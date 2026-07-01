@@ -33,4 +33,26 @@ class ProductImage extends Model
     {
         return $query->where('is_primary', true);
     }
+
+    // NOTA: no se define un accessor sobre `url` para no sombrear la columna cruda
+    // que Filament (FileUpload) necesita en formato relativo. La conversión a URL
+    // pública absoluta se hace en la capa de presentación (API Resources) con el
+    // helper estático publicUrl().
+
+    /**
+     * Convierte una ruta relativa del disco público en URL absoluta.
+     * Idempotente: si ya es una URL (http) la devuelve sin cambios.
+     */
+    public static function publicUrl(?string $path): ?string
+    {
+        if (empty($path)) {
+            return $path;
+        }
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+
+        return asset('storage/' . ltrim($path, '/'));
+    }
 }

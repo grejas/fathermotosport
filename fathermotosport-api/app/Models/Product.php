@@ -150,7 +150,8 @@ class Product extends Model
         $primary = $this->images->firstWhere('is_primary', true)
             ?? $this->images->sortBy('sort_order')->first();
 
-        return $primary?->url;
+        // La columna guarda ruta relativa; se devuelve URL pública absoluta.
+        return ProductImage::publicUrl($primary?->url);
     }
 
     public function getHas3dModelAttribute(): bool
