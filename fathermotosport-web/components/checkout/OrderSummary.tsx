@@ -1,0 +1,67 @@
+"use client";
+
+import Image from "next/image";
+import { useCartStore } from "@/store/cartStore";
+import { formatPrice, getImageUrl } from "@/lib/utils";
+
+interface OrderSummaryProps {
+  discount?: number;
+  children?: React.ReactNode;
+}
+
+export function OrderSummary({ discount = 0, children }: OrderSummaryProps) {
+  const items = useCartStore((s) => s.items);
+  const subtotal = useCartStore((s) => s.subtotal());
+  const total = Math.max(0, subtotal - discount);
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-brand-card p-5">
+      <h3 className="mb-4 text-lg font-bold text-brand-white">Resumen</h3>
+
+      <div className="max-h-64 space-y-3 overflow-y-auto">
+        {items.map((item) => (
+          <div key={item.variantId} className="flex gap-3">
+            <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md bg-brand-dark">
+              {item.image && (
+                <Image src={getImageUrl(item.image)} alt={item.name} fill className="object-cover" sizes="48px" />
+              )}
+              <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-brand-red px-1 text-[10px] font-bold text-white">
+                {item.quantity}
+              </span>
+            </div>
+            <div className="flex-1">
+              <p className="line-clamp-1 text-sm text-brand-white">{item.name}</p>
+              <p className="text-xs text-brand-muted">
+                {[item.size, item.color].filter(Boolean).join(" · ")}
+              </p>
+            </div>
+            <span className="text-sm text-brand-white">{formatPrice(item.price * item.quantity)}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 space-y-2 border-t border-white/10 pt-4 text-sm">
+        <div className="flex justify-between text-brand-muted">
+          <span>Subtotal</span>
+          <span className="text-brand-white">{formatPrice(subtotal)}</span>
+        </div>
+        {discount > 0 && (
+          <div className="flex justify-between text-cat-boots">
+            <span>Descuento</span>
+            <span>−{formatPrice(discount)}</span>
+          </div>
+        )}
+        <div className="flex justify-between text-brand-muted">
+          <span>Envío</span>
+          <span className="font-semibold text-cat-boots">Gratis</span>
+        </div>
+        <div className="flex justify-between border-t border-white/10 pt-2 text-base font-bold text-brand-white">
+          <span>Total</span>
+          <span>{formatPrice(total)}</span>
+        </div>
+      </div>
+
+      {children}
+    </div>
+  );
+}
