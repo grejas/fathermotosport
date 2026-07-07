@@ -10,12 +10,13 @@ import { validateRegister, hasErrors, type FieldErrors } from "@/lib/validators"
 import toast from "react-hot-toast";
 
 const empty = {
-  first_name: "",
-  last_name: "",
   email: "",
-  phone: "",
   password: "",
   password_confirmation: "",
+  first_name: "",
+  last_name: "",
+  birth_date: "",
+  phone: "",
 };
 
 export function RegisterForm() {
@@ -37,7 +38,16 @@ export function RegisterForm() {
     if (hasErrors(v)) return;
 
     try {
-      const res = await register.mutateAsync(form);
+      // Solo se envían los campos opcionales que el usuario completó.
+      const res = await register.mutateAsync({
+        email: form.email,
+        password: form.password,
+        password_confirmation: form.password_confirmation,
+        first_name: form.first_name || undefined,
+        last_name: form.last_name || undefined,
+        birth_date: form.birth_date || undefined,
+        phone: form.phone || undefined,
+      });
       toast.success(
         `¡Cuenta creada! Tienes un cupón de $${res.welcome_coupon?.value ?? "5"} esperándote 🎉`,
         { duration: 5000 }
@@ -57,22 +67,7 @@ export function RegisterForm() {
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
-        <Input
-          label="Nombre"
-          name="first_name"
-          value={form.first_name}
-          onChange={(e) => update("first_name", e.target.value)}
-          error={errors.first_name}
-        />
-        <Input
-          label="Apellido"
-          name="last_name"
-          value={form.last_name}
-          onChange={(e) => update("last_name", e.target.value)}
-          error={errors.last_name}
-        />
-      </div>
+      {/* Obligatorios */}
       <Input
         label="Email"
         type="email"
@@ -80,13 +75,7 @@ export function RegisterForm() {
         value={form.email}
         onChange={(e) => update("email", e.target.value)}
         error={errors.email}
-      />
-      <Input
-        label="Teléfono (opcional)"
-        name="phone"
-        value={form.phone}
-        onChange={(e) => update("phone", e.target.value)}
-        error={errors.phone}
+        placeholder="tu@email.com"
       />
       <Input
         label="Contraseña"
@@ -106,9 +95,64 @@ export function RegisterForm() {
         error={errors.password_confirmation}
       />
 
+      {/* Opcionales */}
+      <div className="border-t border-white/10 pt-4">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-brand-muted">
+          Datos opcionales
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          <Input
+            label="Nombre"
+            name="first_name"
+            value={form.first_name}
+            onChange={(e) => update("first_name", e.target.value)}
+            placeholder="Opcional"
+          />
+          <Input
+            label="Apellido"
+            name="last_name"
+            value={form.last_name}
+            onChange={(e) => update("last_name", e.target.value)}
+            placeholder="Opcional"
+          />
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <Input
+            label="Fecha de nacimiento"
+            type="date"
+            name="birth_date"
+            value={form.birth_date}
+            onChange={(e) => update("birth_date", e.target.value)}
+            hint="Para ofertas personalizadas"
+          />
+          <Input
+            label="Teléfono"
+            name="phone"
+            value={form.phone}
+            onChange={(e) => update("phone", e.target.value)}
+            placeholder="Opcional"
+          />
+        </div>
+      </div>
+
       <Button type="submit" variant="primary" className="w-full" loading={register.isPending}>
         Crear cuenta
       </Button>
+
+      {/* Google (visual por ahora) */}
+      <div className="text-center">
+        <p className="text-xs text-brand-muted">
+          ¿Tenés cuenta de Google?{" "}
+          <button
+            type="button"
+            // TODO: implementar OAuth Google en Fase 6
+            onClick={() => toast("Inicio con Google disponible próximamente.", { icon: "🔒" })}
+            className="font-semibold text-brand-red hover:underline"
+          >
+            Continuar con Google
+          </button>
+        </p>
+      </div>
 
       <p className="text-center text-sm text-brand-muted">
         ¿Ya tienes cuenta?{" "}

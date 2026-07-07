@@ -12,6 +12,9 @@ export function ProductCard({ product }: { product: Product }) {
   const accent = getCategoryColor(product.category?.slug);
   const addItem = useCartStore((s) => s.addItem);
 
+  // Agotado solo si NINGUNA variante activa tiene stock.
+  const isOutOfStock = !product.variants?.some((v) => v.is_active && v.stock > 0);
+
   const quickAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     const variant = product.variants?.find((v) => v.is_active && v.stock > 0);
@@ -47,6 +50,11 @@ export function ProductCard({ product }: { product: Product }) {
           )}
 
           <div className="absolute left-2 top-2 flex flex-col gap-1">
+            {isOutOfStock && (
+              <span className="inline-flex items-center rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-brand-muted ring-1 ring-white/15">
+                Agotado
+              </span>
+            )}
             {product.discount_percent > 0 && (
               <span className="badge-red">-{product.discount_percent}%</span>
             )}
@@ -85,8 +93,10 @@ export function ProductCard({ product }: { product: Product }) {
 
             <button
               onClick={quickAdd}
+              disabled={isOutOfStock}
               className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-lg text-white transition active:scale-90"
+                "flex h-9 w-9 items-center justify-center rounded-lg text-white transition active:scale-90",
+                isOutOfStock && "cursor-not-allowed opacity-40"
               )}
               style={{ backgroundColor: accent }}
               aria-label="Agregar al carrito"

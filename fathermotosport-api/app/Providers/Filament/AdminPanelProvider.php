@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Http\Middleware\EnsurePanelAccess;
 use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -44,6 +45,7 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make('Ventas'),
                 NavigationGroup::make('Clientes'),
                 NavigationGroup::make('Marketing'),
+                NavigationGroup::make('Equipo'),
                 NavigationGroup::make('Configuración'),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
@@ -68,6 +70,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                EnsurePanelAccess::class,
             ]);
 
         // Logo de marca opcional si existe el archivo.

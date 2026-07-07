@@ -14,6 +14,10 @@ class TopProductsWidget extends BaseWidget
 
     protected static ?int $sort = 3;
 
+    protected static ?string $pollingInterval = null;
+
+    protected static ?int $defaultPaginationPageOption = 5;
+
     protected int|string|array $columnSpan = 1;
 
     public function table(Table $table): Table

@@ -98,3 +98,16 @@ export function truncate(text: string, maxLength: number): string {
 export function currentPrice(price: string, salePrice?: string | null): number {
   return parseFloat(salePrice ?? price);
 }
+
+/**
+ * Enmascara parcialmente un email para mostrarlo en el perfil.
+ * gersonrejas@gmail.com → ger*****@gmail.com · ka@gmail.com → ***@gmail.com
+ */
+export function maskEmail(email: string): string {
+  if (!email || !email.includes("@")) return email;
+  const [user, domain] = email.split("@");
+  if (user.length <= 3) return `***@${domain}`;
+  const visible = user.slice(0, 3);
+  const masked = "*".repeat(Math.min(user.length - 3, 5));
+  return `${visible}${masked}@${domain}`;
+}

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Mail\OrderConfirmedMail;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Services\Payments\MercadoPagoService;
@@ -11,6 +12,7 @@ use App\Services\Payments\StripeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class PaymentController extends Controller
 {
@@ -200,10 +202,30 @@ class PaymentController extends Controller
             'paid_at' => now(),
         ]);
 
-        $payment->order?->update([
+        $order = $payment->order;
+        if (! $order) {
+            return;
+        }
+
+        // Evitar reenviar el email si ya estaba pagado (webhooks duplicados).
+        $yaPagado = $order->payment_status === 'paid';
+
+        $order->update([
             'payment_status' => 'paid',
             'status' => 'processing',
         ]);
+
+        // Email de confirmación a todos los compradores (guest o registrados).
+        if (! $yaPagado) {
+            $email = $order->guest_email ?: optional($order->user)->email;
+            if ($email) {
+                try {
+                    Mail::to($email)->send(new OrderConfirmedMail($order->fresh(['items.variant.product', 'address', 'user'])));
+                } catch (\Throwable $e) {
+                    Log::error('Error enviando confirmación de pedido', ['order' => $order->id, 'error' => $e->getMessage()]);
+                }
+            }
+        }
     }
 
     private function flatHeaders(Request $request): array

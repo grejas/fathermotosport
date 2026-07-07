@@ -3,21 +3,25 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProductResource\Pages;
+use App\Models\Brand;
 use App\Models\Product;
 use Filament\Forms;
+use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Str;
 
 class ProductResource extends Resource
 {
     protected static ?string $model = Product::class;
+
+    protected static int $defaultPaginationPageOption = 10;
 
     protected static ?string $navigationIcon = 'heroicon-o-cube';
 
@@ -41,8 +45,16 @@ class ProductResource extends Resource
                         ->label('Nombre')
                         ->required()
                         ->maxLength(255)
-                        ->live(onBlur: true)
-                        ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug($state ?? ''))),
+                        ->live(debounce: 500)
+                        ->afterStateUpdated(function (Get $get, Set $set, ?string $state) {
+                            $set('slug', Str::slug($state ?? ''));
+
+                            // Autogenerar el SKU a partir del nombre solo si el admin
+                            // no lo personalizó (sigue vacío o con patrón autogenerado).
+                            if (filled($state) && static::skuEsAutogenerado($get('sku'))) {
+                                $set('sku', static::generarSkuProducto($get('brand_id'), $state));
+                            }
+                        }),
                     Forms\Components\TextInput::make('slug')
                         ->required()
                         ->maxLength(255)
@@ -52,7 +64,15 @@ class ProductResource extends Resource
                         ->relationship('brand', 'name')
                         ->searchable()
                         ->preload()
-                        ->required(),
+                        ->required()
+                        ->live()
+                        // Al elegir/cambiar la marca, refrescar el SKU con el slug de
+                        // la marca (FMS-{MARCA}-XXXXXX), respetando ediciones manuales.
+                        ->afterStateUpdated(function (Get $get, Set $set, $state) {
+                            if (static::skuEsAutogenerado($get('sku'))) {
+                                $set('sku', static::generarSkuProducto($state, $get('name')));
+                            }
+                        }),
                     Forms\Components\Select::make('category_id')
                         ->label('Categoría')
                         ->relationship('category', 'name')
@@ -62,9 +82,18 @@ class ProductResource extends Resource
                     Forms\Components\TextInput::make('sku')
                         ->label('SKU')
                         ->required()
-                        ->unique(ignoreRecord: true),
-                    Forms\Components\TextInput::make('barcode')
-                        ->label('Código de barras'),
+                        ->default(fn () => 'FMS-'.Str::upper(Str::random(8)))
+                        ->unique(ignoreRecord: true)
+                        ->helperText('Se autogenera; podés editarlo o regenerarlo.')
+                        ->suffixAction(
+                            Action::make('regenerate_sku')
+                                ->icon('heroicon-o-arrow-path')
+                                ->tooltip('Regenerar SKU')
+                                ->action(fn (Get $get, Set $set) => $set(
+                                    'sku',
+                                    static::generarSkuProducto($get('brand_id'), $get('name'))
+                                )),
+                        ),
                     Forms\Components\Toggle::make('is_featured')->label('Destacado'),
                     Forms\Components\Toggle::make('is_new')->label('Nuevo'),
                     Forms\Components\Toggle::make('is_popular')->label('Popular'),
@@ -97,10 +126,6 @@ class ProductResource extends Resource
 
             Forms\Components\Section::make('Descripción')
                 ->schema([
-                    Forms\Components\Textarea::make('short_description')
-                        ->label('Descripción corta')
-                        ->maxLength(300)
-                        ->rows(2),
                     Forms\Components\RichEditor::make('description')
                         ->label('Descripción completa')
                         ->columnSpanFull(),
@@ -182,44 +207,129 @@ class ProductResource extends Resource
 
             Forms\Components\Section::make('Variantes')
                 ->schema([
+                    // relationship('variants') es CRÍTICO: carga las variantes existentes
+                    // al editar y las persiste al guardar.
                     Forms\Components\Repeater::make('variants')
                         ->relationship('variants')
                         ->label('Variantes del producto')
                         ->schema([
-                            Forms\Components\TextInput::make('color')->label('Color'),
+                            Forms\Components\TextInput::make('color')
+                                ->label('Color')
+                                ->live(debounce: 500)
+                                ->afterStateUpdated(fn (Get $get, Set $set) => $set(
+                                    'sku',
+                                    static::generarSkuVariante($get('../../sku'), $get('size'), $get('color'))
+                                )),
                             Forms\Components\Select::make('size')
                                 ->label('Talla')
                                 ->options([
                                     'XS' => 'XS', 'S' => 'S', 'M' => 'M', 'L' => 'L',
                                     'XL' => 'XL', 'XXL' => 'XXL', 'Única' => 'Talla única',
-                                ]),
+                                ])
+                                ->live()
+                                ->afterStateUpdated(fn (Get $get, Set $set) => $set(
+                                    'sku',
+                                    static::generarSkuVariante($get('../../sku'), $get('size'), $get('color'))
+                                )),
                             Forms\Components\Select::make('finish')
                                 ->label('Acabado')
                                 ->options([
                                     'Mate' => 'Mate', 'Brillante' => 'Brillante',
                                     'Carbono' => 'Carbono', 'Cromado' => 'Cromado',
-                                ]),
+                                ])
+                                ->nullable(),
                             Forms\Components\TextInput::make('sku')
-                                ->label('SKU')
+                                ->label('SKU Variante')
                                 ->required()
-                                ->distinct(),
+                                ->default(fn () => 'VAR-'.Str::upper(Str::random(6)))
+                                ->distinct()
+                                ->unique(table: 'product_variants', column: 'sku', ignoreRecord: true)
+                                ->suffixAction(
+                                    Action::make('regen_var_sku')
+                                        ->icon('heroicon-o-arrow-path')
+                                        ->tooltip('Regenerar')
+                                        ->action(fn (Get $get, Set $set) => $set(
+                                            'sku',
+                                            static::generarSkuVariante($get('../../sku'), $get('size'), $get('color'))
+                                        )),
+                                ),
                             Forms\Components\TextInput::make('stock')
                                 ->label('Stock')
                                 ->numeric()
+                                ->required()
+                                ->minValue(0)
                                 ->default(0),
                             Forms\Components\TextInput::make('price')
                                 ->label('Precio')
                                 ->numeric()
+                                ->nullable()
                                 ->prefix('$')
                                 ->helperText('Vacío = precio del producto'),
                             Forms\Components\Toggle::make('is_active')->label('Activa')->default(true),
                         ])
                         ->columns(3)
                         ->defaultItems(1)
+                        ->addActionLabel('+ Agregar variante')
+                        ->reorderable(false)
                         ->collapsible()
                         ->itemLabel(fn (array $state): ?string => $state['sku'] ?? 'Nueva variante'),
                 ]),
         ]);
+    }
+
+    /**
+     * Genera el SKU del producto con formato FMS-{MARCA|INICIALES}-{RANDOM6}.
+     * Usa el slug de la marca si está seleccionada; si no, las iniciales del
+     * nombre; y como último recurso un token aleatorio.
+     */
+    protected static function generarSkuProducto($brandId = null, ?string $name = null): string
+    {
+        $token = null;
+
+        if ($brandId && $slug = Brand::whereKey($brandId)->value('slug')) {
+            $token = Str::upper(Str::of($slug)->replace('-', ''));
+        } elseif (filled($name)) {
+            $palabras = preg_split('/\s+/', trim(Str::upper($name)));
+            $token = collect($palabras)->take(3)
+                ->map(fn ($w) => Str::substr($w, 0, 2))
+                ->implode('');
+        }
+
+        $token = $token ?: Str::upper(Str::random(3));
+
+        return 'FMS-'.$token.'-'.Str::upper(Str::random(6));
+    }
+
+    /**
+     * Genera el SKU de una variante: {SKU_PRODUCTO}-{TALLA}-{INICIAL_COLOR}.
+     * Si falta el SKU del producto usa un fallback aleatorio.
+     */
+    protected static function generarSkuVariante(?string $productSku, ?string $size, ?string $color): string
+    {
+        $base = filled($productSku) ? $productSku : ('VAR-'.Str::upper(Str::random(6)));
+
+        $partes = [$base];
+        if (filled($size)) {
+            $partes[] = Str::upper($size);
+        }
+        if (filled($color)) {
+            $partes[] = Str::upper(Str::substr(trim($color), 0, 1));
+        }
+
+        return implode('-', $partes);
+    }
+
+    /**
+     * Indica si un SKU está vacío o sigue un patrón autogenerado (FMS-… / VAR-…),
+     * de modo que se pueda sobrescribir sin pisar una edición manual del admin.
+     */
+    protected static function skuEsAutogenerado(?string $sku): bool
+    {
+        if (blank($sku)) {
+            return true;
+        }
+
+        return (bool) preg_match('/^(FMS|VAR)-[A-Z0-9]+(-[A-Z0-9]+)*$/', $sku);
     }
 
     public static function table(Table $table): Table
@@ -279,9 +389,9 @@ class ProductResource extends Resource
                     ->label('Duplicar')
                     ->excludeAttributes(['slug', 'sku'])
                     ->beforeReplicaSaved(function (Product $replica): void {
-                        $replica->name = $replica->name . ' (copia)';
-                        $replica->slug = Str::slug($replica->name) . '-' . Str::random(4);
-                        $replica->sku = $replica->sku . '-' . Str::upper(Str::random(4));
+                        $replica->name = $replica->name.' (copia)';
+                        $replica->slug = Str::slug($replica->name).'-'.Str::random(4);
+                        $replica->sku = $replica->sku.'-'.Str::upper(Str::random(4));
                     }),
                 Tables\Actions\DeleteAction::make(),
             ])
@@ -307,24 +417,17 @@ class ProductResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
+        // Eager loading para evitar N+1 en el listado (marca, categoría e
+        // imágenes que usa la columna de imagen principal).
         return parent::getEloquentQuery()
+            ->with(['brand:id,name', 'category:id,name', 'images'])
             ->withoutGlobalScopes([SoftDeletingScope::class]);
     }
 
-    // ─── Permisos por rol: solo el Administrador gestiona productos ───
-    public static function canCreate(): bool
+    // ─── Permisos: Administrador y Empleado gestionan productos por completo ───
+    public static function canAccess(): bool
     {
-        return (bool) auth()->user()?->isAdmin();
-    }
-
-    public static function canEdit(Model $record): bool
-    {
-        return (bool) auth()->user()?->isAdmin();
-    }
-
-    public static function canDelete(Model $record): bool
-    {
-        return (bool) auth()->user()?->isAdmin();
+        return (bool) auth()->user()?->isStaff();
     }
 
     public static function getPages(): array

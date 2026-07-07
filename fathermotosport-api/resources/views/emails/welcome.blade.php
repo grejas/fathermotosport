@@ -1,15 +1,25 @@
-@component('mail::message')
-# ¡Bienvenido a FatherMotoSport, {{ $user->first_name }}!
+@extends('emails.layouts.base')
 
-Gracias por crear tu cuenta. Como regalo de bienvenida, aquí tienes un cupón de **$5 de descuento** en tu primera compra:
+@section('emoji', '🎉')
 
-@component('mail::panel')
-## {{ $coupon->code }}
-$5 de descuento — válido hasta {{ $coupon->end_date?->format('d/m/Y') }}
-@endcomponent
+@section('content')
+  <div class="greeting">Hola{{ $user->first_name ? ' ' . $user->first_name : '' }},</div>
+  <div class="title">¡Bienvenido a FatherMotoSport!</div>
+  <div class="text">Gracias por crear tu cuenta. Como regalo de bienvenida, aquí tienes un cupón de <strong style="color:#fff">$5 de descuento</strong> para tu primera compra.</div>
 
-Usa este código al finalizar tu compra. ¡Y recuerda que el envío siempre es **gratis**!
+  <div class="coupon-box">
+    <div class="coupon-label">Tu cupón de bienvenida</div>
+    <div class="coupon-code">{{ $coupon->code }}</div>
+    <div class="coupon-value">$5.00 de descuento</div>
+    @if($coupon->expires_at)
+      <div class="countdown">
+        <div class="countdown-label">Válido hasta</div>
+        <div class="countdown-time">{{ $coupon->expires_at->format('d/m/Y H:i') }}</div>
+      </div>
+    @endif
+  </div>
 
-Nos vemos en la ruta,
-**El equipo de FatherMotoSport**
-@endcomponent
+  <div class="text">Usá el código al finalizar tu compra. Recordá que el envío siempre es <strong style="color:#fff">gratis</strong> en Bolivia y Brasil.</div>
+
+  <a href="{{ config('app.frontend_url') }}/catalog" class="btn">Explorar productos</a>
+@endsection

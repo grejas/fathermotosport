@@ -9,9 +9,15 @@ import { CartDrawer } from "@/components/cart/CartDrawer";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "FatherMotoSport — Cascos y accesorios premium para motociclistas",
+  title: {
+    default: "FatherMotoSport — Cascos y Accesorios Premium",
+    template: "%s | FatherMotoSport",
+  },
   description:
     "Cascos, guantes, botas, chamarras y repuestos premium. Envío gratis en Bolivia y Brasil. AGV, Shoei, Shark, Alpinestars y más.",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

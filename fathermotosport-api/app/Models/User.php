@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Mail\ResetPasswordMail;
 use App\Models\Concerns\HasUuid;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasAvatar;
@@ -14,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Mail;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable implements FilamentUser, HasAvatar, HasName
@@ -41,17 +43,43 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasName
         return $this->avatar;
     }
 
+    /**
+     * Indica si corresponde mostrar el recordatorio de seguridad (cada 14 días,
+     * no bloqueante). Se basa en el último cambio de contraseña (o la fecha de
+     * registro si nunca cambió) y en cuándo se descartó el recordatorio.
+     */
+    public function needsSecurityReminder(): bool
+    {
+        $reference = $this->last_password_change ?? $this->created_at;
+
+        // Cuenta demasiado nueva o cambio de contraseña reciente → sin recordatorio.
+        if (! $reference || $reference->greaterThan(now()->subDays(14))) {
+            return false;
+        }
+
+        // Descartado hace menos de 14 días → seguir oculto.
+        if ($this->security_reminder_dismissed_at
+            && $this->security_reminder_dismissed_at->greaterThan(now()->subDays(14))) {
+            return false;
+        }
+
+        return true;
+    }
+
     protected $fillable = [
         'role_id',
         'first_name',
         'last_name',
         'email',
         'phone',
+        'birth_date',
         'password',
         'avatar',
         'status',
         'email_verified_at',
         'loyalty_discount_used',
+        'last_password_change',
+        'security_reminder_dismissed_at',
     ];
 
     protected $hidden = [
@@ -63,8 +91,11 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasName
     {
         return [
             'email_verified_at' => 'datetime',
+            'birth_date' => 'date',
             'password' => 'hashed',
             'loyalty_discount_used' => 'boolean',
+            'last_password_change' => 'datetime',
+            'security_reminder_dismissed_at' => 'datetime',
         ];
     }
 
@@ -130,5 +161,24 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasName
     public function isCliente(): bool
     {
         return optional($this->role)->slug === 'cliente';
+    }
+
+    /** Personal del panel: Administrador o Empleado. */
+    public function isStaff(): bool
+    {
+        return $this->isAdmin() || $this->isEmpleado();
+    }
+
+    /**
+     * Envía el email de recuperación con el diseño Dark Race, apuntando al
+     * frontend Next.js. El token expira en 60 minutos (config/auth.php).
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $resetUrl = rtrim(config('app.frontend_url'), '/')
+            . '/reset-password?token=' . $token
+            . '&email=' . urlencode($this->email);
+
+        Mail::to($this->email)->send(new ResetPasswordMail($this, $resetUrl));
     }
 }

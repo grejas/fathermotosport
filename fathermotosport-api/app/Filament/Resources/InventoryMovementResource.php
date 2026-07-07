@@ -13,6 +13,8 @@ class InventoryMovementResource extends Resource
 {
     protected static ?string $model = InventoryMovement::class;
 
+    protected static int $defaultPaginationPageOption = 10;
+
     protected static ?string $navigationIcon = 'heroicon-o-archive-box';
 
     protected static ?string $navigationGroup = 'Catálogo';

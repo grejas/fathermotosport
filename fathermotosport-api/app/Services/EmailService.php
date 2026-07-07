@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Mail\OrderConfirmationMail;
+use App\Mail\OrderConfirmedMail;
 use App\Mail\ShippingUpdateMail;
 use App\Mail\WelcomeMail;
 use App\Models\Coupon;
@@ -28,7 +28,7 @@ class EmailService
             return;
         }
 
-        $this->dispatch($email, new OrderConfirmationMail($order));
+        $this->dispatch($email, new OrderConfirmedMail($order));
     }
 
     /**
@@ -42,7 +42,7 @@ class EmailService
     /**
      * Aviso de despacho con número de seguimiento.
      */
-    public function sendShippingUpdate(Order $order, ?string $trackingNumber = null): void
+    public function sendShippingUpdate(Order $order, ?string $trackingNumber = null, ?string $carrier = null): void
     {
         $email = $order->guest_email ?: optional($order->user)->email;
 
@@ -50,7 +50,7 @@ class EmailService
             return;
         }
 
-        $this->dispatch($email, new ShippingUpdateMail($order, $trackingNumber));
+        $this->dispatch($email, new ShippingUpdateMail($order, $trackingNumber, $carrier));
     }
 
     private function dispatch(string $email, $mailable): void

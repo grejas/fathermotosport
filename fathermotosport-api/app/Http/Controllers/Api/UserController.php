@@ -15,6 +15,9 @@ use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
@@ -121,7 +124,7 @@ class UserController extends Controller
     }
 
     /**
-     * Mi cupón de bienvenida de $5 y si ya fue usado.
+     * Mi cupón de bienvenida de $5 (con vencimiento exacto para el countdown).
      */
     public function myCoupon(Request $request): JsonResponse
     {
@@ -140,8 +143,77 @@ class UserController extends Controller
                 'code' => $coupon->code,
                 'value' => $coupon->value,
                 'used' => $user->loyalty_discount_used,
-                'expires_at' => $coupon->end_date,
+                'expires_at' => $coupon->expires_at,
+                'is_expired' => $coupon->isExpired(),
             ] : null,
         ]);
+    }
+
+    /**
+     * Cambia la contraseña verificando la contraseña actual.
+     * Registra last_password_change (para el recordatorio de seguridad).
+     */
+    public function changePassword(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $user = $request->user();
+
+        if (! Hash::check($data['current_password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['La contraseña actual no es correcta.'],
+            ]);
+        }
+
+        $user->forceFill([
+            'password' => Hash::make($data['password']),
+            'last_password_change' => now(),
+        ])->save();
+
+        return response()->json(['message' => 'Contraseña actualizada correctamente.']);
+    }
+
+    /**
+     * Cambia el correo verificando la contraseña actual.
+     * El nuevo correo queda sin verificar hasta la confirmación.
+     */
+    public function changeEmail(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $data = $request->validate([
+            'current_password' => ['required', 'string'],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+        ]);
+
+        if (! Hash::check($data['current_password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['La contraseña actual no es correcta.'],
+            ]);
+        }
+
+        $user->forceFill([
+            'email' => $data['email'],
+            'email_verified_at' => null,
+            'last_password_change' => now(),
+        ])->save();
+
+        return response()->json([
+            'message' => 'Correo actualizado. Recibirás un email de confirmación en tu nueva dirección.',
+            'user' => new UserResource($user->load('role')),
+        ]);
+    }
+
+    /**
+     * Descarta el recordatorio de seguridad por otros 14 días.
+     */
+    public function dismissSecurityReminder(Request $request): JsonResponse
+    {
+        $request->user()->forceFill(['security_reminder_dismissed_at' => now()])->save();
+
+        return response()->json(['message' => 'Recordatorio pospuesto.']);
     }
 }

@@ -13,6 +13,8 @@ class LowStockWidget extends BaseWidget
 
     protected static ?int $sort = 5;
 
+    protected static ?string $pollingInterval = null;
+
     protected int|string|array $columnSpan = 'full';
 
     public function table(Table $table): Table

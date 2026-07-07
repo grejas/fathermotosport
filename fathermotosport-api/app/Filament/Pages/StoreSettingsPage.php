@@ -3,12 +3,14 @@
 namespace App\Filament\Pages;
 
 use App\Models\StoreConfig;
+use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Illuminate\Support\Facades\Cache;
 
 class StoreSettingsPage extends Page implements HasForms
 {
@@ -28,12 +30,12 @@ class StoreSettingsPage extends Page implements HasForms
 
     public static function canAccess(): bool
     {
-        return (bool) auth()->user()?->isAdmin();
+        return (bool) auth()->user()?->isStaff();
     }
 
     public function mount(): void
     {
-        $config = StoreConfig::current() ?? new StoreConfig();
+        $config = StoreConfig::current() ?? new StoreConfig;
         $keys = $config->payment_keys ?? [];
 
         $this->form->fill([
@@ -110,7 +112,7 @@ class StoreSettingsPage extends Page implements HasForms
     protected function getFormActions(): array
     {
         return [
-            \Filament\Actions\Action::make('save')
+            Action::make('save')
                 ->label('Guardar configuración')
                 ->submit('save'),
         ];
@@ -153,39 +155,12 @@ class StoreSettingsPage extends Page implements HasForms
             'payment_keys' => $paymentKeys,
         ]);
 
-        // 2. Reflejar credenciales en el .env.
-        $this->updateEnv([
-            'PAYPAL_MODE' => $data['paypal_mode'] ?? 'sandbox',
-            'PAYPAL_CLIENT_ID' => $data['paypal_client_id'] ?? '',
-            'PAYPAL_SECRET' => $data['paypal_client_secret'] ?? '',
-            'STRIPE_KEY' => $data['stripe_key'] ?? '',
-            'STRIPE_SECRET' => $data['stripe_secret'] ?? '',
-            'STRIPE_WEBHOOK_SECRET' => $data['stripe_webhook_secret'] ?? '',
-            'MERCADOPAGO_PUBLIC_KEY' => $data['mercadopago_public_key'] ?? '',
-            'MERCADOPAGO_ACCESS_TOKEN' => $data['mercadopago_access_token'] ?? '',
-        ]);
+        // 2. Invalidar el caché de configuración de la tienda.
+        //    Las credenciales de pago quedan en store_config.payment_keys; NO se
+        //    escribe el .env (hacerlo desde una petición web es lento y bajo
+        //    `php artisan serve` (single-thread) provocaba el timeout de 60s).
+        Cache::forget('store_config');
 
         Notification::make()->title('Configuración guardada correctamente')->success()->send();
-    }
-
-    /** Actualiza (o agrega) variables en el archivo .env. */
-    private function updateEnv(array $values): void
-    {
-        $path = base_path('.env');
-        if (! file_exists($path)) {
-            return;
-        }
-        $content = file_get_contents($path);
-
-        foreach ($values as $key => $value) {
-            $escaped = '"' . str_replace('"', '\"', (string) $value) . '"';
-            if (preg_match("/^{$key}=.*/m", $content)) {
-                $content = preg_replace("/^{$key}=.*/m", "{$key}={$escaped}", $content);
-            } else {
-                $content .= PHP_EOL . "{$key}={$escaped}";
-            }
-        }
-
-        file_put_contents($path, $content);
     }
 }

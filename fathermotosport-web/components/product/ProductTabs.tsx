@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Star } from "lucide-react";
 import type { Product } from "@/lib/types";
 import { cn, formatDate } from "@/lib/utils";
+import { ProductDescription } from "./ProductDescription";
 
 type Tab = "description" | "specs" | "reviews";
 
@@ -38,11 +39,7 @@ export function ProductTabs({ product }: { product: Product }) {
       </div>
 
       <div className="py-6">
-        {tab === "description" && (
-          <p className="whitespace-pre-line leading-relaxed text-brand-muted">
-            {product.description ?? "Sin descripción disponible."}
-          </p>
-        )}
+        {tab === "description" && <ProductDescription html={product.description} />}
 
         {tab === "specs" && (
           <div className="overflow-hidden rounded-xl border border-white/10">

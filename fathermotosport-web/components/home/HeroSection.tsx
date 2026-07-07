@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Box, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { initHeroScroll } from "@/animations/scroll";
+import { getBanners, type Banner } from "@/lib/api/banners";
 import { HeroParticles } from "./HeroParticles";
 
 const stats = [
@@ -15,13 +16,46 @@ const stats = [
 
 export function HeroSection() {
   const root = useRef<HTMLDivElement>(null);
+  const [heroBanner, setHeroBanner] = useState<Banner | null>(null);
 
+  // Animación de entrada del hero (texto + botones + stats).
   useEffect(() => initHeroScroll(root.current), []);
+
+  // Banner "hero" configurado desde el panel admin (si existe, se usa como fondo).
+  useEffect(() => {
+    getBanners("hero")
+      .then((banners) => setHeroBanner(banners[0] ?? null))
+      .catch(() => {});
+  }, []);
 
   return (
     <section ref={root} className="relative flex min-h-[92vh] items-center overflow-hidden">
+      {/* Fondo: imagen del banner del admin, detrás de partículas y contenido.
+          La imagen es cuadrada (874x874); se limita al 55% del ancho y se alinea
+          a la derecha para que el casco no invada el texto de la izquierda. */}
+      {heroBanner?.image_url && (
+        <div className="absolute inset-0">
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url(${heroBanner.image_url})`,
+              backgroundSize: "55%",
+              backgroundPosition: "right center",
+              backgroundRepeat: "no-repeat",
+              opacity: 0.65,
+            }}
+          />
+          {/* Scrim lateral: texto legible a la izquierda, banner visible a la derecha. */}
+          <div className="absolute inset-0 bg-gradient-to-r from-brand-carbon via-brand-carbon/85 to-transparent" />
+          {/* Scrim inferior. */}
+          <div className="absolute inset-0 bg-gradient-to-t from-brand-carbon/60 via-transparent to-transparent" />
+        </div>
+      )}
       <HeroParticles />
-      <div className="absolute inset-0 bg-gradient-to-t from-brand-carbon via-brand-carbon/40 to-transparent" />
+      {/* Sin banner: se mantiene el gradiente original (hero idéntico al de antes). */}
+      {!heroBanner?.image_url && (
+        <div className="absolute inset-0 bg-gradient-to-t from-brand-carbon via-brand-carbon/40 to-transparent" />
+      )}
 
       <div className="relative mx-auto w-full max-w-7xl px-4 sm:px-6">
         <div className="max-w-2xl">
@@ -53,6 +87,18 @@ export function HeroSection() {
                 Ver en 3D
               </Button>
             </Link>
+
+            {/* Botón configurado en el admin (button_text), con el mismo estilo
+                glass/pill que "Ver en 3D". Si no hay link_url, cae a /catalog. */}
+            {heroBanner?.button_text && (
+              <a
+                href={heroBanner.link_url ?? "/catalog"}
+                data-hero-cta
+                className="inline-flex h-11 items-center gap-2 rounded-full border border-white/20 bg-white/[0.08] px-6 text-sm font-medium uppercase tracking-widest text-white backdrop-blur-sm transition-all duration-[250ms] hover:border-white/35 hover:bg-white/[0.14]"
+              >
+                {heroBanner.button_text}
+              </a>
+            )}
           </div>
 
           <div className="mt-12 flex gap-10">

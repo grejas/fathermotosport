@@ -165,4 +165,18 @@ class Product extends Model
     {
         return $this->sale_price ?? $this->price;
     }
+
+    /**
+     * Stock total sumando las variantes activas.
+     * El stock vive en product_variants, no en products.
+     */
+    public function getTotalStockAttribute(): int
+    {
+        return (int) $this->variants->where('is_active', true)->sum('stock');
+    }
+
+    public function getIsInStockAttribute(): bool
+    {
+        return $this->total_stock > 0;
+    }
 }

@@ -17,6 +17,8 @@ class BrandResource extends Resource
 {
     protected static ?string $model = Brand::class;
 
+    protected static int $defaultPaginationPageOption = 10;
+
     protected static ?string $navigationIcon = 'heroicon-o-bookmark-square';
 
     protected static ?string $navigationGroup = 'Catálogo';
@@ -90,23 +92,7 @@ class BrandResource extends Resource
 
     public static function canAccess(): bool
     {
-        $u = auth()->user();
-        return (bool) ($u?->isAdmin() || $u?->isEmpleado());
-    }
-
-    public static function canCreate(): bool
-    {
-        return (bool) auth()->user()?->isAdmin();
-    }
-
-    public static function canEdit(Model $record): bool
-    {
-        return (bool) auth()->user()?->isAdmin();
-    }
-
-    public static function canDelete(Model $record): bool
-    {
-        return (bool) auth()->user()?->isAdmin();
+        return (bool) auth()->user()?->isStaff();
     }
 
     public static function getPages(): array

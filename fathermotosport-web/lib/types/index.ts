@@ -8,15 +8,19 @@ export interface Role {
 
 export interface User {
   id: string;
-  first_name: string;
-  last_name: string;
+  first_name: string | null;
+  last_name: string | null;
   full_name: string;
   email: string;
   phone: string | null;
+  birth_date?: string | null;
   avatar: string | null;
   status: "active" | "inactive" | "banned";
   loyalty_discount_used: boolean;
   email_verified_at: string | null;
+  last_password_change?: string | null;
+  security_reminder_dismissed_at?: string | null;
+  needs_security_reminder?: boolean;
   role?: Role;
   created_at?: string;
 }
@@ -109,6 +113,7 @@ export interface Product {
   primary_image: string | null;
   has_3d_model: boolean;
   in_stock: boolean;
+  total_stock?: number;
   brand?: Pick<Brand, "id" | "name" | "slug" | "logo_url">;
   category?: Pick<Category, "id" | "name" | "slug" | "icon">;
   images?: ProductImage[];

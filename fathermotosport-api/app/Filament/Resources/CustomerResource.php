@@ -16,6 +16,8 @@ class CustomerResource extends Resource
 {
     protected static ?string $model = User::class;
 
+    protected static int $defaultPaginationPageOption = 10;
+
     protected static ?string $navigationIcon = 'heroicon-o-users';
 
     protected static ?string $navigationGroup = 'Clientes';
@@ -30,6 +32,7 @@ class CustomerResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
+            ->with(['role:id,name,slug'])
             ->whereHas('role', fn (Builder $q) => $q->where('slug', 'cliente'))
             ->withCount('orders');
     }
@@ -66,6 +69,7 @@ class CustomerResource extends Resource
                     ->label(fn (User $r) => $r->status === 'active' ? 'Desactivar' : 'Activar')
                     ->icon('heroicon-o-power')
                     ->requiresConfirmation()
+                    ->visible(fn () => (bool) auth()->user()?->isAdmin()) // solo Admin
                     ->action(fn (User $r) => $r->update([
                         'status' => $r->status === 'active' ? 'inactive' : 'active',
                     ])),
@@ -108,7 +112,8 @@ class CustomerResource extends Resource
 
     public static function canAccess(): bool
     {
-        return (bool) auth()->user()?->isAdmin();
+        // Empleado y Admin pueden VER clientes (solo lectura); nadie edita su rol.
+        return (bool) auth()->user()?->isStaff();
     }
 
     public static function canCreate(): bool

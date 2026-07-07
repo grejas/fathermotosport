@@ -14,6 +14,8 @@ class ShippingMethodResource extends Resource
 {
     protected static ?string $model = ShippingMethod::class;
 
+    protected static int $defaultPaginationPageOption = 10;
+
     protected static ?string $navigationIcon = 'heroicon-o-truck';
 
     protected static ?string $navigationGroup = 'Ventas';
@@ -73,13 +75,7 @@ class ShippingMethodResource extends Resource
 
     public static function canAccess(): bool
     {
-        $u = auth()->user();
-        return (bool) ($u?->isAdmin() || $u?->isEmpleado());
-    }
-
-    public static function canCreate(): bool
-    {
-        return (bool) auth()->user()?->isAdmin();
+        return (bool) auth()->user()?->isStaff();
     }
 
     public static function getPages(): array

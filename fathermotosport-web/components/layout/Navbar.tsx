@@ -62,9 +62,11 @@ export function Navbar() {
       )}
     >
       <nav className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6">
-        <Link href="/" className="text-xl font-extrabold tracking-tight">
-          <span className="text-brand-red">Father</span>
-          <span className="text-brand-white">motosport</span>
+        <Link href="/" className="flex items-center gap-2">
+          <span className="text-sm font-medium tracking-widest uppercase">
+            <span className="text-brand-red">Father</span>
+            <span className="text-brand-white">Motosport</span>
+          </span>
         </Link>
 
         <ul className="ml-6 hidden items-center gap-5 lg:flex">

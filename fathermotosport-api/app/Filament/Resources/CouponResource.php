@@ -14,6 +14,8 @@ class CouponResource extends Resource
 {
     protected static ?string $model = Coupon::class;
 
+    protected static int $defaultPaginationPageOption = 10;
+
     protected static ?string $navigationIcon = 'heroicon-o-ticket';
 
     protected static ?string $navigationGroup = 'Marketing';
@@ -96,7 +98,7 @@ class CouponResource extends Resource
 
     public static function canAccess(): bool
     {
-        return (bool) auth()->user()?->isAdmin();
+        return (bool) auth()->user()?->isStaff();
     }
 
     public static function getPages(): array

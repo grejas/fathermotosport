@@ -37,7 +37,11 @@ export function ProductInfo({ product }: { product: Product }) {
   const isFav = useFavoritesStore((s) => s.isFavorite(product.id));
   const isAuth = useAuthStore((s) => s.isAuth);
 
-  const inStock = (selectedVariant?.stock ?? 0) > 0;
+  // Stock a mostrar: si hay variante seleccionada, su stock; si no, el total
+  // de todas las variantes activas (variants ya viene filtrado por is_active).
+  const totalStock = variants.reduce((sum, v) => sum + v.stock, 0);
+  const displayStock = selectedVariant ? selectedVariant.stock : totalStock;
+  const inStock = displayStock > 0;
   const rating = Math.round(product.rating_avg ?? 0);
 
   const handleAdd = () => {
@@ -149,7 +153,7 @@ export function ProductInfo({ product }: { product: Product }) {
           </button>
         </div>
         <span className="text-xs text-brand-muted">
-          {selectedVariant?.stock ?? 0} disponibles
+          {displayStock} disponibles
         </span>
       </div>
 

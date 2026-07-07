@@ -19,6 +19,7 @@ class Coupon extends Model
         'used_count',
         'start_date',
         'end_date',
+        'expires_at',
         'is_active',
     ];
 
@@ -29,6 +30,7 @@ class Coupon extends Model
         'used_count' => 'integer',
         'start_date' => 'datetime',
         'end_date' => 'datetime',
+        'expires_at' => 'datetime',
         'is_active' => 'boolean',
     ];
 
@@ -68,10 +70,19 @@ class Coupon extends Model
         if ($this->end_date && $this->end_date->isPast()) {
             return false;
         }
+        if ($this->expires_at && $this->expires_at->isPast()) {
+            return false;
+        }
         if (! is_null($this->max_uses) && $this->used_count >= $this->max_uses) {
             return false;
         }
 
         return true;
+    }
+
+    /** El cupón expiró por su marca de tiempo precisa (expires_at). */
+    public function isExpired(): bool
+    {
+        return $this->expires_at !== null && $this->expires_at->isPast();
     }
 }

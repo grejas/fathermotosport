@@ -13,24 +13,28 @@ class ShippingUpdateMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public function __construct(public Order $order, public ?string $trackingNumber = null)
-    {
+    public function __construct(
+        public Order $order,
+        public ?string $trackingNumber = null,
+        public ?string $carrier = null,
+    ) {
     }
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: "Tu pedido {$this->order->order_number} va en camino - FatherMotoSport",
+            subject: "🚚 Tu pedido {$this->order->order_number} fue despachado — FatherMotoSport",
         );
     }
 
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.orders.shipping',
+            view: 'emails.shipping-update',
             with: [
-                'order' => $this->order,
+                'order' => $this->order->loadMissing('address'),
                 'trackingNumber' => $this->trackingNumber,
+                'carrier' => $this->carrier,
             ],
         );
     }

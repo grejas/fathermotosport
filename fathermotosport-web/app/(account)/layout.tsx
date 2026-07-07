@@ -7,6 +7,7 @@ import { Heart, Package, User as UserIcon } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useMounted } from "@/lib/hooks/useMounted";
 import { Spinner } from "@/components/ui/Spinner";
+import { SecurityReminderBanner } from "@/components/account/SecurityReminderBanner";
 import { cn } from "@/lib/utils";
 
 const nav = [
@@ -37,6 +38,7 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-16 pt-24 sm:px-6">
+      <SecurityReminderBanner />
       <div className="grid gap-8 lg:grid-cols-[220px_1fr]">
         <aside className="space-y-1">
           {nav.map((n) => {

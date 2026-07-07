@@ -34,6 +34,7 @@ class ProductResource extends JsonResource
             'primary_image' => $this->primary_image,
             'has_3d_model' => $this->has_3d_model,
             'in_stock' => $this->resolveInStock(),
+            'total_stock' => $this->whenLoaded('variants', fn () => (int) $this->variants->where('is_active', true)->sum('stock')),
 
             // Relaciones anidadas
             'brand' => $this->whenLoaded('brand', fn () => [

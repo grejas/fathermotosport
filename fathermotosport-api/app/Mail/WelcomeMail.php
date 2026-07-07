@@ -21,14 +21,14 @@ class WelcomeMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: '¡Bienvenido a FatherMotoSport! Tu cupón de $5 te espera',
+            subject: '🎉 Bienvenido a FatherMotoSport — Tu cupón de $5 te espera',
         );
     }
 
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.welcome',
+            view: 'emails.welcome',
             with: [
                 'user' => $this->user,
                 'coupon' => $this->coupon,

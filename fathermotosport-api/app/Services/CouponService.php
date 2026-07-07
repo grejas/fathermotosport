@@ -28,7 +28,8 @@ class CouponService
             'max_uses' => 1,
             'used_count' => 0,
             'start_date' => now(),
-            'end_date' => now()->addYear(),
+            'end_date' => now()->addDay(),        // nivel fecha
+            'expires_at' => now()->addHours(24),  // vencimiento exacto: 24 horas
             'is_active' => true,
         ]);
     }
@@ -44,6 +45,10 @@ class CouponService
 
         if (! $coupon) {
             return $this->result(false, 'El cupón no existe.');
+        }
+
+        if ($coupon->isExpired()) {
+            return $this->result(false, 'Este cupón ha expirado.', $coupon);
         }
 
         if (! $coupon->isValid()) {

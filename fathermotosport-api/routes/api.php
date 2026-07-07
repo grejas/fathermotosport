@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BannerController;
 use App\Http\Controllers\Api\BrandController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\Api\CouponController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\StoreConfigController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -34,10 +36,19 @@ Route::prefix('v1')->group(function () {
 
     Route::get('/brands', [BrandController::class, 'index']);
 
-    // Autenticación
-    Route::post('/auth/register', [AuthController::class, 'register']);
-    Route::post('/auth/login', [AuthController::class, 'login']);
-    Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
+    // Banners (home / hero / sidebar / footer)
+    Route::get('/banners', [BannerController::class, 'index']);
+    Route::get('/banners/{position}', [BannerController::class, 'byPosition']);
+
+    // Configuración pública de la tienda (logo, favicon, contacto, redes)
+    Route::get('/store-config', [StoreConfigController::class, 'show']);
+
+    // Autenticación (rate limiting: 10 intentos por minuto y por IP)
+    Route::middleware('throttle:10,1')->group(function () {
+        Route::post('/auth/register', [AuthController::class, 'register']);
+        Route::post('/auth/login', [AuthController::class, 'login']);
+        Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
+    });
 
     // Carrito (guest por session_id)
     Route::get('/cart', [CartController::class, 'show']);
@@ -50,12 +61,23 @@ Route::prefix('v1')->group(function () {
     Route::post('/orders', [OrderController::class, 'store']);
     Route::get('/orders/{id}', [OrderController::class, 'show']);
 
-    // Pagos
-    Route::post('/payments/paypal/create', [PaymentController::class, 'paypalCreate']);
-    Route::post('/payments/paypal/capture/{orderId}', [PaymentController::class, 'paypalCapture']);
-    Route::post('/payments/stripe/intent', [PaymentController::class, 'stripeIntent']);
-    Route::post('/payments/stripe/confirm', [PaymentController::class, 'stripeConfirm']);
-    Route::post('/payments/mercadopago/create', [PaymentController::class, 'mercadopagoCreate']);
+    // Pagos — DESHABILITADOS hasta contar con credenciales reales de las pasarelas.
+    // Todas las rutas /payments/* devuelven un 503 limpio dirigiendo al cliente a WhatsApp.
+    // Para reactivar: comentar este grupo y descomentar las rutas originales de abajo.
+    Route::any('payments/{any}', function () {
+        return response()->json([
+            'success' => false,
+            'message' => 'Pagos no disponibles aún. Contactanos por WhatsApp.',
+            'whatsapp' => '+59168736384',
+        ], 503);
+    })->where('any', '.*');
+
+    // Rutas de pago originales (reactivar cuando existan credenciales):
+    // Route::post('/payments/paypal/create', [PaymentController::class, 'paypalCreate']);
+    // Route::post('/payments/paypal/capture/{orderId}', [PaymentController::class, 'paypalCapture']);
+    // Route::post('/payments/stripe/intent', [PaymentController::class, 'stripeIntent']);
+    // Route::post('/payments/stripe/confirm', [PaymentController::class, 'stripeConfirm']);
+    // Route::post('/payments/mercadopago/create', [PaymentController::class, 'mercadopagoCreate']);
 
     // Cupones
     Route::post('/coupons/validate', [CouponController::class, 'validate']);
@@ -85,6 +107,11 @@ Route::prefix('v1')->group(function () {
         Route::post('/user/addresses', [UserController::class, 'storeAddress']);
         Route::delete('/user/addresses/{id}', [UserController::class, 'deleteAddress']);
         Route::get('/user/coupon', [UserController::class, 'myCoupon']);
+
+        // Seguridad de la cuenta
+        Route::put('/user/password', [UserController::class, 'changePassword']);
+        Route::put('/user/email', [UserController::class, 'changeEmail']);
+        Route::post('/user/dismiss-security-reminder', [UserController::class, 'dismissSecurityReminder']);
 
         // Carrito autenticado
         Route::post('/cart/merge', [CartController::class, 'merge']);

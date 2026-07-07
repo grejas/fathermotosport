@@ -15,6 +15,12 @@ import { validateCheckout, hasErrors, type FieldErrors } from "@/lib/validators"
 import type { PaymentMethod } from "@/lib/types";
 import toast from "react-hot-toast";
 
+// Los pagos online están deshabilitados hasta contar con credenciales reales
+// de las pasarelas. Mientras tanto se coordina el pago por WhatsApp.
+// Para reactivar: poner PAYMENTS_ENABLED = true.
+const PAYMENTS_ENABLED = false;
+const WHATSAPP_URL = "https://wa.me/59168736384";
+
 export function CheckoutForm() {
   const router = useRouter();
   const items = useCartStore((s) => s.items);
@@ -45,8 +51,8 @@ export function CheckoutForm() {
     if (user) {
       setForm((f) => ({
         ...f,
-        first_name: user.first_name,
-        last_name: user.last_name,
+        first_name: user.first_name ?? "",
+        last_name: user.last_name ?? "",
         email: user.email,
         phone: user.phone ?? "",
       }));
@@ -159,7 +165,26 @@ export function CheckoutForm() {
 
         <section>
           <h3 className="mb-3 text-lg font-bold text-brand-white">Método de pago</h3>
-          <PaymentMethods value={method} onChange={setMethod} />
+          {PAYMENTS_ENABLED ? (
+            <PaymentMethods value={method} onChange={setMethod} />
+          ) : (
+            <div className="rounded-xl border border-brand-gold/30 bg-brand-gold/5 p-4">
+              <p className="text-sm font-semibold text-brand-gold">
+                Próximamente — Contactanos por WhatsApp para coordinar tu pago
+              </p>
+              <a
+                href={WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
+              >
+                Escribir por WhatsApp
+              </a>
+              <div className="pointer-events-none mt-4 select-none opacity-40" aria-hidden>
+                <PaymentMethods value={method} onChange={setMethod} />
+              </div>
+            </div>
+          )}
         </section>
 
         <section>
@@ -180,12 +205,30 @@ export function CheckoutForm() {
 
       <div className="lg:sticky lg:top-20 lg:self-start">
         <OrderSummary discount={discount}>
-          <Button type="submit" variant="primary" className="mt-4 w-full" loading={loading}>
-            Confirmar pedido
-          </Button>
-          <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-brand-muted">
-            <ShieldCheck size={14} className="text-cat-boots" /> SSL · Pago 100% seguro
-          </p>
+          {PAYMENTS_ENABLED ? (
+            <>
+              <Button type="submit" variant="primary" className="mt-4 w-full" loading={loading}>
+                Confirmar pedido
+              </Button>
+              <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-brand-muted">
+                <ShieldCheck size={14} className="text-cat-boots" /> SSL · Pago 100% seguro
+              </p>
+            </>
+          ) : (
+            <>
+              <a
+                href={WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 flex w-full items-center justify-center rounded-xl bg-[#25D366] px-4 py-3 text-sm font-semibold text-white transition hover:brightness-110"
+              >
+                Contactanos por WhatsApp para coordinar tu pago
+              </a>
+              <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-brand-muted">
+                <ShieldCheck size={14} className="text-cat-boots" /> Pagos online próximamente
+              </p>
+            </>
+          )}
         </OrderSummary>
       </div>
     </form>

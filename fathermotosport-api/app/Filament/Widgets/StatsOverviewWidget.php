@@ -7,52 +7,56 @@ use App\Models\ProductVariant;
 use App\Models\User;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\Facades\Cache;
 
 class StatsOverviewWidget extends BaseWidget
 {
     protected static ?int $sort = 1;
 
+    // Sin auto-refresco: evita recargar los COUNT/SUM cada pocos segundos.
+    protected static ?string $pollingInterval = null;
+
     protected function getStats(): array
     {
-        $now = now();
-        $startMonth = $now->copy()->startOfMonth();
-        $startPrevMonth = $now->copy()->subMonth()->startOfMonth();
-        $endPrevMonth = $now->copy()->subMonth()->endOfMonth();
+        // Los escalares se cachean 300s (clave por hora) para acelerar el dashboard.
+        $data = Cache::remember('admin_stats_' . now()->format('Y-m-d-H'), 300, function () {
+            $now = now();
+            $startMonth = $now->copy()->startOfMonth();
+            $startPrevMonth = $now->copy()->subMonth()->startOfMonth();
+            $endPrevMonth = $now->copy()->subMonth()->endOfMonth();
 
-        // Ventas del mes (pagadas)
-        $salesMonth = (float) Order::where('payment_status', 'paid')
-            ->where('created_at', '>=', $startMonth)->sum('total');
-        $salesPrev = (float) Order::where('payment_status', 'paid')
-            ->whereBetween('created_at', [$startPrevMonth, $endPrevMonth])->sum('total');
-        $salesDiff = $this->percentDiff($salesMonth, $salesPrev);
+            return [
+                'salesMonth' => (float) Order::where('payment_status', 'paid')
+                    ->where('created_at', '>=', $startMonth)->sum('total'),
+                'salesPrev' => (float) Order::where('payment_status', 'paid')
+                    ->whereBetween('created_at', [$startPrevMonth, $endPrevMonth])->sum('total'),
+                'ordersMonth' => Order::where('created_at', '>=', $startMonth)->count(),
+                'ordersPrev' => Order::whereBetween('created_at', [$startPrevMonth, $endPrevMonth])->count(),
+                'customersMonth' => User::whereHas('role', fn ($q) => $q->where('slug', 'cliente'))
+                    ->where('created_at', '>=', $startMonth)->count(),
+                'lowStock' => ProductVariant::join('products', 'product_variants.product_id', '=', 'products.id')
+                    ->whereColumn('product_variants.stock', '<=', 'products.minimum_stock')
+                    ->where('product_variants.is_active', true)
+                    ->count(),
+            ];
+        });
 
-        // Pedidos del mes
-        $ordersMonth = Order::where('created_at', '>=', $startMonth)->count();
-        $ordersPrev = Order::whereBetween('created_at', [$startPrevMonth, $endPrevMonth])->count();
-
-        // Clientes nuevos del mes
-        $customersMonth = User::whereHas('role', fn ($q) => $q->where('slug', 'cliente'))
-            ->where('created_at', '>=', $startMonth)->count();
-
-        // Stock bajo
-        $lowStock = ProductVariant::join('products', 'product_variants.product_id', '=', 'products.id')
-            ->whereColumn('product_variants.stock', '<=', 'products.minimum_stock')
-            ->where('product_variants.is_active', true)
-            ->count();
+        $salesDiff = $this->percentDiff($data['salesMonth'], $data['salesPrev']);
+        $lowStock = $data['lowStock'];
 
         return [
-            Stat::make('Ventas del mes', '$' . number_format($salesMonth, 2))
+            Stat::make('Ventas del mes', '$' . number_format($data['salesMonth'], 2))
                 ->description($salesDiff['label'])
                 ->descriptionIcon($salesDiff['icon'])
                 ->color($salesDiff['color'])
                 ->icon('heroicon-o-banknotes'),
 
-            Stat::make('Pedidos del mes', $ordersMonth)
-                ->description("Mes anterior: {$ordersPrev}")
+            Stat::make('Pedidos del mes', $data['ordersMonth'])
+                ->description("Mes anterior: {$data['ordersPrev']}")
                 ->descriptionIcon('heroicon-o-shopping-bag')
                 ->color('info'),
 
-            Stat::make('Clientes nuevos', $customersMonth)
+            Stat::make('Clientes nuevos', $data['customersMonth'])
                 ->description('Registrados este mes')
                 ->descriptionIcon('heroicon-o-user-plus')
                 ->color('success'),

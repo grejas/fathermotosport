@@ -7,10 +7,11 @@ export interface LoginPayload {
 }
 
 export interface RegisterPayload {
-  first_name: string;
-  last_name: string;
+  first_name?: string;
+  last_name?: string;
   email: string;
   phone?: string;
+  birth_date?: string;
   password: string;
   password_confirmation: string;
 }

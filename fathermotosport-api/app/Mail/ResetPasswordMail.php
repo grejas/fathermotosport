@@ -2,33 +2,36 @@
 
 namespace App\Mail;
 
-use App\Models\Order;
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class OrderConfirmationMail extends Mailable
+class ResetPasswordMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public function __construct(public Order $order)
+    public function __construct(public User $user, public string $resetUrl)
     {
     }
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: "Confirmación de tu pedido {$this->order->order_number} - FatherMotoSport",
+            subject: '🔒 Recuperá tu contraseña — FatherMotoSport',
         );
     }
 
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.orders.confirmation',
-            with: ['order' => $this->order],
+            view: 'emails.reset-password',
+            with: [
+                'user' => $this->user,
+                'resetUrl' => $this->resetUrl,
+            ],
         );
     }
 }

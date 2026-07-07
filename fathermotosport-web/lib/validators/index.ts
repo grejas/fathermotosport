@@ -26,8 +26,7 @@ export function validateRegister(data: {
   password_confirmation: string;
 }): FieldErrors {
   const errors: FieldErrors = {};
-  if (!minLength(data.first_name, 1)) errors.first_name = "El nombre es obligatorio.";
-  if (!minLength(data.last_name, 1)) errors.last_name = "El apellido es obligatorio.";
+  // Nombre y apellido son opcionales; solo email y contraseña son obligatorios.
   if (!isEmail(data.email)) errors.email = "Ingresa un email válido.";
   if (!minLength(data.password, 8)) errors.password = "Mínimo 8 caracteres.";
   if (data.password !== data.password_confirmation)

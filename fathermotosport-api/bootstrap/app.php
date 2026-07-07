@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Middleware\CheckRole;
+use App\Http\Middleware\CompressResponse;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -19,6 +21,15 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => CheckRole::class,
+        ]);
+
+        // Cabeceras de seguridad en todas las respuestas (web + API).
+        $middleware->append(SecurityHeaders::class);
+
+        // Compresión gzip SOLO en la API REST. NUNCA en el grupo web/panel:
+        // rompería los POST de Livewire del login de Filament.
+        $middleware->api(append: [
+            CompressResponse::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

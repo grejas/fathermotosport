@@ -10,12 +10,15 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Response;
 
 class OrderResource extends Resource
 {
     protected static ?string $model = Order::class;
+
+    protected static int $defaultPaginationPageOption = 10;
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
 
@@ -201,7 +204,7 @@ class OrderResource extends Resource
                             ]
                         );
                         $record->update(['status' => 'shipped', 'shipping_status' => 'in_transit']);
-                        app(EmailService::class)->sendShippingUpdate($record, $data['tracking_number']);
+                        app(EmailService::class)->sendShippingUpdate($record, $data['tracking_number'], $data['carrier'] ?? null);
                     })
                     ->successNotificationTitle('Tracking registrado y cliente notificado'),
             ])
@@ -250,6 +253,18 @@ class OrderResource extends Resource
         return Response::streamDownload($callback, 'pedidos-' . now()->format('Ymd-His') . '.csv', [
             'Content-Type' => 'text/csv',
         ]);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        // Eager loading del usuario (solo columnas necesarias) para evitar N+1
+        // en la columna "Cliente" del listado.
+        return parent::getEloquentQuery()->with(['user:id,first_name,last_name,email']);
+    }
+
+    public static function canAccess(): bool
+    {
+        return (bool) auth()->user()?->isStaff();
     }
 
     public static function canCreate(): bool

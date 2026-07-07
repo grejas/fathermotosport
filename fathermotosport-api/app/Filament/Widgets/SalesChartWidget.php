@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Models\Order;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 class SalesChartWidget extends ChartWidget
 {
@@ -12,26 +13,33 @@ class SalesChartWidget extends ChartWidget
 
     protected static ?int $sort = 2;
 
+    protected static ?string $pollingInterval = null;
+
     protected int|string|array $columnSpan = 1;
 
     protected function getData(): array
     {
-        $start = now()->subDays(29)->startOfDay();
+        // La serie diaria se cachea 300s (clave por hora) para acelerar el dashboard.
+        [$labels, $values] = Cache::remember('admin_sales_chart_' . now()->format('Y-m-d-H'), 300, function () {
+            $start = now()->subDays(29)->startOfDay();
 
-        // Ventas pagadas agrupadas por día.
-        $rows = Order::where('payment_status', 'paid')
-            ->where('created_at', '>=', $start)
-            ->selectRaw('DATE(created_at) as d, SUM(total) as t')
-            ->groupBy('d')
-            ->pluck('t', 'd');
+            // Ventas pagadas agrupadas por día.
+            $rows = Order::where('payment_status', 'paid')
+                ->where('created_at', '>=', $start)
+                ->selectRaw('DATE(created_at) as d, SUM(total) as t')
+                ->groupBy('d')
+                ->pluck('t', 'd');
 
-        $labels = [];
-        $values = [];
-        for ($i = 0; $i < 30; $i++) {
-            $date = $start->copy()->addDays($i)->format('Y-m-d');
-            $labels[] = Carbon::parse($date)->format('d/m');
-            $values[] = round((float) ($rows[$date] ?? 0), 2);
-        }
+            $labels = [];
+            $values = [];
+            for ($i = 0; $i < 30; $i++) {
+                $date = $start->copy()->addDays($i)->format('Y-m-d');
+                $labels[] = Carbon::parse($date)->format('d/m');
+                $values[] = round((float) ($rows[$date] ?? 0), 2);
+            }
+
+            return [$labels, $values];
+        });
 
         return [
             'datasets' => [

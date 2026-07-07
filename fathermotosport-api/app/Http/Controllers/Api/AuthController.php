@@ -38,8 +38,10 @@ class AuthController extends Controller
             'last_name' => $request->last_name,
             'email' => $request->email,
             'phone' => $request->phone,
+            'birth_date' => $request->birth_date,
             'password' => Hash::make($request->password),
             'status' => 'active',
+            'last_password_change' => now(),
         ]);
 
         // Descuento de $5 automático al registrarse → cupón único.
