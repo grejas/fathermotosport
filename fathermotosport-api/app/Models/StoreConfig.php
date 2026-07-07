@@ -19,6 +19,7 @@ class StoreConfig extends Model
         'facebook',
         'instagram',
         'youtube',
+        'tiktok',
         'maintenance_mode',
         'payment_keys',
     ];

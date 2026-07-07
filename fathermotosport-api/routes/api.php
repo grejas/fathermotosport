@@ -13,7 +13,6 @@ use App\Http\Controllers\Api\CouponController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProductController;
-use App\Http\Controllers\Api\StoreConfigController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -39,9 +38,6 @@ Route::prefix('v1')->group(function () {
     // Banners (home / hero / sidebar / footer)
     Route::get('/banners', [BannerController::class, 'index']);
     Route::get('/banners/{position}', [BannerController::class, 'byPosition']);
-
-    // Configuración pública de la tienda (logo, favicon, contacto, redes)
-    Route::get('/store-config', [StoreConfigController::class, 'show']);
 
     // Autenticación (rate limiting: 10 intentos por minuto y por IP)
     Route::middleware('throttle:10,1')->group(function () {

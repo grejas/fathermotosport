@@ -50,6 +50,7 @@ class StoreSettingsPage extends Page implements HasForms
             'facebook' => $config->facebook,
             'instagram' => $config->instagram,
             'youtube' => $config->youtube,
+            'tiktok' => $config->tiktok,
             'paypal_mode' => data_get($keys, 'paypal.mode', 'sandbox'),
             'paypal_client_id' => data_get($keys, 'paypal.client_id'),
             'paypal_client_secret' => data_get($keys, 'paypal.secret'),
@@ -87,6 +88,7 @@ class StoreSettingsPage extends Page implements HasForms
                         Forms\Components\TextInput::make('facebook')->label('Facebook')->url(),
                         Forms\Components\TextInput::make('instagram')->label('Instagram')->url(),
                         Forms\Components\TextInput::make('youtube')->label('YouTube')->url(),
+                        Forms\Components\TextInput::make('tiktok')->label('TikTok')->url()->placeholder('https://tiktok.com/@fathermotosport'),
                     ]),
 
                 Forms\Components\Section::make('Credenciales de pago')
@@ -152,6 +154,7 @@ class StoreSettingsPage extends Page implements HasForms
             'facebook' => $data['facebook'] ?? null,
             'instagram' => $data['instagram'] ?? null,
             'youtube' => $data['youtube'] ?? null,
+            'tiktok' => $data['tiktok'] ?? null,
             'payment_keys' => $paymentKeys,
         ]);
 
