@@ -1,7 +1,3 @@
 {
-  "buildCommand": "cd fathermotosport-web && npm install && npm run build",
-  "outputDirectory": "fathermotosport-web/.next",
-  "installCommand": "cd fathermotosport-web && npm install",
-  "framework": "nextjs",
-  "rootDirectory": "fathermotosport-web"
+  "framework": "nextjs"
 }
