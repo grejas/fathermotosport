@@ -22,6 +22,7 @@ return [
         'http://localhost:3001',
         'https://fathermotosport.com',
         'https://www.fathermotosport.com',
+        'https://fathermotosport.vercel.app',
     ],
 
     'allowed_origins_patterns' => [],
