@@ -4,7 +4,7 @@ export const TOKEN_KEY = "fms_token";
 export const SESSION_KEY = "fms_session";
 
 const apiClient: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1",
+  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "https://api.fathermotosport.com/api/v1",
   headers: { Accept: "application/json", "Content-Type": "application/json" },
 });
 
