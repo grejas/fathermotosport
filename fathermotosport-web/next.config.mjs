@@ -17,6 +17,12 @@ const nextConfig = {
         port: "8000",
         pathname: "/storage/**",
       },
+      // Producción: API Laravel en Hostinger (storage local vía storage:link)
+      {
+        protocol: "https",
+        hostname: "api.fathermotosport.com",
+        pathname: "/storage/**",
+      },
       // Producción: Cloudflare R2 / dominio de storage
       {
         protocol: "https",
