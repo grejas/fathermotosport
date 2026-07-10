@@ -72,8 +72,8 @@ export function HeroSection() {
           </h1>
 
           <p data-hero-sub className="mt-5 max-w-lg text-lg text-brand-muted">
-            Cascos, guantes y protección premium con certificación internacional. Envío gratis en Bolivia
-            y Brasil, y vista previa en 3D real.
+            Cascos, guantes y protección premium con certificación internacional. Envío gratis
+            y vista previa en 3D real.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">

@@ -16,7 +16,7 @@ class StoreAddressRequest extends FormRequest
         return [
             'full_name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:20'],
-            'country' => ['required', 'in:Bolivia,Brasil'],
+            'country' => ['required', 'string', 'max:100'],
             'state' => ['nullable', 'string', 'max:255'],
             'city' => ['required', 'string', 'max:255'],
             'postal_code' => ['nullable', 'string', 'max:20'],

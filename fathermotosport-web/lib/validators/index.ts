@@ -46,7 +46,7 @@ export function validateCheckout(data: {
   if (!minLength(data.full_name, 1)) errors.full_name = "Nombre obligatorio.";
   if (data.email !== undefined && !isEmail(data.email)) errors.email = "Email válido obligatorio.";
   if (!minLength(data.phone, 1)) errors.phone = "Teléfono obligatorio.";
-  if (!["Bolivia", "Brasil"].includes(data.country)) errors.country = "Selecciona un país.";
+  if (!minLength(data.country, 1)) errors.country = "Selecciona un país.";
   if (!minLength(data.city, 1)) errors.city = "Ciudad obligatoria.";
   if (!minLength(data.address_line, 1)) errors.address_line = "Dirección obligatoria.";
   return errors;

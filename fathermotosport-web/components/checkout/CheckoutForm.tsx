@@ -21,6 +21,23 @@ import toast from "react-hot-toast";
 const PAYMENTS_ENABLED = false;
 const WHATSAPP_URL = "https://wa.me/59168736384";
 
+const countries = [
+  { value: "Bolivia", label: "Bolivia" },
+  { value: "Brasil", label: "Brasil" },
+  { value: "Argentina", label: "Argentina" },
+  { value: "Chile", label: "Chile" },
+  { value: "Peru", label: "Perú" },
+  { value: "Colombia", label: "Colombia" },
+  { value: "Mexico", label: "México" },
+  { value: "Ecuador", label: "Ecuador" },
+  { value: "Paraguay", label: "Paraguay" },
+  { value: "Uruguay", label: "Uruguay" },
+  { value: "Venezuela", label: "Venezuela" },
+  { value: "España", label: "España" },
+  { value: "USA", label: "Estados Unidos" },
+  { value: "Otro", label: "Otro país" },
+];
+
 export function CheckoutForm() {
   const router = useRouter();
   const items = useCartStore((s) => s.items);
@@ -34,7 +51,7 @@ export function CheckoutForm() {
     last_name: "",
     email: "",
     phone: "",
-    country: "Bolivia" as "Bolivia" | "Brasil",
+    country: "Bolivia" as string,
     state: "",
     city: "",
     address_line: "",
@@ -148,11 +165,14 @@ export function CheckoutForm() {
               <label className="mb-1.5 block text-sm font-medium text-brand-white">País</label>
               <select
                 value={form.country}
-                onChange={(e) => setForm({ ...form, country: e.target.value as "Bolivia" | "Brasil" })}
+                onChange={(e) => setForm({ ...form, country: e.target.value })}
                 className="input-brand"
               >
-                <option value="Bolivia">Bolivia</option>
-                <option value="Brasil">Brasil</option>
+                {countries.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.label}
+                  </option>
+                ))}
               </select>
             </div>
             <Input label="Teléfono" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} error={errors.phone} />

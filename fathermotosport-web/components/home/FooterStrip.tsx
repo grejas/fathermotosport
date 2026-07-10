@@ -1,7 +1,7 @@
 import { Truck, ShieldCheck, Lock, MessageCircle } from "lucide-react";
 
 const benefits = [
-  { icon: Truck, title: "Envío gratis", desc: "Bolivia y Brasil" },
+  { icon: Truck, title: "Envío gratis", desc: "En todos tus pedidos" },
   { icon: ShieldCheck, title: "Garantía", desc: "Productos originales" },
   { icon: Lock, title: "Pago seguro", desc: "Encriptación SSL" },
   { icon: MessageCircle, title: "Soporte", desc: "WhatsApp directo" },

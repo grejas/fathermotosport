@@ -7,7 +7,7 @@ const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP ?? "+59168736384";
 const socialLinks = [
   {
     label: "Facebook",
-    href: process.env.NEXT_PUBLIC_FACEBOOK ?? "https://facebook.com/fathermotosport",
+    href: process.env.NEXT_PUBLIC_FACEBOOK ?? "https://facebook.com/Fathersonimport",
     path: "M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0 0 22 12z",
   },
   {
@@ -45,8 +45,7 @@ export function Footer() {
             <span className="text-brand-white">Motosport</span>
           </Link>
           <p className="mt-3 max-w-xs text-sm text-brand-muted">
-            Equipamiento premium para motociclistas. Cascos, guantes, botas y más, con envío gratis en
-            Bolivia y Brasil.
+            Equipamiento premium para motociclistas. Cascos, guantes, botas y más, con envío gratis.
           </p>
         </div>
 

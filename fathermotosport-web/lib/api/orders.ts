@@ -7,7 +7,7 @@ export interface CreateOrderPayload {
   address: {
     full_name: string;
     phone: string;
-    country: "Bolivia" | "Brasil";
+    country: string;
     state?: string;
     city: string;
     postal_code?: string;

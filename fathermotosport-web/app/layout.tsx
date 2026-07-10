@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     template: "%s | FatherMotoSport",
   },
   description:
-    "Cascos, guantes, botas, chamarras y repuestos premium. Envío gratis en Bolivia y Brasil. AGV, Shoei, Shark, Alpinestars y más.",
+    "Cascos, guantes, botas, chamarras y repuestos premium. Envío gratis. AGV, Shoei, Shark, Alpinestars y más.",
   icons: {
     icon: "/favicon.ico",
   },

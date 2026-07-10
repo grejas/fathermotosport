@@ -26,7 +26,7 @@ export function CartDrawer() {
               <span className="text-brand-muted">Subtotal</span>
               <span className="font-bold text-brand-white">{formatPrice(subtotal)}</span>
             </div>
-            <p className="text-xs text-cat-boots">Envío gratis · Bolivia y Brasil</p>
+            <p className="text-xs text-cat-boots">Envío gratis</p>
             <Link href="/cart" onClick={closeCart} className="block">
               <Button variant="glass" className="w-full">
                 Ver carrito completo

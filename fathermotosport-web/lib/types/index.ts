@@ -130,7 +130,7 @@ export interface Address {
   user_id: string | null;
   full_name: string;
   phone: string | null;
-  country: "Bolivia" | "Brasil";
+  country: string;
   state: string | null;
   city: string | null;
   postal_code: string | null;
@@ -173,7 +173,7 @@ export interface Order {
   payment_status: PaymentStatus;
   shipping_status: ShippingStatus;
   payment_method: PaymentMethod | null;
-  country: "Bolivia" | "Brasil";
+  country: string;
   notes: string | null;
   items?: OrderItem[];
   address?: Address;
