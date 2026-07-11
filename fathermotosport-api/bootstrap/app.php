@@ -23,6 +23,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => CheckRole::class,
         ]);
 
+        // API pura: no existe una página "login" a la que redirigir a los
+        // invitados. Devolver null evita que el middleware Authenticate llame a
+        // route('login') (que lanzaría RouteNotFoundException → 500) y permite
+        // que se lance AuthenticationException → 401 JSON limpio.
+        $middleware->redirectGuestsTo(fn (Request $request) => null);
+
         // Cabeceras de seguridad en todas las respuestas (web + API).
         $middleware->append(SecurityHeaders::class);
 
@@ -33,10 +39,18 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Toda excepción bajo /api/* se renderiza como JSON, aunque el cliente
+        // no envíe el header "Accept: application/json". Sin esto, una petición
+        // sin token intentaba redirigir a la ruta "login" (inexistente en una
+        // API) y devolvía un 500 en lugar de un 401 limpio.
+        $exceptions->shouldRenderJsonWhen(
+            fn (Request $request, Throwable $e) => $request->is('api/*') || $request->expectsJson()
+        );
+
         // Respuestas JSON para peticiones API no autenticadas.
         $exceptions->render(function (AuthenticationException $e, Request $request) {
             if ($request->is('api/*')) {
-                return response()->json(['message' => 'No autenticado.'], 401);
+                return response()->json(['message' => 'No autenticado'], 401);
             }
         });
 
