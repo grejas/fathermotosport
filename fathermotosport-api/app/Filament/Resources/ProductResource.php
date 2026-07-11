@@ -155,8 +155,11 @@ class ProductResource extends Resource
                                 ->disk('public')
                                 ->directory('products')
                                 ->visibility('public')
+                                ->imagePreviewHeight('120')
                                 ->required(),
-                            Forms\Components\Toggle::make('is_primary')->label('Principal'),
+                            Forms\Components\Toggle::make('is_primary')
+                                ->label('Principal')
+                                ->helperText('Marca solo una como principal.'),
                             Forms\Components\TextInput::make('sort_order')
                                 ->label('Orden')
                                 ->numeric()
@@ -165,6 +168,8 @@ class ProductResource extends Resource
                         ->columns(3)
                         ->orderColumn('sort_order')
                         ->defaultItems(0)
+                        ->addActionLabel('+ Agregar imagen')
+                        ->reorderableWithButtons()
                         ->collapsible(),
                 ]),
 
@@ -220,13 +225,11 @@ class ProductResource extends Resource
                                     'sku',
                                     static::generarSkuVariante($get('../../sku'), $get('size'), $get('color'))
                                 )),
-                            Forms\Components\Select::make('size')
+                            Forms\Components\TextInput::make('size')
                                 ->label('Talla')
-                                ->options([
-                                    'XS' => 'XS', 'S' => 'S', 'M' => 'M', 'L' => 'L',
-                                    'XL' => 'XL', 'XXL' => 'XXL', 'Única' => 'Talla única',
-                                ])
-                                ->live()
+                                ->placeholder('Ej: M, L, XL, 57-58, Único...')
+                                ->nullable()
+                                ->live(debounce: 500)
                                 ->afterStateUpdated(fn (Get $get, Set $set) => $set(
                                     'sku',
                                     static::generarSkuVariante($get('../../sku'), $get('size'), $get('color'))
