@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { useLogin } from "@/lib/hooks/useAuth";
 import { validateLogin, hasErrors, type FieldErrors } from "@/lib/validators";
+import { GoogleButton } from "./GoogleButton";
 import toast from "react-hot-toast";
 
 export function LoginForm() {
@@ -67,6 +68,14 @@ export function LoginForm() {
       <Button type="submit" variant="primary" className="w-full" loading={login.isPending}>
         Ingresar
       </Button>
+
+      <div className="flex items-center gap-3 py-1">
+        <span className="h-px flex-1 bg-white/10" />
+        <span className="text-xs text-brand-muted">o</span>
+        <span className="h-px flex-1 bg-white/10" />
+      </div>
+
+      <GoogleButton />
 
       <p className="text-center text-sm text-brand-muted">
         ¿No tienes cuenta?{" "}

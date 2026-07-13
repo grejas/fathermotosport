@@ -46,6 +46,11 @@ Route::prefix('v1')->group(function () {
         Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
     });
 
+    // Google OAuth (Socialite). El callback real es /api/v1/auth/google/callback:
+    // ese es el URI que debe registrarse en Google Cloud Console y en GOOGLE_REDIRECT_URL.
+    Route::get('/auth/google', [AuthController::class, 'redirectToGoogle']);
+    Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
+
     // Carrito (guest por session_id)
     Route::get('/cart', [CartController::class, 'show']);
     Route::post('/cart/items', [CartController::class, 'addItem']);

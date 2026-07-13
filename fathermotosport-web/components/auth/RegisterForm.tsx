@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { useRegister } from "@/lib/hooks/useAuth";
 import { validateRegister, hasErrors, type FieldErrors } from "@/lib/validators";
+import { GoogleButton } from "./GoogleButton";
 import toast from "react-hot-toast";
 
 const empty = {
@@ -139,20 +140,13 @@ export function RegisterForm() {
         Crear cuenta
       </Button>
 
-      {/* Google (visual por ahora) */}
-      <div className="text-center">
-        <p className="text-xs text-brand-muted">
-          ¿Tenés cuenta de Google?{" "}
-          <button
-            type="button"
-            // TODO: implementar OAuth Google en Fase 6
-            onClick={() => toast("Inicio con Google disponible próximamente.", { icon: "🔒" })}
-            className="font-semibold text-brand-red hover:underline"
-          >
-            Continuar con Google
-          </button>
-        </p>
+      <div className="flex items-center gap-3 py-1">
+        <span className="h-px flex-1 bg-white/10" />
+        <span className="text-xs text-brand-muted">o</span>
+        <span className="h-px flex-1 bg-white/10" />
       </div>
+
+      <GoogleButton label="Registrarme con Google" />
 
       <p className="text-center text-sm text-brand-muted">
         ¿Ya tienes cuenta?{" "}
