@@ -183,23 +183,20 @@ class ProductResource extends Resource
                         // insertar una fila vacía y violaría el NOT NULL de file_glb_url.
                         ->relationship('model3d', condition: fn (?array $state): bool => filled($state['file_glb_url'] ?? null))
                         ->schema([
-                            Forms\Components\FileUpload::make('file_glb_url')
-                                ->label('Archivo GLB')
-                                ->disk('public')
-                                ->directory('models')
-                                ->acceptedFileTypes(['model/gltf-binary', 'application/octet-stream'])
-                                ->visibility('public'),
-                            Forms\Components\FileUpload::make('file_draco_url')
-                                ->label('GLB Draco (comprimido)')
-                                ->disk('public')
-                                ->directory('models')
-                                ->visibility('public'),
-                            Forms\Components\FileUpload::make('preview_url')
-                                ->label('Preview WebP')
-                                ->image()
-                                ->disk('public')
-                                ->directory('models/previews')
-                                ->visibility('public'),
+                            Forms\Components\TextInput::make('file_glb_url')
+                                ->label('URL del GLB')
+                                ->placeholder('https://api.fathermotosport.com/storage/models/archivo.glb')
+                                ->url()
+                                ->nullable(),
+                            Forms\Components\TextInput::make('file_draco_url')
+                                ->label('URL GLB Draco (comprimido)')
+                                ->placeholder('https://api.fathermotosport.com/storage/models/archivo_draco.glb')
+                                ->url()
+                                ->nullable(),
+                            Forms\Components\TextInput::make('preview_url')
+                                ->label('URL Preview WebP')
+                                ->url()
+                                ->nullable(),
                             Forms\Components\TextInput::make('file_size_kb')
                                 ->label('Tamaño (KB)')
                                 ->numeric(),
