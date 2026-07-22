@@ -12,7 +12,7 @@ interface HelmetModelProps {
 }
 
 export function HelmetModel({ url, scale = 1, visorColor }: HelmetModelProps) {
-  const { scene } = useGLTF(url);
+  const { scene } = useGLTF(url, true);
   const ref = useHelmetFloat();
 
   useEffect(() => {

@@ -8,6 +8,7 @@ import { Lights } from "./Lights";
 import { Environment } from "./Environment";
 import { Controls } from "./Controls";
 import { HelmetModel } from "./HelmetModel";
+import { ModelErrorBoundary } from "./ModelErrorBoundary";
 import { visorColors, type VisorColor } from "./Materials";
 
 interface ProductViewer3DProps {
@@ -33,12 +34,14 @@ export function ProductViewer3D({ url, showVisorColors = true }: ProductViewer3D
       className="relative aspect-square w-full overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-brand-dark to-brand-carbon"
     >
       <Canvas camera={{ position: [0, 0, 4], fov: 45 }} gl={{ alpha: true, antialias: true }} shadows>
-        <Suspense fallback={<Loader />}>
-          <Lights />
-          <HelmetModel url={url} visorColor={visor} />
-          <Environment />
-        </Suspense>
-        <Controls autoRotate={autoRotate} />
+        <ModelErrorBoundary>
+          <Suspense fallback={<Loader />}>
+            <Lights />
+            <HelmetModel url={url} visorColor={visor} />
+            <Environment />
+          </Suspense>
+          <Controls autoRotate={autoRotate} />
+        </ModelErrorBoundary>
       </Canvas>
 
       {/* Badge 360 */}
