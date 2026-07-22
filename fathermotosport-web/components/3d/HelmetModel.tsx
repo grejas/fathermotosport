@@ -38,13 +38,13 @@ export function HelmetModel({ url, scale = 1, visorColor }: HelmetModelProps) {
         <primitive object={scene} scale={scale} />
         {!hasVisorGeometry && (
           // Visera sintética: el GLB no trae una malla de visor propia, así
-          // que se simula una con una calota esférica curvada al frente del casco.
-          <mesh position={[0, 0.05, 0.5]} rotation={[Math.PI / 2, 0, 0]} scale={[1.1, 0.85, 0.9]}>
-            <sphereGeometry args={[0.65, 32, 16, 0, Math.PI * 2, 0, Math.PI * 0.45]} />
+          // que se simula una franja curva y plana al frente del casco.
+          <mesh position={[0, 0.05, 0.42]} rotation={[-0.2, 0, 0]} scale={[1.1, 0.55, 0.3]}>
+            <sphereGeometry args={[0.38, 32, 16, 0, Math.PI * 0.6, 0.3, 0.5]} />
             <meshPhysicalMaterial
               color={visorColor ? visorColor.hex : "#0a0a0a"}
               transparent
-              opacity={visorColor ? 0.3 : 0.25}
+              opacity={0.25}
               roughness={0}
               metalness={0.1}
               side={THREE.DoubleSide}
