@@ -156,7 +156,15 @@ class ProductResource extends Resource
                                 ->directory('products')
                                 ->visibility('public')
                                 ->imagePreviewHeight('120')
-                                ->required(),
+                                ->required()
+                                // Nombre único por archivo (uniqid + nombre original) para
+                                // descartar colisiones de nombre entre filas del Repeater.
+                                ->saveUploadedFileUsing(function ($file) {
+                                    $filename = uniqid().'_'.$file->getClientOriginalName();
+                                    $file->storeAs('products', $filename, 'public');
+
+                                    return 'products/'.$filename;
+                                }),
                             Forms\Components\Toggle::make('is_primary')
                                 ->label('Principal')
                                 ->helperText('Marca solo una como principal.'),
