@@ -56,14 +56,14 @@ export function ProductGallery({ images, name }: { images: ProductImage[]; name:
           <>
             <button
               onClick={() => goTo(-1)}
-              className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/40 p-2 text-brand-white backdrop-blur transition hover:bg-black/60"
+              className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white backdrop-blur-sm transition hover:bg-black/70 opacity-100"
               aria-label="Imagen anterior"
             >
               <ChevronLeft size={20} />
             </button>
             <button
               onClick={() => goTo(1)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/40 p-2 text-brand-white backdrop-blur transition hover:bg-black/60"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white backdrop-blur-sm transition hover:bg-black/70 opacity-100"
               aria-label="Imagen siguiente"
             >
               <ChevronRight size={20} />
