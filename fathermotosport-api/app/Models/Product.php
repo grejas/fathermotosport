@@ -96,6 +96,11 @@ class Product extends Model
         return $this->belongsToMany(User::class, 'favorites')->withTimestamps();
     }
 
+    public function visorColors(): BelongsToMany
+    {
+        return $this->belongsToMany(VisorColor::class, 'product_visor_colors');
+    }
+
     // Scopes
     public function scopeActive(Builder $query): Builder
     {

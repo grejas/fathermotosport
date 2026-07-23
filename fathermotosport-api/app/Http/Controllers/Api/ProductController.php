@@ -42,6 +42,7 @@ class ProductController extends Controller
                 'images',
                 'variants',
                 'model3d',
+                'visorColors',
                 'reviews' => fn ($q) => $q->approved()->with('user')->latest(),
             ])
             ->withCount(['reviews' => fn ($q) => $q->approved()])

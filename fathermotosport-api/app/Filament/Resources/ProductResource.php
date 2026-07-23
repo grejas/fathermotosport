@@ -207,6 +207,15 @@ class ProductResource extends Resource
                         ->columns(2),
                 ]),
 
+            Forms\Components\Section::make('Visores disponibles')
+                ->collapsible()
+                ->schema([
+                    Forms\Components\CheckboxList::make('visorColors')
+                        ->relationship('visorColors', 'name')
+                        ->label('Visores disponibles')
+                        ->columns(3),
+                ]),
+
             Forms\Components\Section::make('Variantes')
                 ->schema([
                     // relationship('variants') es CRÍTICO: carga las variantes existentes

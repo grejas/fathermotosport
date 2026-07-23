@@ -60,6 +60,7 @@ class ProductResource extends JsonResource
                     ->values())
             ),
             'model_3d' => new Product3dModelResource($this->whenLoaded('model3d')),
+            'visor_colors' => VisorColorResource::collection($this->whenLoaded('visorColors')),
             'reviews' => ReviewResource::collection($this->whenLoaded('reviews')),
             'reviews_count' => $this->whenCounted('reviews'),
             'rating_avg' => $this->when(isset($this->reviews_avg_rating), fn () => round((float) $this->reviews_avg_rating, 1)),
