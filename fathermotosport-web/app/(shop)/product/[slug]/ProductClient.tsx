@@ -1,22 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import dynamic from "next/dynamic";
 import { Eye } from "lucide-react";
 import { useProduct } from "@/lib/hooks/useProducts";
 import { ProductGallery } from "@/components/product/ProductGallery";
+import { Product3DGallery } from "@/components/product/Product3DGallery";
 import { ProductInfo } from "@/components/product/ProductInfo";
 import { ProductTabs } from "@/components/product/ProductTabs";
 import { RelatedProducts } from "@/components/product/RelatedProducts";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Button } from "@/components/ui/Button";
 import { VisorColorsModal } from "@/components/3d/VisorColorsModal";
-
-// El viewer 3D solo se carga en cliente (Three.js no debe renderizar en SSR).
-const ProductViewer3D = dynamic(
-  () => import("@/components/3d/ProductViewer3D").then((m) => m.ProductViewer3D),
-  { ssr: false, loading: () => <Skeleton className="aspect-square w-full rounded-2xl" /> }
-);
 
 export function ProductClient({ slug }: { slug: string }) {
   const { data: product, isLoading, isError } = useProduct(slug);
@@ -51,7 +45,12 @@ export function ProductClient({ slug }: { slug: string }) {
       <div className="grid gap-10 lg:grid-cols-2">
         <div>
           {product.has_3d_model && product.model_3d ? (
-            <ProductViewer3D url={product.model_3d.file_glb_url} showVisorColors={isHelmet} />
+            <Product3DGallery
+              modelUrl={product.model_3d.file_glb_url}
+              images={product.images ?? []}
+              name={product.name}
+              showVisorColors={isHelmet}
+            />
           ) : (
             <ProductGallery images={product.images ?? []} name={product.name} />
           )}
