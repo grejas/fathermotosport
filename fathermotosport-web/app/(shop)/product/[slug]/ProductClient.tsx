@@ -73,7 +73,11 @@ export function ProductClient({ slug }: { slug: string }) {
       <RelatedProducts categoryId={product.category?.id} currentSlug={product.slug} />
 
       {isHelmet && (
-        <VisorColorsModal open={showVisorModal} onClose={() => setShowVisorModal(false)} />
+        <VisorColorsModal
+          open={showVisorModal}
+          onClose={() => setShowVisorModal(false)}
+          productVisorColors={product.visor_colors}
+        />
       )}
     </div>
   );

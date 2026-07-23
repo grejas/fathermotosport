@@ -80,6 +80,14 @@ export interface Product3DModel {
   version: string;
 }
 
+export interface VisorColor {
+  id: string;
+  name: string;
+  hex_color: string;
+  image_url: string | null;
+  sort_order: number;
+}
+
 export interface Review {
   id: string;
   rating: number;
@@ -119,6 +127,7 @@ export interface Product {
   images?: ProductImage[];
   variants?: ProductVariant[];
   model_3d?: Product3DModel | null;
+  visor_colors?: VisorColor[];
   reviews?: Review[];
   reviews_count?: number;
   rating_avg?: number;
