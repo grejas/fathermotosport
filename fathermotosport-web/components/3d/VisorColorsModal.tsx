@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Spinner } from "@/components/ui/Spinner";
 import { useVisorColors } from "@/lib/hooks/useVisorColors";
@@ -19,15 +19,16 @@ interface VisorColorsModalProps {
 export function VisorColorsModal({ open, onClose, productVisorColors }: VisorColorsModalProps) {
   const hasProductColors = !!productVisorColors && productVisorColors.length > 0;
   const { data: globalColors, isLoading } = useVisorColors(open && !hasProductColors);
-  const [selectedVisor, setSelectedVisor] = useState<VisorColor | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   // Vuelve al grid cada vez que se abre/cierra el modal, para no arrastrar
   // la selección de una apertura anterior.
   useEffect(() => {
-    if (!open) setSelectedVisor(null);
+    if (!open) setSelectedIndex(null);
   }, [open]);
 
   const colors = hasProductColors ? productVisorColors! : (globalColors ?? []);
+  const selectedVisor = selectedIndex !== null ? colors[selectedIndex] : null;
 
   return (
     <Modal open={open} onClose={onClose} title="Elige el color de tu visor">
@@ -37,33 +38,51 @@ export function VisorColorsModal({ open, onClose, productVisorColors }: VisorCol
         </div>
       ) : colors.length === 0 ? (
         <p className="py-8 text-center text-sm text-brand-muted">No hay visores disponibles.</p>
-      ) : selectedVisor ? (
+      ) : selectedVisor && selectedIndex !== null ? (
         <div className="flex flex-col items-center gap-4">
           <button
-            onClick={() => setSelectedVisor(null)}
+            onClick={() => setSelectedIndex(null)}
             className="mr-auto flex items-center gap-1 text-sm font-medium text-brand-muted transition hover:text-brand-white"
           >
             <ArrowLeft size={16} /> Volver
           </button>
-          {selectedVisor.image_url ? (
-            <div className="relative h-56 w-56 overflow-hidden rounded-2xl border-2 border-white/20">
-              <Image src={getImageUrl(selectedVisor.image_url)} alt={selectedVisor.name} fill className="object-cover" sizes="224px" />
-            </div>
-          ) : (
-            <span
-              className="h-56 w-56 rounded-2xl border-2 border-white/20"
-              style={{ backgroundColor: selectedVisor.hex_color }}
-              aria-hidden
-            />
-          )}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSelectedIndex((i) => (i ?? 0) - 1)}
+              disabled={selectedIndex === 0}
+              className="rounded-full bg-white/5 p-2 text-brand-white transition hover:bg-white/10 disabled:opacity-0"
+              aria-label="Visor anterior"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            {selectedVisor.image_url ? (
+              <div className="relative h-56 w-56 overflow-hidden rounded-2xl border-2 border-white/20">
+                <Image src={getImageUrl(selectedVisor.image_url)} alt={selectedVisor.name} fill className="object-cover" sizes="224px" />
+              </div>
+            ) : (
+              <span
+                className="h-56 w-56 rounded-2xl border-2 border-white/20"
+                style={{ backgroundColor: selectedVisor.hex_color }}
+                aria-hidden
+              />
+            )}
+            <button
+              onClick={() => setSelectedIndex((i) => (i ?? 0) + 1)}
+              disabled={selectedIndex === colors.length - 1}
+              className="rounded-full bg-white/5 p-2 text-brand-white transition hover:bg-white/10 disabled:opacity-0"
+              aria-label="Visor siguiente"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
           <span className="text-center text-sm font-semibold text-brand-white">{selectedVisor.name}</span>
         </div>
       ) : (
         <div className="grid grid-cols-3 gap-4 sm:grid-cols-5">
-          {colors.map((c) => (
+          {colors.map((c, i) => (
             <button
               key={c.id}
-              onClick={() => setSelectedVisor(c)}
+              onClick={() => setSelectedIndex(i)}
               className="flex flex-col items-center gap-2"
             >
               {c.image_url ? (
