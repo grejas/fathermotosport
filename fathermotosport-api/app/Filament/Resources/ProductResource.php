@@ -168,7 +168,9 @@ class ProductResource extends Resource
                         ->columns(3)
                         ->orderColumn('sort_order')
                         ->defaultItems(0)
+                        ->maxItems(10)
                         ->addActionLabel('+ Agregar imagen')
+                        ->reorderable()
                         ->reorderableWithButtons()
                         ->collapsible(),
                 ]),
