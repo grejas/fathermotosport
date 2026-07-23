@@ -16,7 +16,8 @@ export const metadata: Metadata = {
   description:
     "Cascos, guantes, botas, chamarras y repuestos premium. Envío gratis. AGV, Shoei, Shark, Alpinestars y más.",
   icons: {
-    icon: "/favicon.ico",
+    icon: "/icon.png",
+    shortcut: "/favicon.ico",
   },
 };
 
