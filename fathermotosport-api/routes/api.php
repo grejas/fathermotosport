@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\VisorColorController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -38,6 +39,9 @@ Route::prefix('v1')->group(function () {
     // Banners (home / hero / sidebar / footer)
     Route::get('/banners', [BannerController::class, 'index']);
     Route::get('/banners/{position}', [BannerController::class, 'byPosition']);
+
+    // Colores de visor para cascos
+    Route::get('/visor-colors', [VisorColorController::class, 'index']);
 
     // Autenticación (rate limiting: 10 intentos por minuto y por IP)
     Route::middleware('throttle:10,1')->group(function () {
