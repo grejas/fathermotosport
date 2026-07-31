@@ -43,7 +43,7 @@ export function ProductGallery({ images, name }: { images: ProductImage[]; name:
             alt={name}
             fill
             sizes="(max-width:1024px) 100vw, 50vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-110"
+            className="object-contain transition-transform duration-500 group-hover:scale-105"
             priority
           />
         ) : (
