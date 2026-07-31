@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { useMounted } from "@/lib/hooks/useMounted";
-import { LanguageSelector } from "@/components/ui/LanguageSelector";
 import { CartIcon } from "./CartIcon";
 
 const links = [
@@ -123,8 +122,6 @@ export function Navbar() {
               </span>
             )}
           </Link>
-
-          <LanguageSelector />
 
           <CartIcon />
 
