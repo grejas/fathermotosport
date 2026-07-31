@@ -43,23 +43,6 @@
     background: rgba(232, 0, 29, 0.35);
     color: #fff;
   }
-
-  /* Oculta el banner y el gadget que Google Translate inyecta,
-     reemplazado por el LanguageSelector propio del header. */
-  .goog-te-banner-frame.skiptranslate,
-  #goog-gt-tt,
-  .goog-te-balloon-frame {
-    display: none !important;
-  }
-
-  body {
-    top: 0 !important;
-  }
-
-  .goog-te-gadget {
-    height: 0;
-    overflow: hidden;
-  }
 }
 
 @layer components {

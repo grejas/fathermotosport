@@ -11,34 +11,26 @@ const LANGS: { code: LangCode; label: string }[] = [
   { code: "en", label: "EN" },
 ];
 
-function readCookieLang(): LangCode {
-  const match = document.cookie.match(/googtrans=\/es\/(pt|en)/);
-  return (match?.[1] as LangCode) ?? "es";
+const ORIGINAL_URL = "https://fathermotosport.com";
+const TRANSLATE_HOST = "fathermotosport-com.translate.goog";
+
+function buildUrl(lang: LangCode): string {
+  if (lang === "es") return ORIGINAL_URL;
+  return `https://${TRANSLATE_HOST}/?_x_tr_sl=es&_x_tr_tl=${lang}&_x_tr_hl=es`;
 }
 
-function setGoogTransCookie(lang: LangCode) {
-  const domain = window.location.hostname;
-  if (lang === "es") {
-    document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${domain}`;
-    return;
-  }
-  document.cookie = `googtrans=/es/${lang}; path=/`;
-  document.cookie = `googtrans=/es/${lang}; path=/; domain=${domain}`;
+function readActiveLang(): LangCode {
+  if (!window.location.hostname.includes("translate.goog")) return "es";
+  const tl = new URLSearchParams(window.location.search).get("_x_tr_tl");
+  return tl === "pt" || tl === "en" ? tl : "es";
 }
 
 export function LanguageSelector() {
   const [active, setActive] = useState<LangCode>("es");
 
   useEffect(() => {
-    setActive(readCookieLang());
+    setActive(readActiveLang());
   }, []);
-
-  const selectLanguage = (lang: LangCode) => {
-    if (lang === active) return;
-    setGoogTransCookie(lang);
-    window.location.reload();
-  };
 
   return (
     <div className="flex items-center gap-0.5 rounded-lg border border-white/10 bg-white/5 p-0.5">
@@ -46,7 +38,10 @@ export function LanguageSelector() {
         <button
           key={code}
           type="button"
-          onClick={() => selectLanguage(code)}
+          onClick={() => {
+            if (code === active) return;
+            window.location.href = buildUrl(code);
+          }}
           className={cn(
             "notranslate rounded-md px-2 py-1 text-xs font-semibold transition",
             active === code
