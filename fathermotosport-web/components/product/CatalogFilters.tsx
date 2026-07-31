@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import type { Brand } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 
@@ -23,6 +24,7 @@ interface Props {
 }
 
 export function CatalogFilters({ brands, value, onChange, onClear }: Props) {
+  const t = useTranslations("catalog");
   const [local, setLocal] = useState<CatalogFilterState>(value);
 
   useEffect(() => setLocal(value), [value]);
@@ -52,17 +54,17 @@ export function CatalogFilters({ brands, value, onChange, onClear }: Props) {
       <div>
         <h4 className="mb-2 text-sm font-bold text-brand-white">Tipo</h4>
         <div className="flex flex-col gap-1">
-          {types.map((t) => (
+          {types.map((type) => (
             <button
-              key={t}
-              onClick={() => apply({ type: t })}
+              key={type}
+              onClick={() => apply({ type })}
               className={`rounded-lg px-2 py-1.5 text-left text-sm capitalize transition ${
-                local.type === t
+                local.type === type
                   ? "bg-brand-red/15 text-brand-red"
                   : "text-brand-muted hover:text-brand-white"
               }`}
             >
-              {t}
+              {type === "todos" ? t("all") : type}
             </button>
           ))}
         </div>
@@ -124,7 +126,7 @@ export function CatalogFilters({ brands, value, onChange, onClear }: Props) {
       </div>
 
       <Button variant="glass" size="sm" className="w-full" onClick={onClear}>
-        Limpiar filtros
+        {t("clear_filters")}
       </Button>
     </aside>
   );

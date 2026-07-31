@@ -1,25 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Link, usePathname, useRouter } from "@/lib/i18n/navigation";
 import { Heart, Menu, Search, User, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { useMounted } from "@/lib/hooks/useMounted";
+import { LanguageSelector } from "@/components/ui/LanguageSelector";
 import { CartIcon } from "./CartIcon";
 
 const links = [
-  { label: "Cascos", href: "/catalog?category=1" },
-  { label: "Guantes", href: "/catalog?category=2" },
-  { label: "Botas", href: "/catalog?category=3" },
-  { label: "Chamarras", href: "/catalog?category=5" },
-  { label: "Repuestos", href: "/catalog?category=6" },
-  { label: "Marcas", href: "/catalog" },
-];
+  { key: "helmets", href: "/catalog?category=1" },
+  { key: "gloves", href: "/catalog?category=2" },
+  { key: "boots", href: "/catalog?category=3" },
+  { key: "jackets", href: "/catalog?category=5" },
+  { key: "parts", href: "/catalog?category=6" },
+  { key: "brands", href: "/catalog" },
+] as const;
 
 export function Navbar() {
+  const t = useTranslations("nav");
   const pathname = usePathname();
   const router = useRouter();
   const isHome = pathname === "/";
@@ -71,12 +73,12 @@ export function Navbar() {
 
         <ul className="ml-6 hidden items-center gap-5 lg:flex">
           {links.map((l) => (
-            <li key={l.label}>
+            <li key={l.key}>
               <Link
                 href={l.href}
                 className="text-sm font-medium text-brand-white/80 transition hover:text-brand-red"
               >
-                {l.label}
+                {t(l.key)}
               </Link>
             </li>
           ))}
@@ -123,6 +125,8 @@ export function Navbar() {
             )}
           </Link>
 
+          <LanguageSelector />
+
           <CartIcon />
 
           <Link
@@ -130,7 +134,7 @@ export function Navbar() {
             className="ml-1 hidden items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-brand-white transition hover:bg-white/10 sm:flex"
           >
             <User size={18} />
-            {isAuth ? "Mi cuenta" : "Ingresar"}
+            {isAuth ? "Mi cuenta" : t("login")}
           </Link>
 
           <button
@@ -156,13 +160,13 @@ export function Navbar() {
           </form>
           <ul className="flex flex-col gap-1">
             {links.map((l) => (
-              <li key={l.label}>
+              <li key={l.key}>
                 <Link
                   href={l.href}
                   onClick={() => setMobileOpen(false)}
                   className="block rounded-lg px-3 py-2 text-sm font-medium text-brand-white/90 hover:bg-white/10"
                 >
-                  {l.label}
+                  {t(l.key)}
                 </Link>
               </li>
             ))}
@@ -172,7 +176,7 @@ export function Navbar() {
                 onClick={() => setMobileOpen(false)}
                 className="block rounded-lg px-3 py-2 text-sm font-semibold text-brand-red hover:bg-white/10"
               >
-                {isAuth ? "Mi cuenta" : "Ingresar"}
+                {isAuth ? "Mi cuenta" : t("login")}
               </Link>
             </li>
           </ul>

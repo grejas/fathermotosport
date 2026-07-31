@@ -1,0 +1,48 @@
+{
+  "nav": {
+    "helmets": "Capacetes",
+    "gloves": "Luvas",
+    "boots": "Botas",
+    "jackets": "Jaquetas",
+    "parts": "Peças",
+    "brands": "Marcas",
+    "login": "Entrar"
+  },
+  "product": {
+    "add_to_cart": "Adicionar ao carrinho",
+    "whatsapp": "Consultar pelo WhatsApp",
+    "size": "Tamanho",
+    "color": "Cor",
+    "in_stock": "EM ESTOQUE",
+    "out_of_stock": "ESGOTADO",
+    "available": "disponíveis",
+    "size_guide": "Ver guia de tamanhos",
+    "view_visors": "Ver viseiras",
+    "free_shipping": "Frete grátis",
+    "warranty": "Garantia",
+    "support": "Suporte"
+  },
+  "catalog": {
+    "title": "Catálogo",
+    "products": "produtos",
+    "newest": "Mais recentes",
+    "price_asc": "Preço: menor para maior",
+    "price_desc": "Preço: maior para menor",
+    "name_az": "Nome A-Z",
+    "popular": "Populares",
+    "no_products": "Nenhum produto encontrado.",
+    "clear_filters": "Limpar filtros",
+    "all": "Todos"
+  },
+  "home": {
+    "hero_title": "Equipe-se como um",
+    "hero_highlight": "campeão de pista",
+    "hero_desc": "Capacetes, luvas e proteção premium com certificação internacional.",
+    "view_catalog": "Ver catálogo",
+    "view_3d": "Ver em 3D",
+    "discover": "DESCUBRA MAIS PRODUTOS",
+    "products": "Produtos",
+    "brands": "Marcas",
+    "days": "Dias úteis"
+  }
+}

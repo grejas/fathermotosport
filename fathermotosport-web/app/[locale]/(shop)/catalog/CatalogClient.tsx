@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useRouter } from "@/lib/i18n/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { LayoutGrid, List } from "lucide-react";
 import { getProducts } from "@/lib/api/products";
@@ -19,6 +21,7 @@ const emptyFilters: CatalogFilterState = {
 };
 
 export function CatalogClient() {
+  const t = useTranslations("catalog");
   const router = useRouter();
   const params = useSearchParams();
   const [view, setView] = useState<"grid" | "list">("grid");
@@ -75,9 +78,11 @@ export function CatalogClient() {
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-brand-white">
-              {search ? `Resultados para "${search}"` : "Catálogo"}
+              {search ? `Resultados para "${search}"` : t("title")}
             </h1>
-            <p className="text-sm text-brand-muted">{meta?.total ?? 0} productos</p>
+            <p className="text-sm text-brand-muted">
+              {meta?.total ?? 0} {t("products")}
+            </p>
           </div>
 
           <div className="flex items-center gap-3">
@@ -86,11 +91,11 @@ export function CatalogClient() {
               onChange={(e) => setSort(e.target.value as ProductFilters["sort"])}
               className="input-brand w-auto px-3 py-2 text-sm"
             >
-              <option value="newest">Más recientes</option>
-              <option value="price_asc">Precio: menor a mayor</option>
-              <option value="price_desc">Precio: mayor a menor</option>
-              <option value="name_asc">Nombre A-Z</option>
-              <option value="popular">Populares</option>
+              <option value="newest">{t("newest")}</option>
+              <option value="price_asc">{t("price_asc")}</option>
+              <option value="price_desc">{t("price_desc")}</option>
+              <option value="name_asc">{t("name_az")}</option>
+              <option value="popular">{t("popular")}</option>
             </select>
 
             <div className="flex rounded-lg border border-white/10">

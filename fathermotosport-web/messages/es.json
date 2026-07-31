@@ -1,0 +1,48 @@
+{
+  "nav": {
+    "helmets": "Cascos",
+    "gloves": "Guantes",
+    "boots": "Botas",
+    "jackets": "Chamarras",
+    "parts": "Repuestos",
+    "brands": "Marcas",
+    "login": "Ingresar"
+  },
+  "product": {
+    "add_to_cart": "Agregar al carrito",
+    "whatsapp": "Consultar por WhatsApp",
+    "size": "Talla",
+    "color": "Color",
+    "in_stock": "EN STOCK",
+    "out_of_stock": "AGOTADO",
+    "available": "disponibles",
+    "size_guide": "Ver guía de tallas",
+    "view_visors": "Ver visores",
+    "free_shipping": "Envío gratis",
+    "warranty": "Garantía",
+    "support": "Soporte"
+  },
+  "catalog": {
+    "title": "Catálogo",
+    "products": "productos",
+    "newest": "Más recientes",
+    "price_asc": "Precio: menor a mayor",
+    "price_desc": "Precio: mayor a menor",
+    "name_az": "Nombre A-Z",
+    "popular": "Populares",
+    "no_products": "No se encontraron productos.",
+    "clear_filters": "Limpiar filtros",
+    "all": "Todos"
+  },
+  "home": {
+    "hero_title": "Equípate como un",
+    "hero_highlight": "campeón de pista",
+    "hero_desc": "Cascos, guantes y protección premium con certificación internacional.",
+    "view_catalog": "Ver catálogo",
+    "view_3d": "Ver en 3D",
+    "discover": "DESCUBRE MÁS PRODUCTOS",
+    "products": "Productos",
+    "brands": "Marcas",
+    "days": "Días hábiles"
+  }
+}

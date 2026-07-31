@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import type { Product } from "@/lib/types";
 import { stagger, slideUp } from "@/animations/variants";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -13,6 +14,8 @@ interface ProductGridProps {
 }
 
 export function ProductGrid({ products, loading, emptyMessage }: ProductGridProps) {
+  const t = useTranslations("catalog");
+
   if (loading) {
     return (
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -33,7 +36,7 @@ export function ProductGrid({ products, loading, emptyMessage }: ProductGridProp
   if (!products.length) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-brand-muted">
-        {emptyMessage ?? "No se encontraron productos."}
+        {emptyMessage ?? t("no_products")}
       </div>
     );
   }

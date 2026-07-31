@@ -1,0 +1,48 @@
+{
+  "nav": {
+    "helmets": "Helmets",
+    "gloves": "Gloves",
+    "boots": "Boots",
+    "jackets": "Jackets",
+    "parts": "Parts",
+    "brands": "Brands",
+    "login": "Sign in"
+  },
+  "product": {
+    "add_to_cart": "Add to cart",
+    "whatsapp": "Ask on WhatsApp",
+    "size": "Size",
+    "color": "Color",
+    "in_stock": "IN STOCK",
+    "out_of_stock": "OUT OF STOCK",
+    "available": "available",
+    "size_guide": "View size guide",
+    "view_visors": "View visors",
+    "free_shipping": "Free shipping",
+    "warranty": "Warranty",
+    "support": "Support"
+  },
+  "catalog": {
+    "title": "Catalog",
+    "products": "products",
+    "newest": "Newest",
+    "price_asc": "Price: low to high",
+    "price_desc": "Price: high to low",
+    "name_az": "Name A-Z",
+    "popular": "Popular",
+    "no_products": "No products found.",
+    "clear_filters": "Clear filters",
+    "all": "All"
+  },
+  "home": {
+    "hero_title": "Gear up like a",
+    "hero_highlight": "track champion",
+    "hero_desc": "Premium helmets, gloves and protection with international certification.",
+    "view_catalog": "View catalog",
+    "view_3d": "View in 3D",
+    "discover": "DISCOVER MORE PRODUCTS",
+    "products": "Products",
+    "brands": "Brands",
+    "days": "Business days"
+  }
+}

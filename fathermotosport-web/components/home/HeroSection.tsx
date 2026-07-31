@@ -1,22 +1,24 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/lib/i18n/navigation";
 import { Box, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { initHeroScroll } from "@/animations/scroll";
 import { getBanners, type Banner } from "@/lib/api/banners";
 import { HeroParticles } from "./HeroParticles";
 
-const stats = [
-  { value: "200+", label: "Productos" },
-  { value: "15+", label: "Marcas" },
-  { value: "5-7", label: "Dias habiles" },
-];
-
 export function HeroSection() {
+  const t = useTranslations("home");
   const root = useRef<HTMLDivElement>(null);
   const [heroBanner, setHeroBanner] = useState<Banner | null>(null);
+
+  const stats = [
+    { value: "200+", label: t("products") },
+    { value: "15+", label: t("brands") },
+    { value: "5-7", label: t("days") },
+  ];
 
   // Animación de entrada del hero (texto + botones + stats).
   useEffect(() => initHeroScroll(root.current), []);
@@ -68,23 +70,22 @@ export function HeroSection() {
           </span>
 
           <h1 data-hero-title className="mt-5 text-5xl font-extrabold leading-[1.05] text-brand-white sm:text-6xl">
-            Equípate como un <span className="text-brand-red">campeón</span> de pista
+            {t("hero_title")} <span className="text-brand-red">{t("hero_highlight")}</span>
           </h1>
 
           <p data-hero-sub className="mt-5 max-w-lg text-lg text-brand-muted">
-            Cascos, guantes y protección premium con certificación internacional. Envío gratis
-            y vista previa en 3D real.
+            {t("hero_desc")}
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/catalog" data-hero-cta>
               <Button variant="primary" size="lg" icon={<ArrowRight size={18} />}>
-                Ver catálogo
+                {t("view_catalog")}
               </Button>
             </Link>
             <Link href="/catalog" data-hero-cta>
               <Button variant="glass" size="lg" icon={<Box size={18} />}>
-                Ver en 3D
+                {t("view_3d")}
               </Button>
             </Link>
 

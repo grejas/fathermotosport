@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Heart, Minus, Plus, Ruler, ShieldCheck, Star, Truck, MessageCircle, Award } from "lucide-react";
 import type { Product, ProductVariant } from "@/lib/types";
 import { cn, formatPrice, getCategoryColor } from "@/lib/utils";
@@ -15,6 +16,7 @@ import toast from "react-hot-toast";
 const whatsapp = (process.env.NEXT_PUBLIC_WHATSAPP ?? "+59168736384").replace(/[^0-9]/g, "");
 
 export function ProductInfo({ product }: { product: Product }) {
+  const t = useTranslations("product");
   const accent = getCategoryColor(product.category?.slug);
   const variants = useMemo(() => (product.variants ?? []).filter((v) => v.is_active), [product]);
 
@@ -74,7 +76,11 @@ export function ProductInfo({ product }: { product: Product }) {
             ))}
           </div>
           <span className="text-xs text-brand-muted">{product.reviews_count ?? 0} reseñas</span>
-          {inStock ? <Badge variant="green">En stock</Badge> : <Badge variant="red">Agotado</Badge>}
+          {inStock ? (
+            <Badge variant="green">{t("in_stock")}</Badge>
+          ) : (
+            <Badge variant="red">{t("out_of_stock")}</Badge>
+          )}
         </div>
       </div>
 
@@ -92,7 +98,7 @@ export function ProductInfo({ product }: { product: Product }) {
 
       {sizes.length > 0 && (
         <div>
-          <p className="mb-2 text-sm font-semibold text-brand-white">Talla</p>
+          <p className="mb-2 text-sm font-semibold text-brand-white">{t("size")}</p>
           <div className="flex flex-wrap gap-2">
             {sizes.map((s) => {
               const v = variants.find((x) => x.size === s && (color ? x.color === color : true));
@@ -120,7 +126,7 @@ export function ProductInfo({ product }: { product: Product }) {
             className="mt-2 flex items-center gap-1.5 text-xs font-medium text-brand-muted transition hover:text-brand-white"
           >
             <Ruler size={14} />
-            Ver guía de tallas
+            {t("size_guide")}
           </button>
           <SizeGuideModal open={sizeGuideOpen} onClose={() => setSizeGuideOpen(false)} />
         </div>
@@ -128,7 +134,9 @@ export function ProductInfo({ product }: { product: Product }) {
 
       {colors.length > 0 && (
         <div>
-          <p className="mb-2 text-sm font-semibold text-brand-white">Color: {color}</p>
+          <p className="mb-2 text-sm font-semibold text-brand-white">
+            {t("color")}: {color}
+          </p>
           <div className="flex gap-2">
             {colors.map((c) => (
               <button
@@ -163,13 +171,13 @@ export function ProductInfo({ product }: { product: Product }) {
           </button>
         </div>
         <span className="text-xs text-brand-muted">
-          {displayStock} disponibles
+          {displayStock} {t("available")}
         </span>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <Button variant="primary" className="flex-1" onClick={handleAdd} disabled={!inStock}>
-          Agregar al carrito
+          {t("add_to_cart")}
         </Button>
         {isAuth && (
           <Button
@@ -188,16 +196,16 @@ export function ProductInfo({ product }: { product: Product }) {
         rel="noopener noreferrer"
       >
         <Button variant="glass" className="w-full" icon={<MessageCircle size={18} />}>
-          Consultar por WhatsApp
+          {t("whatsapp")}
         </Button>
       </a>
 
       <div className="grid grid-cols-2 gap-3 border-t border-white/10 pt-5 sm:grid-cols-4">
         {[
-          { icon: Truck, label: "Envío gratis" },
-          { icon: ShieldCheck, label: "Garantía" },
+          { icon: Truck, label: t("free_shipping") },
+          { icon: ShieldCheck, label: t("warranty") },
           { icon: Award, label: product.certification ?? "Certificado" },
-          { icon: MessageCircle, label: "Soporte" },
+          { icon: MessageCircle, label: t("support") },
         ].map(({ icon: Icon, label }, i) => (
           <div key={i} className="flex flex-col items-center gap-1.5 text-center">
             <Icon size={20} style={{ color: accent }} />

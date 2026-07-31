@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Eye } from "lucide-react";
 import { useProduct } from "@/lib/hooks/useProducts";
 import { ProductGallery } from "@/components/product/ProductGallery";
@@ -13,6 +14,7 @@ import { Button } from "@/components/ui/Button";
 import { VisorColorsModal } from "@/components/3d/VisorColorsModal";
 
 export function ProductClient({ slug }: { slug: string }) {
+  const t = useTranslations("product");
   const { data: product, isLoading, isError } = useProduct(slug);
   const [showVisorModal, setShowVisorModal] = useState(false);
 
@@ -62,7 +64,7 @@ export function ProductClient({ slug }: { slug: string }) {
               className="mt-4 w-full sm:w-auto"
               onClick={() => setShowVisorModal(true)}
             >
-              Ver visores
+              {t("view_visors")}
             </Button>
           )}
         </div>
