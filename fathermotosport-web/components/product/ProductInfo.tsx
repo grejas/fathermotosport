@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Heart, Minus, Plus, ShieldCheck, Star, Truck, MessageCircle, Award } from "lucide-react";
+import { Heart, Minus, Plus, Ruler, ShieldCheck, Star, Truck, MessageCircle, Award } from "lucide-react";
 import type { Product, ProductVariant } from "@/lib/types";
 import { cn, formatPrice, getCategoryColor } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { SizeGuideModal } from "@/components/product/SizeGuideModal";
 import { useCartStore } from "@/store/cartStore";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { useAuthStore } from "@/store/authStore";
@@ -23,6 +24,7 @@ export function ProductInfo({ product }: { product: Product }) {
   const [size, setSize] = useState<string | null>(sizes[0] ?? null);
   const [color, setColor] = useState<string | null>(colors[0] ?? null);
   const [qty, setQty] = useState(1);
+  const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
 
   const selectedVariant: ProductVariant | undefined = useMemo(
     () =>
@@ -113,6 +115,14 @@ export function ProductInfo({ product }: { product: Product }) {
               );
             })}
           </div>
+          <button
+            onClick={() => setSizeGuideOpen(true)}
+            className="mt-2 flex items-center gap-1.5 text-xs font-medium text-brand-muted transition hover:text-brand-white"
+          >
+            <Ruler size={14} />
+            Ver guía de tallas
+          </button>
+          <SizeGuideModal open={sizeGuideOpen} onClose={() => setSizeGuideOpen(false)} />
         </div>
       )}
 
