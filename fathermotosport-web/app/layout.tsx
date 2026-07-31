@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import "@/styles/globals.css";
 import { Providers } from "@/components/layout/Providers";
 import { Navbar } from "@/components/layout/Navbar";
@@ -31,6 +32,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Footer />
           <CartDrawer />
         </Providers>
+
+        <div id="google_translate_element" style={{ position: "fixed", bottom: "20px", right: "20px", zIndex: 9999 }}></div>
+
+        <Script id="google-translate-init" strategy="afterInteractive">{`
+          function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+              pageLanguage: 'es',
+              includedLanguages: 'pt,en',
+              layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+              autoDisplay: false
+            }, 'google_translate_element');
+          }
+        `}</Script>
+
+        <Script
+          src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
