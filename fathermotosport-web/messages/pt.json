@@ -142,6 +142,8 @@
     "email": "Email",
     "password": "Senha",
     "forgot_password": "Esqueceu sua senha?",
+    "welcome_subtitle": "Bem-vindo de volta à FatherMotoSport",
+    "login_with_google": "Continuar com o Google",
     "no_account": "Não tem conta?",
     "have_account": "Já tem conta?",
     "welcome_back": "Bem-vindo de volta!",

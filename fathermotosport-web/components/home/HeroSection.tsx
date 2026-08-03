@@ -1,18 +1,21 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/lib/i18n/navigation";
 import { Box, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { initHeroScroll } from "@/animations/scroll";
 import { getBanners, type Banner } from "@/lib/api/banners";
+import { translateText } from "@/lib/utils/translate";
 import { HeroParticles } from "./HeroParticles";
 
 export function HeroSection() {
   const t = useTranslations("home");
+  const locale = useLocale();
   const root = useRef<HTMLDivElement>(null);
   const [heroBanner, setHeroBanner] = useState<Banner | null>(null);
+  const [translatedButtonText, setTranslatedButtonText] = useState<string | null>(null);
 
   const stats = [
     { value: "200+", label: t("products") },
@@ -29,6 +32,22 @@ export function HeroSection() {
       .then((banners) => setHeroBanner(banners[0] ?? null))
       .catch(() => {});
   }, []);
+
+  // Traduce silenciosamente el button_text del banner (contenido del admin,
+  // vive en español en la base de datos) cuando el locale activo es pt/en.
+  useEffect(() => {
+    if (!heroBanner?.button_text || locale === "es") {
+      setTranslatedButtonText(null);
+      return;
+    }
+    let cancelled = false;
+    translateText(heroBanner.button_text, locale).then((text) => {
+      if (!cancelled) setTranslatedButtonText(text);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [heroBanner, locale]);
 
   return (
     <section ref={root} className="relative flex min-h-[92vh] items-center overflow-hidden">
@@ -97,7 +116,7 @@ export function HeroSection() {
                 data-hero-cta
                 className="inline-flex h-11 items-center gap-2 rounded-full border border-white/20 bg-white/[0.08] px-6 text-sm font-medium uppercase tracking-widest text-white backdrop-blur-sm transition-all duration-[250ms] hover:border-white/35 hover:bg-white/[0.14]"
               >
-                {heroBanner.button_text}
+                {translatedButtonText ?? heroBanner.button_text}
               </a>
             )}
           </div>

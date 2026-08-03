@@ -78,7 +78,7 @@ export function LoginForm() {
         <span className="h-px flex-1 bg-white/10" />
       </div>
 
-      <GoogleButton />
+      <GoogleButton label={t("login_with_google")} />
 
       <p className="text-center text-sm text-brand-muted">
         {t("no_account")}{" "}
