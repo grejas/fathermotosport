@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { Eye } from "lucide-react";
 import { useProduct } from "@/lib/hooks/useProducts";
 import { ProductGallery } from "@/components/product/ProductGallery";
@@ -12,11 +12,35 @@ import { RelatedProducts } from "@/components/product/RelatedProducts";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Button } from "@/components/ui/Button";
 import { VisorColorsModal } from "@/components/3d/VisorColorsModal";
+import { translateText } from "@/lib/utils/translate";
 
 export function ProductClient({ slug }: { slug: string }) {
   const t = useTranslations("product");
+  const locale = useLocale();
   const { data: product, isLoading, isError } = useProduct(slug);
   const [showVisorModal, setShowVisorModal] = useState(false);
+  const [translated, setTranslated] = useState<{ name: string; description: string | null } | null>(null);
+
+  // Traduce silenciosamente name/description al idioma activo (pt/en) usando la
+  // API pública de Google Translate. El contenido en la base de datos vive en
+  // español; en 'es' no se traduce nada.
+  useEffect(() => {
+    if (!product || locale === "es") {
+      setTranslated(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const [name, description] = await Promise.all([
+        translateText(product.name, locale),
+        product.description ? translateText(product.description, locale) : Promise.resolve(product.description),
+      ]);
+      if (!cancelled) setTranslated({ name, description });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [product, locale]);
 
   if (isLoading) {
     return (
@@ -41,6 +65,7 @@ export function ProductClient({ slug }: { slug: string }) {
   }
 
   const isHelmet = product.category?.slug === "cascos";
+  const displayProduct = translated ? { ...product, name: translated.name, description: translated.description } : product;
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-24 sm:px-6">
@@ -50,11 +75,11 @@ export function ProductClient({ slug }: { slug: string }) {
             <Product3DGallery
               modelUrl={product.model_3d.file_glb_url}
               images={product.images ?? []}
-              name={product.name}
+              name={displayProduct.name}
               showVisorColors={isHelmet}
             />
           ) : (
-            <ProductGallery images={product.images ?? []} name={product.name} />
+            <ProductGallery images={product.images ?? []} name={displayProduct.name} />
           )}
           {isHelmet && (
             <Button
@@ -68,10 +93,10 @@ export function ProductClient({ slug }: { slug: string }) {
             </Button>
           )}
         </div>
-        <ProductInfo product={product} />
+        <ProductInfo product={displayProduct} />
       </div>
 
-      <ProductTabs product={product} />
+      <ProductTabs product={displayProduct} />
       <RelatedProducts categoryId={product.category?.id} currentSlug={product.slug} />
 
       {isHelmet && (
