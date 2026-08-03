@@ -66,7 +66,7 @@ export function HeroSection() {
             className="inline-flex items-center gap-2 rounded-full border border-brand-red/30 bg-brand-red/10 px-3 py-1 text-xs font-semibold text-brand-red"
           >
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-red" />
-            Colección 2026 · Disponible ahora
+            {t("collection_tag")}
           </span>
 
           <h1 data-hero-title className="mt-5 text-5xl font-extrabold leading-[1.05] text-brand-white sm:text-6xl">

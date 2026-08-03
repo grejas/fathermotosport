@@ -8,7 +8,8 @@
     "brands": "Marcas",
     "login": "Ingresar",
     "profile": "Perfil",
-    "favorites": "Favoritos"
+    "favorites": "Favoritos",
+    "accessories": "Accesorios"
   },
   "product": {
     "add_to_cart": "Agregar al carrito",
@@ -51,7 +52,26 @@
     "discover": "DESCUBRE MÁS PRODUCTOS",
     "products": "Productos",
     "brands": "Marcas",
-    "days": "Días hábiles"
+    "days": "Días hábiles",
+    "collection_tag": "Colección 2026 · Disponible ahora",
+    "explore_by_category": "Explora por categoría",
+    "featured": "Destacados",
+    "featured_subtitle": "Lo más buscado de la temporada",
+    "view_all": "Ver todo",
+    "no_featured": "Aún no hay productos destacados.",
+    "pay_in_installments": "Paga en cuotas · 100% seguro",
+    "payment_desc": "Aceptamos PayPal, Stripe y MercadoPago con encriptación SSL.",
+    "view_payment_methods": "Ver métodos de pago"
+  },
+  "benefits": {
+    "free_shipping": "Envío gratis",
+    "free_shipping_desc": "En todos tus pedidos",
+    "warranty": "Garantía",
+    "warranty_desc": "Productos originales",
+    "secure_payment": "Pago seguro",
+    "secure_payment_desc": "Encriptación SSL",
+    "support": "Soporte",
+    "support_desc": "WhatsApp directo"
   },
   "footer": {
     "description": "Equipamiento premium para motociclistas. Cascos, guantes, botas y más, con envío gratis.",

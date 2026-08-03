@@ -2,22 +2,26 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { HardHat, Hand, Footprints, Shirt, Wrench, Package } from "lucide-react";
 import { stagger, slideUp } from "@/animations/variants";
 
 const categories = [
-  { id: 1, name: "Cascos", color: "#fa0536", icon: HardHat },
-  { id: 2, name: "Guantes", color: "#fa0536", icon: Hand },
-  { id: 3, name: "Botas", color: "#fa0536", icon: Footprints },
-  { id: 5, name: "Chamarras", color: "#fa0536", icon: Shirt },
-  { id: 6, name: "Repuestos", color: "#fa0536", icon: Wrench },
-  { id: 7, name: "Accesorios", color: "#fa0536", icon: Package },
-];
+  { id: 1, key: "helmets", color: "#fa0536", icon: HardHat },
+  { id: 2, key: "gloves", color: "#fa0536", icon: Hand },
+  { id: 3, key: "boots", color: "#fa0536", icon: Footprints },
+  { id: 5, key: "jackets", color: "#fa0536", icon: Shirt },
+  { id: 6, key: "parts", color: "#fa0536", icon: Wrench },
+  { id: 7, key: "accessories", color: "#fa0536", icon: Package },
+] as const;
 
 export function CategoryGrid() {
+  const t = useTranslations("home");
+  const tNav = useTranslations("nav");
+
   return (
     <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-      <h2 className="mb-8 text-2xl font-bold text-brand-white">Explora por categoría</h2>
+      <h2 className="mb-8 text-2xl font-bold text-brand-white">{t("explore_by_category")}</h2>
       <motion.div
         variants={stagger}
         initial="hidden"
@@ -48,7 +52,7 @@ export function CategoryGrid() {
                 >
                   <Icon size={26} />
                 </span>
-                <span className="text-sm font-semibold text-brand-white">{c.name}</span>
+                <span className="text-sm font-semibold text-brand-white">{tNav(c.key)}</span>
               </Link>
             </motion.div>
           );

@@ -1,14 +1,19 @@
-import Link from "next/link";
+"use client";
+
+import { useTranslations } from "next-intl";
+import { Link } from "@/lib/i18n/navigation";
 import { Button } from "@/components/ui/Button";
 
 export function PaymentBanner() {
+  const t = useTranslations("home");
+
   return (
     <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <div className="flex flex-col items-center justify-between gap-6 rounded-2xl border border-white/10 bg-gradient-to-r from-brand-dark to-brand-card p-8 md:flex-row">
         <div>
-          <h3 className="text-xl font-bold text-brand-white">Paga en cuotas · 100% seguro</h3>
+          <h3 className="text-xl font-bold text-brand-white">{t("pay_in_installments")}</h3>
           <p className="mt-1 text-sm text-brand-muted">
-            Aceptamos PayPal, Stripe y MercadoPago con encriptación SSL.
+            {t("payment_desc")}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -22,7 +27,7 @@ export function PaymentBanner() {
           ))}
         </div>
         <Link href="/checkout">
-          <Button variant="gold">Ver métodos de pago</Button>
+          <Button variant="gold">{t("view_payment_methods")}</Button>
         </Link>
       </div>
     </section>

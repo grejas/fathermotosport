@@ -8,7 +8,8 @@
     "brands": "Brands",
     "login": "Sign in",
     "profile": "Profile",
-    "favorites": "Favorites"
+    "favorites": "Favorites",
+    "accessories": "Accessories"
   },
   "product": {
     "add_to_cart": "Add to cart",
@@ -51,7 +52,26 @@
     "discover": "DISCOVER MORE PRODUCTS",
     "products": "Products",
     "brands": "Brands",
-    "days": "Business days"
+    "days": "Business days",
+    "collection_tag": "2026 Collection · Available now",
+    "explore_by_category": "Explore by category",
+    "featured": "Featured",
+    "featured_subtitle": "Most wanted this season",
+    "view_all": "View all",
+    "no_featured": "No featured products yet.",
+    "pay_in_installments": "Pay in installments · 100% secure",
+    "payment_desc": "We accept PayPal, Stripe and MercadoPago with SSL encryption.",
+    "view_payment_methods": "View payment methods"
+  },
+  "benefits": {
+    "free_shipping": "Free shipping",
+    "free_shipping_desc": "On all your orders",
+    "warranty": "Warranty",
+    "warranty_desc": "Original products",
+    "secure_payment": "Secure payment",
+    "secure_payment_desc": "SSL encryption",
+    "support": "Support",
+    "support_desc": "Direct WhatsApp"
   },
   "footer": {
     "description": "Premium gear for motorcyclists. Helmets, gloves, boots and more, with free shipping.",
