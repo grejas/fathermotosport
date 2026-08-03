@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/lib/i18n/navigation";
 import { MessageCircle } from "lucide-react";
 
 const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP ?? "+59168736384";
@@ -28,14 +29,17 @@ const socialLinks = [
 ];
 
 const categoryLinks = [
-  { label: "Cascos", href: "/catalog?category=1" },
-  { label: "Guantes", href: "/catalog?category=2" },
-  { label: "Botas", href: "/catalog?category=3" },
-  { label: "Chamarras", href: "/catalog?category=5" },
-  { label: "Repuestos", href: "/catalog?category=6" },
-];
+  { key: "helmets", href: "/catalog?category=1" },
+  { key: "gloves", href: "/catalog?category=2" },
+  { key: "boots", href: "/catalog?category=3" },
+  { key: "jackets", href: "/catalog?category=5" },
+  { key: "parts", href: "/catalog?category=6" },
+] as const;
 
 export function Footer() {
+  const t = useTranslations("footer");
+  const tNav = useTranslations("nav");
+
   return (
     <footer className="border-t border-white/10 bg-brand-dark">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-4">
@@ -44,18 +48,16 @@ export function Footer() {
             <span className="text-brand-red">Father</span>
             <span className="text-brand-white">Motosport</span>
           </Link>
-          <p className="mt-3 max-w-xs text-sm text-brand-muted">
-            Equipamiento premium para motociclistas. Cascos, guantes, botas y más, con envío gratis.
-          </p>
+          <p className="mt-3 max-w-xs text-sm text-brand-muted">{t("description")}</p>
         </div>
 
         <div>
-          <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-brand-white">Categorías</h4>
+          <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-brand-white">{t("categories")}</h4>
           <ul className="space-y-2">
             {categoryLinks.map((l) => (
-              <li key={l.label}>
+              <li key={l.key}>
                 <Link href={l.href} className="text-sm text-brand-muted transition hover:text-brand-red">
-                  {l.label}
+                  {tNav(l.key)}
                 </Link>
               </li>
             ))}
@@ -63,7 +65,7 @@ export function Footer() {
         </div>
 
         <div>
-          <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-brand-white">Pagos</h4>
+          <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-brand-white">{t("payments")}</h4>
           <div className="flex flex-wrap gap-2">
             {["PayPal", "Visa", "MasterCard", "MercadoPago"].map((m) => (
               <span
@@ -77,7 +79,7 @@ export function Footer() {
         </div>
 
         <div>
-          <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-brand-white">Contacto</h4>
+          <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-brand-white">{t("contact")}</h4>
           <a
             href={`https://wa.me/${whatsapp.replace(/[^0-9]/g, "")}`}
             target="_blank"
@@ -106,7 +108,7 @@ export function Footer() {
       </div>
 
       <div className="border-t border-white/10 py-5 text-center text-xs text-brand-muted">
-        © {new Date().getFullYear()} FatherMotoSport. Todos los derechos reservados.
+        © {new Date().getFullYear()} FatherMotoSport. {t("copyright")}
       </div>
     </footer>
   );

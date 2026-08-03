@@ -1,6 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/lib/i18n/navigation";
 import { ChevronRight, Package } from "lucide-react";
 import { useMyOrders } from "@/lib/hooks/useOrders";
 import { Badge } from "@/components/ui/Badge";
@@ -17,12 +18,13 @@ const badgeVariant: Record<OrderStatus, "red" | "gold" | "green" | "gray"> = {
 };
 
 export default function OrdersPage() {
+  const t = useTranslations("orders");
   const { data, isLoading } = useMyOrders();
   const orders = data?.data ?? [];
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-extrabold text-brand-white">Mis pedidos</h1>
+      <h1 className="mb-6 text-2xl font-extrabold text-brand-white">{t("my_orders")}</h1>
 
       {isLoading ? (
         <div className="space-y-3">
@@ -33,7 +35,7 @@ export default function OrdersPage() {
       ) : orders.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-brand-card py-16 text-brand-muted">
           <Package size={48} className="opacity-40" />
-          <p>Aún no tienes pedidos.</p>
+          <p>{t("empty")}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -45,11 +47,20 @@ export default function OrdersPage() {
             >
               <div>
                 <p className="font-bold text-brand-white">{o.order_number}</p>
-                <p className="text-sm text-brand-muted">{o.created_at ? formatDate(o.created_at) : ""}</p>
+                <p
+                  className="text-sm text-brand-muted"
+                  aria-label={o.created_at ? `${t("date")}: ${formatDate(o.created_at)}` : undefined}
+                >
+                  {o.created_at ? formatDate(o.created_at) : ""}
+                </p>
               </div>
               <div className="flex items-center gap-4">
-                <Badge variant={badgeVariant[o.status]}>{orderStatusLabels[o.status]}</Badge>
-                <span className="font-bold text-brand-white">{formatPrice(o.total)}</span>
+                <span aria-label={`${t("status")}: ${orderStatusLabels[o.status]}`}>
+                  <Badge variant={badgeVariant[o.status]}>{orderStatusLabels[o.status]}</Badge>
+                </span>
+                <span className="font-bold text-brand-white" aria-label={`${t("total")}: ${formatPrice(o.total)}`}>
+                  {formatPrice(o.total)}
+                </span>
                 <ChevronRight size={18} className="text-brand-muted" />
               </div>
             </Link>

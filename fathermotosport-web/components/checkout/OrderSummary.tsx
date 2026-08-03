@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { useCartStore } from "@/store/cartStore";
 import { formatPrice, getImageUrl } from "@/lib/utils";
 
@@ -10,13 +11,15 @@ interface OrderSummaryProps {
 }
 
 export function OrderSummary({ discount = 0, children }: OrderSummaryProps) {
+  const t = useTranslations("checkout");
+  const tCart = useTranslations("cart");
   const items = useCartStore((s) => s.items);
   const subtotal = useCartStore((s) => s.subtotal());
   const total = Math.max(0, subtotal - discount);
 
   return (
     <div className="rounded-2xl border border-white/10 bg-brand-card p-5">
-      <h3 className="mb-4 text-lg font-bold text-brand-white">Resumen</h3>
+      <h3 className="mb-4 text-lg font-bold text-brand-white">{t("order_summary")}</h3>
 
       <div className="max-h-64 space-y-3 overflow-y-auto">
         {items.map((item) => (
@@ -42,21 +45,21 @@ export function OrderSummary({ discount = 0, children }: OrderSummaryProps) {
 
       <div className="mt-4 space-y-2 border-t border-white/10 pt-4 text-sm">
         <div className="flex justify-between text-brand-muted">
-          <span>Subtotal</span>
+          <span>{tCart("subtotal")}</span>
           <span className="text-brand-white">{formatPrice(subtotal)}</span>
         </div>
         {discount > 0 && (
           <div className="flex justify-between text-cat-boots">
-            <span>Descuento</span>
+            <span>{tCart("discount")}</span>
             <span>−{formatPrice(discount)}</span>
           </div>
         )}
         <div className="flex justify-between text-brand-muted">
-          <span>Envío</span>
-          <span className="font-semibold text-cat-boots">Gratis</span>
+          <span>{tCart("shipping")}</span>
+          <span className="font-semibold text-cat-boots">{t("free")}</span>
         </div>
         <div className="flex justify-between border-t border-white/10 pt-2 text-base font-bold text-brand-white">
-          <span>Total</span>
+          <span>{tCart("total")}</span>
           <span>{formatPrice(total)}</span>
         </div>
       </div>

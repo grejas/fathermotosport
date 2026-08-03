@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/lib/i18n/navigation";
 import { Box, Plus } from "lucide-react";
 import type { Product } from "@/lib/types";
 import { cn, formatPrice, getCategoryColor, getImageUrl } from "@/lib/utils";
@@ -9,6 +10,7 @@ import { useCartStore } from "@/store/cartStore";
 import toast from "react-hot-toast";
 
 export function ProductCard({ product }: { product: Product }) {
+  const t = useTranslations("product");
   const accent = getCategoryColor(product.category?.slug);
   const addItem = useCartStore((s) => s.addItem);
 
@@ -19,15 +21,15 @@ export function ProductCard({ product }: { product: Product }) {
     e.preventDefault();
     const variant = product.variants?.find((v) => v.is_active && v.stock > 0);
     if (!variant) {
-      toast.error("Sin stock disponible");
+      toast.error(t("no_stock"));
       return;
     }
     addItem(product, variant, 1);
-    toast.success(`${product.name} agregado`);
+    toast.success(t("added_to_cart", { name: product.name }));
   };
 
   return (
-    <Link href={`/product/${product.slug}`} className="group">
+    <Link href={`/product/${product.slug}`} className="group" aria-label={`${t("view_product")}: ${product.name}`}>
       <article
         className="card-product h-full"
         style={{ ["--accent" as string]: accent }}
@@ -52,19 +54,20 @@ export function ProductCard({ product }: { product: Product }) {
           <div className="absolute left-2 top-2 flex flex-col gap-1">
             {isOutOfStock && (
               <span className="inline-flex items-center rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-brand-muted ring-1 ring-white/15">
-                Agotado
+                {t("out_of_stock")}
               </span>
             )}
             {product.discount_percent > 0 && (
               <span className="badge-red">-{product.discount_percent}%</span>
             )}
-            {product.is_new && <span className="badge-gold">Nuevo</span>}
+            {product.is_new && <span className="badge-gold">{t("new")}</span>}
+            {!product.is_new && product.is_popular && <span className="badge-gold">{t("popular")}</span>}
           </div>
 
           {product.has_3d_model && (
             <span
               className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-bold text-brand-white backdrop-blur"
-              title="Modelo 3D disponible"
+              title={t("model_3d_available")}
             >
               <Box size={11} /> 3D
             </span>
@@ -99,7 +102,7 @@ export function ProductCard({ product }: { product: Product }) {
                 isOutOfStock && "cursor-not-allowed opacity-40"
               )}
               style={{ backgroundColor: accent }}
-              aria-label="Agregar al carrito"
+              aria-label={t("add_to_cart")}
             >
               <Plus size={18} />
             </button>

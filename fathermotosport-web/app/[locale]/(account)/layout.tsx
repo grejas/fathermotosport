@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Link, usePathname, useRouter } from "@/lib/i18n/navigation";
 import { Heart, Package, User as UserIcon } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useMounted } from "@/lib/hooks/useMounted";
@@ -10,17 +10,19 @@ import { Spinner } from "@/components/ui/Spinner";
 import { SecurityReminderBanner } from "@/components/account/SecurityReminderBanner";
 import { cn } from "@/lib/utils";
 
-const nav = [
-  { href: "/profile", label: "Perfil", icon: UserIcon },
-  { href: "/orders", label: "Mis pedidos", icon: Package },
-  { href: "/favorites", label: "Favoritos", icon: Heart },
-];
-
 export default function AccountLayout({ children }: { children: React.ReactNode }) {
+  const t = useTranslations("orders");
+  const tNav = useTranslations("nav");
   const router = useRouter();
   const pathname = usePathname();
   const mounted = useMounted();
   const isAuth = useAuthStore((s) => s.isAuth);
+
+  const nav = [
+    { href: "/profile", label: tNav("profile"), icon: UserIcon },
+    { href: "/orders", label: t("my_orders"), icon: Package },
+    { href: "/favorites", label: tNav("favorites"), icon: Heart },
+  ];
 
   useEffect(() => {
     if (mounted && !isAuth) router.replace(`/login?redirect=${pathname}`);

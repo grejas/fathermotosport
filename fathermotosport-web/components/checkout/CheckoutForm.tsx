@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useRouter } from "@/lib/i18n/navigation";
 import { ShieldCheck, Tag } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -22,23 +23,27 @@ const PAYMENTS_ENABLED = false;
 const WHATSAPP_URL = "https://wa.me/59168736384";
 
 const countries = [
-  { value: "Bolivia", label: "Bolivia" },
-  { value: "Brasil", label: "Brasil" },
-  { value: "Argentina", label: "Argentina" },
-  { value: "Chile", label: "Chile" },
-  { value: "Peru", label: "Perú" },
-  { value: "Colombia", label: "Colombia" },
-  { value: "Mexico", label: "México" },
-  { value: "Ecuador", label: "Ecuador" },
-  { value: "Paraguay", label: "Paraguay" },
-  { value: "Uruguay", label: "Uruguay" },
-  { value: "Venezuela", label: "Venezuela" },
-  { value: "España", label: "España" },
-  { value: "USA", label: "Estados Unidos" },
-  { value: "Otro", label: "Otro país" },
-];
+  { value: "Bolivia", key: "bolivia" },
+  { value: "Brasil", key: "brazil" },
+  { value: "Argentina", key: "argentina" },
+  { value: "Chile", key: "chile" },
+  { value: "Peru", key: "peru" },
+  { value: "Colombia", key: "colombia" },
+  { value: "Mexico", key: "mexico" },
+  { value: "Ecuador", key: "ecuador" },
+  { value: "Paraguay", key: "paraguay" },
+  { value: "Uruguay", key: "uruguay" },
+  { value: "Venezuela", key: "venezuela" },
+  { value: "España", key: "spain" },
+  { value: "USA", key: "usa" },
+  { value: "Otro", key: "other" },
+] as const;
 
 export function CheckoutForm() {
+  const t = useTranslations("checkout");
+  const tAuth = useTranslations("auth");
+  const tCountries = useTranslations("countries");
+  const tCart = useTranslations("cart");
   const router = useRouter();
   const items = useCartStore((s) => s.items);
   const subtotal = useCartStore((s) => s.subtotal());
@@ -86,7 +91,7 @@ export function CheckoutForm() {
     const res = await validateCoupon(coupon.trim(), subtotal);
     if (res.valid) {
       setDiscount(res.discount);
-      toast.success(`Cupón aplicado: −$${res.discount}`);
+      toast.success(tCart("coupon_applied", { amount: res.discount }));
     } else {
       setDiscount(0);
       toast.error(res.message);
@@ -105,11 +110,11 @@ export function CheckoutForm() {
     });
     setErrors(validation);
     if (hasErrors(validation)) {
-      toast.error("Revisa los campos del formulario.");
+      toast.error(t("form_errors"));
       return;
     }
     if (!items.length) {
-      toast.error("Tu carrito está vacío.");
+      toast.error(t("empty_cart_error"));
       return;
     }
 
@@ -132,12 +137,12 @@ export function CheckoutForm() {
       });
 
       clearCart();
-      toast.success("¡Pedido creado!");
+      toast.success(t("order_created"));
       router.push(`/checkout/success?order=${res.order.id}&number=${res.order.order_number}`);
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { message?: string } } }).response?.data?.message ??
-        "No se pudo crear el pedido.";
+        t("order_error");
       toast.error(message);
     } finally {
       setLoading(false);
@@ -149,20 +154,20 @@ export function CheckoutForm() {
       <div className="space-y-6">
         {!isAuth && (
           <section>
-            <h3 className="mb-3 text-lg font-bold text-brand-white">Tus datos</h3>
+            <h3 className="mb-3 text-lg font-bold text-brand-white">{t("your_data")}</h3>
             <div className="grid grid-cols-2 gap-3">
-              <Input label="Nombre" value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} error={errors.full_name} />
-              <Input label="Apellido" value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} />
-              <Input label="Email" type="email" className="col-span-2" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} error={errors.email} />
+              <Input label={t("first_name")} value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} error={errors.full_name} />
+              <Input label={t("last_name")} value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} />
+              <Input label={tAuth("email")} type="email" className="col-span-2" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} error={errors.email} />
             </div>
           </section>
         )}
 
         <section>
-          <h3 className="mb-3 text-lg font-bold text-brand-white">Dirección de envío</h3>
+          <h3 className="mb-3 text-lg font-bold text-brand-white">{t("shipping_address")}</h3>
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-brand-white">País</label>
+              <label className="mb-1.5 block text-sm font-medium text-brand-white">{t("country")}</label>
               <select
                 value={form.country}
                 onChange={(e) => setForm({ ...form, country: e.target.value })}
@@ -170,27 +175,27 @@ export function CheckoutForm() {
               >
                 {countries.map((c) => (
                   <option key={c.value} value={c.value}>
-                    {c.label}
+                    {tCountries(c.key)}
                   </option>
                 ))}
               </select>
             </div>
-            <Input label="Teléfono" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} error={errors.phone} />
-            <Input label="Departamento / Estado" value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} />
-            <Input label="Ciudad" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} error={errors.city} />
-            <Input label="Dirección" value={form.address_line} onChange={(e) => setForm({ ...form, address_line: e.target.value })} error={errors.address_line} />
-            <Input label="Referencia (opcional)" className="col-span-2" value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} />
+            <Input label={t("phone")} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} error={errors.phone} />
+            <Input label={t("state")} value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} />
+            <Input label={t("city")} value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} error={errors.city} />
+            <Input label={t("address")} value={form.address_line} onChange={(e) => setForm({ ...form, address_line: e.target.value })} error={errors.address_line} />
+            <Input label={t("reference")} className="col-span-2" value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} />
           </div>
         </section>
 
         <section>
-          <h3 className="mb-3 text-lg font-bold text-brand-white">Método de pago</h3>
+          <h3 className="mb-3 text-lg font-bold text-brand-white">{t("payment_method")}</h3>
           {PAYMENTS_ENABLED ? (
             <PaymentMethods value={method} onChange={setMethod} />
           ) : (
             <div className="rounded-xl border border-brand-gold/30 bg-brand-gold/5 p-4">
               <p className="text-sm font-semibold text-brand-gold">
-                Próximamente — Contactanos por WhatsApp para coordinar tu pago
+                {t("coming_soon_whatsapp")}
               </p>
               <a
                 href={WHATSAPP_URL}
@@ -198,7 +203,7 @@ export function CheckoutForm() {
                 rel="noopener noreferrer"
                 className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
               >
-                Escribir por WhatsApp
+                {t("write_whatsapp")}
               </a>
               <div className="pointer-events-none mt-4 select-none opacity-40" aria-hidden>
                 <PaymentMethods value={method} onChange={setMethod} />
@@ -208,16 +213,16 @@ export function CheckoutForm() {
         </section>
 
         <section>
-          <h3 className="mb-3 text-lg font-bold text-brand-white">Cupón</h3>
+          <h3 className="mb-3 text-lg font-bold text-brand-white">{t("coupon")}</h3>
           {showWelcomeCoupon && (
             <p className="mb-2 flex items-center gap-1.5 text-sm text-brand-gold">
-              <Tag size={14} /> ¡Tienes un cupón de bienvenida de $5! Revísalo en tu perfil.
+              <Tag size={14} /> {t("welcome_coupon")}
             </p>
           )}
           <div className="flex gap-2">
-            <Input placeholder="Código de cupón" value={coupon} onChange={(e) => setCoupon(e.target.value)} />
+            <Input placeholder={tCart("coupon_placeholder")} value={coupon} onChange={(e) => setCoupon(e.target.value)} />
             <Button type="button" variant="glass" onClick={applyCoupon}>
-              Aplicar
+              {tCart("apply")}
             </Button>
           </div>
         </section>
@@ -228,10 +233,10 @@ export function CheckoutForm() {
           {PAYMENTS_ENABLED ? (
             <>
               <Button type="submit" variant="primary" className="mt-4 w-full" loading={loading}>
-                Confirmar pedido
+                {t("confirm_order")}
               </Button>
               <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-brand-muted">
-                <ShieldCheck size={14} className="text-cat-boots" /> SSL · Pago 100% seguro
+                <ShieldCheck size={14} className="text-cat-boots" /> {t("ssl_secure")}
               </p>
             </>
           ) : (
@@ -242,10 +247,10 @@ export function CheckoutForm() {
                 rel="noopener noreferrer"
                 className="mt-4 flex w-full items-center justify-center rounded-xl bg-[#25D366] px-4 py-3 text-sm font-semibold text-white transition hover:brightness-110"
               >
-                Contactanos por WhatsApp para coordinar tu pago
+                {t("contact_whatsapp")}
               </a>
               <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-brand-muted">
-                <ShieldCheck size={14} className="text-cat-boots" /> Pagos online próximamente
+                <ShieldCheck size={14} className="text-cat-boots" /> {t("payments_coming_soon")}
               </p>
             </>
           )}

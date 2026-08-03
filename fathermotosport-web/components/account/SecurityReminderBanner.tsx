@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useRouter } from "@/lib/i18n/navigation";
 import { ShieldAlert, X } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useMounted } from "@/lib/hooks/useMounted";
@@ -12,6 +13,7 @@ import apiClient from "@/lib/api/client";
  * No bloquea nada: el usuario puede posponerlo o actualizar cuando quiera.
  */
 export function SecurityReminderBanner() {
+  const t = useTranslations("security");
   const router = useRouter();
   const mounted = useMounted();
   const user = useAuthStore((s) => s.user);
@@ -34,22 +36,22 @@ export function SecurityReminderBanner() {
     <div className="mb-6 flex flex-col items-start gap-3 rounded-2xl border border-brand-gold/30 bg-brand-gold/10 p-4 sm:flex-row sm:items-center">
       <ShieldAlert className="shrink-0 text-brand-gold" size={22} />
       <p className="flex-1 text-sm text-brand-white">
-        Por tu seguridad, te recomendamos actualizar tu contraseña.
+        {t("message")}
       </p>
       <div className="flex items-center gap-2">
         <button
           onClick={() => router.push("/profile?security=password")}
           className="rounded-lg bg-brand-gold px-3 py-1.5 text-xs font-semibold text-brand-carbon transition hover:opacity-90"
         >
-          Actualizar ahora
+          {t("update_now")}
         </button>
         <button
           onClick={remindLater}
           className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-brand-muted transition hover:text-brand-white"
         >
-          Recordármelo después
+          {t("remind_later")}
         </button>
-        <button onClick={remindLater} aria-label="Cerrar" className="p-1 text-brand-muted hover:text-brand-white">
+        <button onClick={remindLater} aria-label={t("close")} className="p-1 text-brand-muted hover:text-brand-white">
           <X size={16} />
         </button>
       </div>

@@ -1,11 +1,13 @@
 "use client";
 
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { useCartStore, type LocalCartItem } from "@/store/cartStore";
 import { formatPrice, getImageUrl } from "@/lib/utils";
 
 export function CartItem({ item }: { item: LocalCartItem }) {
+  const t = useTranslations("cart");
   const updateQuantity = useCartStore((s) => s.updateQuantity);
   const removeItem = useCartStore((s) => s.removeItem);
 
@@ -15,7 +17,7 @@ export function CartItem({ item }: { item: LocalCartItem }) {
         {item.image ? (
           <Image src={getImageUrl(item.image)} alt={item.name} fill className="object-cover" sizes="80px" />
         ) : (
-          <div className="flex h-full items-center justify-center text-xs text-brand-muted">Sin foto</div>
+          <div className="flex h-full items-center justify-center text-xs text-brand-muted">{t("no_photo")}</div>
         )}
       </div>
 
@@ -30,15 +32,20 @@ export function CartItem({ item }: { item: LocalCartItem }) {
             <button
               onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
               className="p-1.5 text-brand-muted hover:text-brand-white"
-              aria-label="Reducir"
+              aria-label={t("decrease")}
             >
               <Minus size={14} />
             </button>
-            <span className="min-w-[28px] text-center text-sm text-brand-white">{item.quantity}</span>
+            <span
+              className="min-w-[28px] text-center text-sm text-brand-white"
+              aria-label={`${t("quantity")}: ${item.quantity}`}
+            >
+              {item.quantity}
+            </span>
             <button
               onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
               className="p-1.5 text-brand-muted hover:text-brand-white"
-              aria-label="Aumentar"
+              aria-label={t("increase")}
             >
               <Plus size={14} />
             </button>
@@ -53,7 +60,7 @@ export function CartItem({ item }: { item: LocalCartItem }) {
       <button
         onClick={() => removeItem(item.variantId)}
         className="self-start p-1 text-brand-muted transition hover:text-brand-red"
-        aria-label="Eliminar"
+        aria-label={t("remove")}
       >
         <Trash2 size={16} />
       </button>

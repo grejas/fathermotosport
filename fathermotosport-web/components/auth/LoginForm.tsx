@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Link, useRouter } from "@/lib/i18n/navigation";
 import { Lock, Mail } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -12,6 +13,8 @@ import { GoogleButton } from "./GoogleButton";
 import toast from "react-hot-toast";
 
 export function LoginForm() {
+  const t = useTranslations("auth");
+  const tCommon = useTranslations("common");
   const router = useRouter();
   const params = useSearchParams();
   const login = useLogin();
@@ -26,12 +29,12 @@ export function LoginForm() {
 
     try {
       await login.mutateAsync(form);
-      toast.success("¡Bienvenido de vuelta!");
+      toast.success(t("welcome_back"));
       router.push(params.get("redirect") ?? "/profile");
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { message?: string } } }).response?.data?.message ??
-        "Credenciales incorrectas.";
+        t("invalid_credentials");
       toast.error(message);
     }
   };
@@ -39,7 +42,7 @@ export function LoginForm() {
   return (
     <form onSubmit={submit} className="space-y-4">
       <Input
-        label="Email"
+        label={t("email")}
         type="email"
         name="email"
         value={form.email}
@@ -49,7 +52,7 @@ export function LoginForm() {
         placeholder="tu@email.com"
       />
       <Input
-        label="Contraseña"
+        label={t("password")}
         type="password"
         name="password"
         value={form.password}
@@ -61,26 +64,26 @@ export function LoginForm() {
 
       <div className="flex justify-end">
         <Link href="/forgot-password" className="text-sm text-brand-red hover:underline">
-          ¿Olvidaste tu contraseña?
+          {t("forgot_password")}
         </Link>
       </div>
 
       <Button type="submit" variant="primary" className="w-full" loading={login.isPending}>
-        Ingresar
+        {t("login")}
       </Button>
 
       <div className="flex items-center gap-3 py-1">
         <span className="h-px flex-1 bg-white/10" />
-        <span className="text-xs text-brand-muted">o</span>
+        <span className="text-xs text-brand-muted">{tCommon("or")}</span>
         <span className="h-px flex-1 bg-white/10" />
       </div>
 
       <GoogleButton />
 
       <p className="text-center text-sm text-brand-muted">
-        ¿No tienes cuenta?{" "}
+        {t("no_account")}{" "}
         <Link href="/register" className="font-semibold text-brand-red hover:underline">
-          Crear cuenta
+          {t("register")}
         </Link>
       </p>
     </form>
