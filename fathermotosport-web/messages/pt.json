@@ -41,7 +41,17 @@
     "popular": "Populares",
     "no_products": "Nenhum produto encontrado.",
     "clear_filters": "Limpar filtros",
-    "all": "Todos"
+    "all": "Todos",
+    "type": "Tipo",
+    "brands": "Marcas",
+    "price": "Preço",
+    "certification": "Certificação",
+    "integral": "Integral",
+    "modular": "Modular",
+    "off_road": "Off-Road",
+    "adventure": "Adventure",
+    "ece": "ECE 22.06",
+    "dot": "DOT"
   },
   "home": {
     "hero_title": "Equipe-se como um",

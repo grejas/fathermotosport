@@ -13,8 +13,17 @@ export interface CatalogFilterState {
   certifications: string[];
 }
 
-const types = ["todos", "integral", "modular", "off-road", "adventure"];
-const certs = ["ECE 22.06", "DOT"];
+const types = [
+  { value: "todos", key: "all" },
+  { value: "integral", key: "integral" },
+  { value: "modular", key: "modular" },
+  { value: "off-road", key: "off_road" },
+  { value: "adventure", key: "adventure" },
+] as const;
+const certs = [
+  { value: "ECE 22.06", key: "ece" },
+  { value: "DOT", key: "dot" },
+] as const;
 
 interface Props {
   brands: Brand[];
@@ -52,26 +61,26 @@ export function CatalogFilters({ brands, value, onChange, onClear }: Props) {
   return (
     <aside className="w-full shrink-0 space-y-6 lg:w-[220px]">
       <div>
-        <h4 className="mb-2 text-sm font-bold text-brand-white">Tipo</h4>
+        <h4 className="mb-2 text-sm font-bold text-brand-white">{t("type")}</h4>
         <div className="flex flex-col gap-1">
           {types.map((type) => (
             <button
-              key={type}
-              onClick={() => apply({ type })}
+              key={type.value}
+              onClick={() => apply({ type: type.value })}
               className={`rounded-lg px-2 py-1.5 text-left text-sm capitalize transition ${
-                local.type === type
+                local.type === type.value
                   ? "bg-brand-red/15 text-brand-red"
                   : "text-brand-muted hover:text-brand-white"
               }`}
             >
-              {type === "todos" ? t("all") : type}
+              {t(type.key)}
             </button>
           ))}
         </div>
       </div>
 
       <div>
-        <h4 className="mb-2 text-sm font-bold text-brand-white">Marcas</h4>
+        <h4 className="mb-2 text-sm font-bold text-brand-white">{t("brands")}</h4>
         <div className="flex max-h-48 flex-col gap-1.5 overflow-y-auto">
           {brands.map((b) => (
             <label key={b.id} className="flex items-center gap-2 text-sm text-brand-muted">
@@ -88,7 +97,7 @@ export function CatalogFilters({ brands, value, onChange, onClear }: Props) {
       </div>
 
       <div>
-        <h4 className="mb-2 text-sm font-bold text-brand-white">Precio</h4>
+        <h4 className="mb-2 text-sm font-bold text-brand-white">{t("price")}</h4>
         <div className="flex items-center gap-2">
           <input
             type="number"
@@ -109,17 +118,17 @@ export function CatalogFilters({ brands, value, onChange, onClear }: Props) {
       </div>
 
       <div>
-        <h4 className="mb-2 text-sm font-bold text-brand-white">Certificación</h4>
+        <h4 className="mb-2 text-sm font-bold text-brand-white">{t("certification")}</h4>
         <div className="flex flex-col gap-1.5">
           {certs.map((c) => (
-            <label key={c} className="flex items-center gap-2 text-sm text-brand-muted">
+            <label key={c.value} className="flex items-center gap-2 text-sm text-brand-muted">
               <input
                 type="checkbox"
-                checked={local.certifications.includes(c)}
-                onChange={() => toggleCert(c)}
+                checked={local.certifications.includes(c.value)}
+                onChange={() => toggleCert(c.value)}
                 className="accent-brand-red"
               />
-              {c}
+              {t(c.key)}
             </label>
           ))}
         </div>

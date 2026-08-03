@@ -41,7 +41,17 @@
     "popular": "Popular",
     "no_products": "No products found.",
     "clear_filters": "Clear filters",
-    "all": "All"
+    "all": "All",
+    "type": "Type",
+    "brands": "Brands",
+    "price": "Price",
+    "certification": "Certification",
+    "integral": "Full-face",
+    "modular": "Modular",
+    "off_road": "Off-Road",
+    "adventure": "Adventure",
+    "ece": "ECE 22.06",
+    "dot": "DOT"
   },
   "home": {
     "hero_title": "Gear up like a",
