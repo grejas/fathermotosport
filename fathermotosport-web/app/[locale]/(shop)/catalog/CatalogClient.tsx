@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/lib/i18n/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { LayoutGrid, List } from "lucide-react";
 import { getProducts } from "@/lib/api/products";
 import { getBrands } from "@/lib/api/catalog";
@@ -52,6 +52,7 @@ export function CatalogClient() {
     staleTime: 0,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
+    placeholderData: keepPreviousData,
   });
 
   const { data: brands } = useQuery({ queryKey: ["brands"], queryFn: getBrands });
