@@ -45,7 +45,7 @@ class ProductResource extends Resource
                         ->label('Nombre')
                         ->required()
                         ->maxLength(255)
-                        ->live(debounce: 500)
+                        ->live(onBlur: true)
                         ->afterStateUpdated(function (Get $get, Set $set, ?string $state) {
                             $set('slug', Str::slug($state ?? ''));
 
@@ -236,7 +236,7 @@ class ProductResource extends Resource
                         ->schema([
                             Forms\Components\TextInput::make('color')
                                 ->label('Color')
-                                ->live(debounce: 500)
+                                ->live(onBlur: true)
                                 ->afterStateUpdated(fn (Get $get, Set $set) => $set(
                                     'sku',
                                     static::generarSkuVariante($get('../../sku'), $get('size'), $get('color'))
@@ -245,7 +245,7 @@ class ProductResource extends Resource
                                 ->label('Talla')
                                 ->placeholder('Ej: M, L, XL, 57-58, Único...')
                                 ->nullable()
-                                ->live(debounce: 500)
+                                ->live(onBlur: true)
                                 ->afterStateUpdated(fn (Get $get, Set $set) => $set(
                                     'sku',
                                     static::generarSkuVariante($get('../../sku'), $get('size'), $get('color'))
