@@ -35,13 +35,12 @@ export function SpinGallery({ spinUrl, images, name }: SpinGalleryProps) {
         </div>
       ) : (
         <>
-          <iframe
-            src={spinUrl}
-            width="100%"
-            height="100%"
-            frameBorder="0"
-            allowFullScreen
-            className="aspect-square w-full overflow-hidden rounded-2xl border border-white/10 bg-brand-dark"
+          <div
+            className="Sirv aspect-square w-full overflow-hidden rounded-2xl border border-white/10 bg-brand-dark"
+            data-src={spinUrl}
+            data-option-loop="true"
+            data-option-autoplay="true"
+            data-option-speed="50"
           />
           <Script
             src="https://scripts.sirv.com/sirvjs/v3/sirv.js"
