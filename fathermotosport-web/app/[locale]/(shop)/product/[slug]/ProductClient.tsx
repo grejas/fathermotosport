@@ -6,6 +6,7 @@ import { Eye } from "lucide-react";
 import { useProduct } from "@/lib/hooks/useProducts";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { Product3DGallery } from "@/components/product/Product3DGallery";
+import { SpinGallery } from "@/components/product/SpinGallery";
 import { ProductInfo } from "@/components/product/ProductInfo";
 import { ProductTabs } from "@/components/product/ProductTabs";
 import { RelatedProducts } from "@/components/product/RelatedProducts";
@@ -72,13 +73,10 @@ export function ProductClient({ slug }: { slug: string }) {
       <div className="grid gap-10 lg:grid-cols-2">
         <div>
           {product.spin_url ? (
-            <iframe
-              src={product.spin_url}
-              width="100%"
-              height="100%"
-              frameBorder="0"
-              allowFullScreen
-              className="aspect-square w-full rounded-2xl"
+            <SpinGallery
+              spinUrl={product.spin_url}
+              images={product.images ?? []}
+              name={displayProduct.name}
             />
           ) : product.has_3d_model && product.model_3d ? (
             <Product3DGallery
