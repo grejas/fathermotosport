@@ -71,7 +71,16 @@ export function ProductClient({ slug }: { slug: string }) {
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-24 sm:px-6">
       <div className="grid gap-10 lg:grid-cols-2">
         <div>
-          {product.has_3d_model && product.model_3d ? (
+          {product.spin_url ? (
+            <iframe
+              src={product.spin_url}
+              width="100%"
+              height="100%"
+              frameBorder="0"
+              allowFullScreen
+              className="aspect-square w-full rounded-2xl"
+            />
+          ) : product.has_3d_model && product.model_3d ? (
             <Product3DGallery
               modelUrl={product.model_3d.file_glb_url}
               images={product.images ?? []}

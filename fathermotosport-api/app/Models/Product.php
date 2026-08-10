@@ -35,6 +35,7 @@ class Product extends Model
         'is_popular',
         'specs',
         'certification',
+        'spin_url',
     ];
 
     protected $casts = [

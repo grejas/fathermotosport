@@ -187,6 +187,15 @@ class ProductResource extends Resource
                 ->collapsible()
                 ->collapsed()
                 ->schema([
+                    // Campo directo del producto (no pertenece a la relación model3d):
+                    // si está completo, la web muestra este spin 360° en vez del
+                    // visor 3D o la galería de fotos.
+                    Forms\Components\TextInput::make('spin_url')
+                        ->label('URL del Spin 360° (Sirv)')
+                        ->placeholder('https://mycompany.sirv.com/spin.html?...')
+                        ->url()
+                        ->nullable()
+                        ->helperText('Si se completa, reemplaza al visor 3D y a la galería de fotos en la página del producto.'),
                     Forms\Components\Group::make()
                         // Solo se crea/actualiza el registro model3d cuando hay un GLB.
                         // Sin esta condición, guardar un producto sin 3D intentaría

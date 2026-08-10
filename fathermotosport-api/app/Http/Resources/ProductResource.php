@@ -28,6 +28,7 @@ class ProductResource extends JsonResource
             'is_popular' => $this->is_popular,
             'specs' => $this->specs,
             'certification' => $this->certification,
+            'spin_url' => $this->spin_url,
 
             // Campos calculados
             'discount_percent' => $this->discount_percent,

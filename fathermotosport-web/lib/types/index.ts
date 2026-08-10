@@ -117,6 +117,7 @@ export interface Product {
   is_popular: boolean;
   specs: Record<string, string> | null;
   certification: string | null;
+  spin_url?: string | null;
   discount_percent: number;
   primary_image: string | null;
   has_3d_model: boolean;
