@@ -34,7 +34,7 @@ export function SpinGallery({ spinUrl, images, name }: SpinGalleryProps) {
         </div>
       ) : (
         <iframe
-          src={`${spinUrl}?autoplay=1&loop=1&speed=50`}
+          src={`${spinUrl}?image.type=webp&spin.speed=20&spin.loop=true&spin.autoplay=true`}
           width="100%"
           height="100%"
           frameBorder="0"
