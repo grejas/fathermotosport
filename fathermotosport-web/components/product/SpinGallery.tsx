@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Script from "next/script";
 import { RotateCw } from "lucide-react";
 import type { ProductImage } from "@/lib/types";
 import { cn, getImageUrl } from "@/lib/utils";
@@ -33,14 +34,20 @@ export function SpinGallery({ spinUrl, images, name }: SpinGalleryProps) {
           />
         </div>
       ) : (
-        <iframe
-          src={`${spinUrl}?image.type=webp&spin.speed=20&spin.loop=true&spin.autoplay=true`}
-          width="100%"
-          height="100%"
-          frameBorder="0"
-          allowFullScreen
-          className="aspect-square w-full overflow-hidden rounded-2xl border border-white/10 bg-brand-dark"
-        />
+        <>
+          <iframe
+            src={spinUrl}
+            width="100%"
+            height="100%"
+            frameBorder="0"
+            allowFullScreen
+            className="aspect-square w-full overflow-hidden rounded-2xl border border-white/10 bg-brand-dark"
+          />
+          <Script
+            src="https://scripts.sirv.com/sirvjs/v3/sirv.js"
+            strategy="afterInteractive"
+          />
+        </>
       )}
 
       <div className="flex gap-2 overflow-x-auto">
