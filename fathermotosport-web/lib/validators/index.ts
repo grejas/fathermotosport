@@ -6,6 +6,25 @@ export const isEmail = (value: string): boolean =>
 export const minLength = (value: string, length: number): boolean =>
   value.trim().length >= length;
 
+export interface PasswordRequirement {
+  key: "length" | "uppercase" | "lowercase" | "number" | "symbol";
+  met: boolean;
+}
+
+const PASSWORD_RULES: { key: PasswordRequirement["key"]; test: (v: string) => boolean }[] = [
+  { key: "length", test: (v) => v.length >= 8 },
+  { key: "uppercase", test: (v) => /[A-Z]/.test(v) },
+  { key: "lowercase", test: (v) => /[a-z]/.test(v) },
+  { key: "number", test: (v) => /\d/.test(v) },
+  { key: "symbol", test: (v) => /[@$!%*?&]/.test(v) },
+];
+
+export const getPasswordRequirements = (password: string): PasswordRequirement[] =>
+  PASSWORD_RULES.map((rule) => ({ key: rule.key, met: rule.test(password) }));
+
+export const isStrongPassword = (password: string): boolean =>
+  PASSWORD_RULES.every((rule) => rule.test(password));
+
 export interface FieldErrors {
   [key: string]: string | undefined;
 }
@@ -28,7 +47,7 @@ export function validateRegister(data: {
   const errors: FieldErrors = {};
   // Nombre y apellido son opcionales; solo email y contraseña son obligatorios.
   if (!isEmail(data.email)) errors.email = "Ingresa un email válido.";
-  if (!minLength(data.password, 8)) errors.password = "Mínimo 8 caracteres.";
+  if (!isStrongPassword(data.password)) errors.password = "La contraseña no cumple los requisitos.";
   if (data.password !== data.password_confirmation)
     errors.password_confirmation = "Las contraseñas no coinciden.";
   return errors;

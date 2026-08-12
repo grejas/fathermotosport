@@ -19,7 +19,7 @@ class RegisterRequest extends FormRequest
             'birth_date' => ['nullable', 'date', 'before:today', 'after:1900-01-01'],
             'phone' => ['nullable', 'string', 'max:20'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'string', 'min:8', 'confirmed', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/'],
             'recaptcha_token' => ['required', 'string'],
         ];
     }

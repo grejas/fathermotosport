@@ -3,13 +3,28 @@
 import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import ReCAPTCHA from "react-google-recaptcha";
+import { Check, X } from "lucide-react";
 import { Link, useRouter } from "@/lib/i18n/navigation";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { useRegister } from "@/lib/hooks/useAuth";
-import { validateRegister, hasErrors, type FieldErrors } from "@/lib/validators";
+import {
+  validateRegister,
+  hasErrors,
+  getPasswordRequirements,
+  isStrongPassword,
+  type FieldErrors,
+} from "@/lib/validators";
 import { GoogleButton } from "./GoogleButton";
 import toast from "react-hot-toast";
+
+const PASSWORD_REQUIREMENT_LABELS = {
+  length: "password_req_length",
+  uppercase: "password_req_uppercase",
+  lowercase: "password_req_lowercase",
+  number: "password_req_number",
+  symbol: "password_req_symbol",
+} as const;
 
 const empty = {
   email: "",
@@ -31,6 +46,8 @@ export function RegisterForm() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const captchaRef = useRef<ReCAPTCHA>(null);
+  const passwordRequirements = getPasswordRequirements(form.password);
+  const passwordValid = isStrongPassword(form.password);
 
   const update = (field: keyof typeof empty, value: string) => {
     const next = { ...form, [field]: value };
@@ -92,15 +109,32 @@ export function RegisterForm() {
         error={errors.email}
         placeholder="tu@email.com"
       />
-      <Input
-        label={t("password")}
-        type="password"
-        name="password"
-        value={form.password}
-        onChange={(e) => update("password", e.target.value)}
-        error={errors.password}
-        hint={t("min_password_hint")}
-      />
+      <div>
+        <Input
+          label={t("password")}
+          type="password"
+          name="password"
+          value={form.password}
+          onChange={(e) => update("password", e.target.value)}
+        />
+        <ul className="mt-2 space-y-1">
+          {passwordRequirements.map((req) => (
+            <li
+              key={req.key}
+              className={`flex items-center gap-1.5 text-xs ${
+                req.met ? "text-green-500" : "text-brand-muted"
+              }`}
+            >
+              {req.met ? (
+                <Check className="h-3.5 w-3.5 shrink-0" />
+              ) : (
+                <X className="h-3.5 w-3.5 shrink-0" />
+              )}
+              {t(PASSWORD_REQUIREMENT_LABELS[req.key])}
+            </li>
+          ))}
+        </ul>
+      </div>
       <Input
         label={t("confirm_password")}
         type="password"
@@ -164,7 +198,7 @@ export function RegisterForm() {
         variant="primary"
         className="w-full"
         loading={register.isPending}
-        disabled={!captchaToken}
+        disabled={!captchaToken || !passwordValid}
       >
         {t("register")}
       </Button>

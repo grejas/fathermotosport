@@ -175,7 +175,12 @@
     "check_inbox": "Verifique sua caixa de entrada para continuar.",
     "send_link": "Enviar link",
     "back_to_login": "Voltar para o login",
-    "captcha_required": "Confirme que você não é um robô."
+    "captcha_required": "Confirme que você não é um robô.",
+    "password_req_length": "Mínimo de 8 caracteres",
+    "password_req_uppercase": "Pelo menos uma letra maiúscula",
+    "password_req_lowercase": "Pelo menos uma letra minúscula",
+    "password_req_number": "Pelo menos um número",
+    "password_req_symbol": "Pelo menos um símbolo (!@#$%^&*)"
   },
   "favorites": {
     "my_favorites": "Meus favoritos",

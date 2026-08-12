@@ -175,7 +175,12 @@
     "check_inbox": "Check your inbox to continue.",
     "send_link": "Send link",
     "back_to_login": "Back to sign in",
-    "captcha_required": "Please confirm you're not a robot."
+    "captcha_required": "Please confirm you're not a robot.",
+    "password_req_length": "At least 8 characters",
+    "password_req_uppercase": "At least one uppercase letter",
+    "password_req_lowercase": "At least one lowercase letter",
+    "password_req_number": "At least one number",
+    "password_req_symbol": "At least one symbol (!@#$%^&*)"
   },
   "favorites": {
     "my_favorites": "My favorites",
