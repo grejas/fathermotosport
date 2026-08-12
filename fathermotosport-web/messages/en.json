@@ -174,7 +174,8 @@
     "reset_email_error": "Couldn't send the email.",
     "check_inbox": "Check your inbox to continue.",
     "send_link": "Send link",
-    "back_to_login": "Back to sign in"
+    "back_to_login": "Back to sign in",
+    "captcha_required": "Please confirm you're not a robot."
   },
   "favorites": {
     "my_favorites": "My favorites",

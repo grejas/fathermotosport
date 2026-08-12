@@ -14,6 +14,7 @@ export interface RegisterPayload {
   birth_date?: string;
   password: string;
   password_confirmation: string;
+  recaptcha_token: string;
 }
 
 export async function login(payload: LoginPayload): Promise<AuthResponse> {

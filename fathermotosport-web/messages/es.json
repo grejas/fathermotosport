@@ -174,7 +174,8 @@
     "reset_email_error": "No se pudo enviar el correo.",
     "check_inbox": "Revisa tu bandeja de entrada para continuar.",
     "send_link": "Enviar enlace",
-    "back_to_login": "Volver a ingresar"
+    "back_to_login": "Volver a ingresar",
+    "captcha_required": "Confirma que no eres un robot."
   },
   "favorites": {
     "my_favorites": "Mis favoritos",

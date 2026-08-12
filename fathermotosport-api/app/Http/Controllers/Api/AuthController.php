@@ -15,6 +15,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
@@ -34,6 +35,8 @@ class AuthController extends Controller
      */
     public function register(RegisterRequest $request): JsonResponse
     {
+        $this->verifyRecaptcha($request->validated('recaptcha_token'));
+
         $clienteRole = Role::where('slug', 'cliente')->firstOrFail();
 
         $user = User::create([
@@ -62,6 +65,24 @@ class AuthController extends Controller
             ],
             'token' => $token,
         ], 201);
+    }
+
+    /**
+     * Verifica el token de reCAPTCHA v2 contra la API de Google.
+     * Lanza ValidationException (→ 422) si la verificación falla.
+     */
+    private function verifyRecaptcha(string $token): void
+    {
+        $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
+            'secret' => config('services.recaptcha.secret_key'),
+            'response' => $token,
+        ]);
+
+        if (! $response->successful() || $response->json('success') !== true) {
+            throw ValidationException::withMessages([
+                'recaptcha_token' => ['La verificación de reCAPTCHA falló. Intenta nuevamente.'],
+            ]);
+        }
     }
 
     /**

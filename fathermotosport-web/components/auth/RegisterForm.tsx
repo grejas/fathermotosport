@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import ReCAPTCHA from "react-google-recaptcha";
 import { Link, useRouter } from "@/lib/i18n/navigation";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -28,6 +29,8 @@ export function RegisterForm() {
   const register = useRegister();
   const [form, setForm] = useState(empty);
   const [errors, setErrors] = useState<FieldErrors>({});
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const captchaRef = useRef<ReCAPTCHA>(null);
 
   const update = (field: keyof typeof empty, value: string) => {
     const next = { ...form, [field]: value };
@@ -41,6 +44,11 @@ export function RegisterForm() {
     setErrors(v);
     if (hasErrors(v)) return;
 
+    if (!captchaToken) {
+      toast.error(t("captcha_required"));
+      return;
+    }
+
     try {
       // Solo se envían los campos opcionales que el usuario completó.
       const res = await register.mutateAsync({
@@ -51,6 +59,7 @@ export function RegisterForm() {
         last_name: form.last_name || undefined,
         birth_date: form.birth_date || undefined,
         phone: form.phone || undefined,
+        recaptcha_token: captchaToken,
       });
       toast.success(
         t("account_created", { amount: res.welcome_coupon?.value ?? "5" }),
@@ -66,6 +75,8 @@ export function RegisterForm() {
         setErrors(mapped);
       }
       toast.error(data?.message ?? t("account_create_error"));
+      captchaRef.current?.reset();
+      setCaptchaToken(null);
     }
   };
 
@@ -139,7 +150,22 @@ export function RegisterForm() {
         </div>
       </div>
 
-      <Button type="submit" variant="primary" className="w-full" loading={register.isPending}>
+      <div className="flex justify-center">
+        <ReCAPTCHA
+          ref={captchaRef}
+          sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ?? ""}
+          onChange={(token) => setCaptchaToken(token)}
+          onExpired={() => setCaptchaToken(null)}
+        />
+      </div>
+
+      <Button
+        type="submit"
+        variant="primary"
+        className="w-full"
+        loading={register.isPending}
+        disabled={!captchaToken}
+      >
         {t("register")}
       </Button>
 

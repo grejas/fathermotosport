@@ -14,12 +14,13 @@ class RegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'first_name' => ['nullable', 'string', 'max:80'],
-            'last_name' => ['nullable', 'string', 'max:80'],
+            'first_name' => ['nullable', 'string', 'max:50', 'regex:/^[a-zA-ZÀ-ÿ\s]+$/'],
+            'last_name' => ['nullable', 'string', 'max:50', 'regex:/^[a-zA-ZÀ-ÿ\s]+$/'],
             'birth_date' => ['nullable', 'date', 'before:today', 'after:1900-01-01'],
             'phone' => ['nullable', 'string', 'max:20'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'recaptcha_token' => ['required', 'string'],
         ];
     }
 }

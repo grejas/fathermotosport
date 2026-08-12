@@ -63,6 +63,10 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URL'),
     ],
 
+    'recaptcha' => [
+        'secret_key' => env('RECAPTCHA_SECRET_KEY'),
+    ],
+
     'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
 
 ];
