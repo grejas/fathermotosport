@@ -36,6 +36,19 @@ export function validateLogin(data: { email: string; password: string }): FieldE
   return errors;
 }
 
+const NAME_REGEX = /^[a-zA-ZÀ-ÿ\s]+$/;
+const PHONE_REGEX = /^[+\d\s\-()]+$/;
+
+const isValidName = (value: string): boolean => {
+  const v = value.trim();
+  return v.length > 0 && v.length <= 25 && NAME_REGEX.test(v);
+};
+
+const isValidPhone = (value: string): boolean => {
+  const v = value.trim();
+  return v.length >= 7 && v.length <= 20 && PHONE_REGEX.test(v);
+};
+
 export function validateRegister(data: {
   first_name: string;
   last_name: string;
@@ -45,11 +58,16 @@ export function validateRegister(data: {
   password_confirmation: string;
 }): FieldErrors {
   const errors: FieldErrors = {};
-  // Nombre y apellido son opcionales; solo email y contraseña son obligatorios.
   if (!isEmail(data.email)) errors.email = "Ingresa un email válido.";
   if (!isStrongPassword(data.password)) errors.password = "La contraseña no cumple los requisitos.";
   if (data.password !== data.password_confirmation)
     errors.password_confirmation = "Las contraseñas no coinciden.";
+  if (!isValidName(data.first_name))
+    errors.first_name = "El nombre solo puede contener letras (máx. 25 caracteres).";
+  if (!isValidName(data.last_name))
+    errors.last_name = "El apellido solo puede contener letras (máx. 25 caracteres).";
+  if (data.phone && data.phone.trim() && !isValidPhone(data.phone))
+    errors.phone = "Ingresa un número válido con código de país (ej: +591 68736384).";
   return errors;
 }
 

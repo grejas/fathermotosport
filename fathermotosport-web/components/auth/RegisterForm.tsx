@@ -67,13 +67,12 @@ export function RegisterForm() {
     }
 
     try {
-      // Solo se envían los campos opcionales que el usuario completó.
       const res = await register.mutateAsync({
         email: form.email,
         password: form.password,
         password_confirmation: form.password_confirmation,
-        first_name: form.first_name || undefined,
-        last_name: form.last_name || undefined,
+        first_name: form.first_name.trim(),
+        last_name: form.last_name.trim(),
         birth_date: form.birth_date || undefined,
         phone: form.phone || undefined,
         recaptcha_token: captchaToken,
@@ -109,6 +108,24 @@ export function RegisterForm() {
         error={errors.email}
         placeholder="tu@email.com"
       />
+      <div className="grid grid-cols-2 gap-3">
+        <Input
+          label={tCheckout("first_name")}
+          name="first_name"
+          value={form.first_name}
+          onChange={(e) => update("first_name", e.target.value)}
+          error={errors.first_name}
+          maxLength={25}
+        />
+        <Input
+          label={tCheckout("last_name")}
+          name="last_name"
+          value={form.last_name}
+          onChange={(e) => update("last_name", e.target.value)}
+          error={errors.last_name}
+          maxLength={25}
+        />
+      </div>
       <div>
         <Input
           label={t("password")}
@@ -151,22 +168,6 @@ export function RegisterForm() {
         </p>
         <div className="grid grid-cols-2 gap-3">
           <Input
-            label={tCheckout("first_name")}
-            name="first_name"
-            value={form.first_name}
-            onChange={(e) => update("first_name", e.target.value)}
-            placeholder={t("optional")}
-          />
-          <Input
-            label={tCheckout("last_name")}
-            name="last_name"
-            value={form.last_name}
-            onChange={(e) => update("last_name", e.target.value)}
-            placeholder={t("optional")}
-          />
-        </div>
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          <Input
             label={t("birth_date")}
             type="date"
             name="birth_date"
@@ -179,7 +180,9 @@ export function RegisterForm() {
             name="phone"
             value={form.phone}
             onChange={(e) => update("phone", e.target.value)}
-            placeholder={t("optional")}
+            error={errors.phone}
+            placeholder="+591 68736384 o +55 11 99999-9999"
+            maxLength={20}
           />
         </div>
       </div>
