@@ -43,8 +43,8 @@ Route::prefix('v1')->group(function () {
     // Colores de visor para cascos
     Route::get('/visor-colors', [VisorColorController::class, 'index']);
 
-    // Autenticación (rate limiting: 10 intentos por minuto y por IP)
-    Route::middleware('throttle:10,1')->group(function () {
+    // Autenticación (rate limiting: 5 intentos por minuto y por IP, contra fuerza bruta)
+    Route::middleware('throttle:5,1')->group(function () {
         Route::post('/auth/register', [AuthController::class, 'register']);
         Route::post('/auth/login', [AuthController::class, 'login']);
         Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
