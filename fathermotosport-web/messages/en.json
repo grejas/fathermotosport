@@ -180,7 +180,18 @@
     "password_req_uppercase": "At least one uppercase letter",
     "password_req_lowercase": "At least one lowercase letter",
     "password_req_number": "At least one number",
-    "password_req_symbol": "At least one symbol (!@#$%^&*)"
+    "password_req_symbol": "At least one symbol (!@#$%^&*)",
+    "send_code": "Send code",
+    "code_sent": "We sent a code to your email.",
+    "code_send_error": "Couldn't send the code.",
+    "verify_code_title": "Verify your email",
+    "verify_code_desc": "We sent a 6-digit code to {email}. Enter it to finish creating your account.",
+    "code_label": "Verification code",
+    "code_required_error": "Enter the 6-digit code.",
+    "code_expires_hint": "The code expires in 10 minutes.",
+    "verify_and_create": "Verify & create account",
+    "verify_error": "Couldn't verify the code.",
+    "back_to_form": "Back"
   },
   "favorites": {
     "my_favorites": "My favorites",

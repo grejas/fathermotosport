@@ -3,7 +3,11 @@
 import { useMutation } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/authStore";
 import * as authApi from "@/lib/api/auth";
-import type { LoginPayload, RegisterPayload } from "@/lib/api/auth";
+import type {
+  LoginPayload,
+  SendVerificationCodePayload,
+  VerifyAndRegisterPayload,
+} from "@/lib/api/auth";
 
 /** Estado de autenticación reactivo. */
 export function useAuth() {
@@ -21,10 +25,16 @@ export function useLogin() {
   });
 }
 
-export function useRegister() {
+export function useSendVerificationCode() {
+  return useMutation({
+    mutationFn: (payload: SendVerificationCodePayload) => authApi.sendVerificationCode(payload),
+  });
+}
+
+export function useVerifyAndRegister() {
   const registerUser = useAuthStore((s) => s.registerUser);
   return useMutation({
-    mutationFn: (payload: RegisterPayload) => authApi.register(payload),
+    mutationFn: (payload: VerifyAndRegisterPayload) => authApi.verifyAndRegister(payload),
     onSuccess: (data) => registerUser({ user: data.user, token: data.token }),
   });
 }

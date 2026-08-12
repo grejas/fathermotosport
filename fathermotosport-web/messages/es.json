@@ -180,7 +180,18 @@
     "password_req_uppercase": "Al menos una mayúscula",
     "password_req_lowercase": "Al menos una minúscula",
     "password_req_number": "Al menos un número",
-    "password_req_symbol": "Al menos un símbolo (!@#$%^&*)"
+    "password_req_symbol": "Al menos un símbolo (!@#$%^&*)",
+    "send_code": "Enviar código",
+    "code_sent": "Te enviamos un código a tu email.",
+    "code_send_error": "No se pudo enviar el código.",
+    "verify_code_title": "Verifica tu email",
+    "verify_code_desc": "Te enviamos un código de 6 dígitos a {email}. Ingrésalo para completar tu registro.",
+    "code_label": "Código de verificación",
+    "code_required_error": "Ingresa el código de 6 dígitos.",
+    "code_expires_hint": "El código vence en 10 minutos.",
+    "verify_and_create": "Verificar y crear cuenta",
+    "verify_error": "No se pudo verificar el código.",
+    "back_to_form": "Volver"
   },
   "favorites": {
     "my_favorites": "Mis favoritos",

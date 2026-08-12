@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\ForgotPasswordRequest;
 use App\Http\Requests\Auth\LoginRequest;
-use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\SendVerificationCodeRequest;
+use App\Http\Requests\Auth\VerifyAndRegisterRequest;
 use App\Http\Resources\UserResource;
+use App\Models\EmailVerificationCode;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\CouponService;
@@ -31,11 +33,53 @@ class AuthController extends Controller
     }
 
     /**
-     * Registra un cliente, genera su cupón de bienvenida de $5 y devuelve un token.
+     * Paso 1 del registro: verifica el reCAPTCHA y envía un código de 6 dígitos
+     * (válido 10 minutos) al email indicado. Aún no crea la cuenta.
      */
-    public function register(RegisterRequest $request): JsonResponse
+    public function sendVerificationCode(SendVerificationCodeRequest $request): JsonResponse
     {
         $this->verifyRecaptcha($request->validated('recaptcha_token'));
+
+        // Invalida cualquier código anterior pendiente para este email.
+        EmailVerificationCode::where('email', $request->email)
+            ->whereNull('used_at')
+            ->update(['used_at' => now()]);
+
+        $code = (string) random_int(100000, 999999);
+
+        EmailVerificationCode::create([
+            'email' => $request->email,
+            'code' => $code,
+            'expires_at' => now()->addMinutes(10),
+        ]);
+
+        $this->emails->sendVerificationCode($request->email, $code);
+
+        return response()->json([
+            'message' => 'Te enviamos un código de verificación a tu email.',
+        ]);
+    }
+
+    /**
+     * Paso 2 del registro: valida el código de verificación y, si es correcto,
+     * crea al cliente, genera su cupón de bienvenida de $5 y devuelve un token.
+     */
+    public function verifyAndRegister(VerifyAndRegisterRequest $request): JsonResponse
+    {
+        $verification = EmailVerificationCode::where('email', $request->email)
+            ->where('code', $request->code)
+            ->whereNull('used_at')
+            ->where('expires_at', '>=', now())
+            ->latest('id')
+            ->first();
+
+        if (! $verification) {
+            throw ValidationException::withMessages([
+                'code' => ['El código es inválido o ha expirado.'],
+            ]);
+        }
+
+        $verification->update(['used_at' => now()]);
 
         $clienteRole = Role::where('slug', 'cliente')->firstOrFail();
 
@@ -48,6 +92,7 @@ class AuthController extends Controller
             'birth_date' => $request->birth_date,
             'password' => Hash::make($request->password),
             'status' => 'active',
+            'email_verified_at' => now(),
             'last_password_change' => now(),
         ]);
 
@@ -158,7 +203,7 @@ class AuthController extends Controller
 
     /**
      * Callback de Google: crea el usuario si no existe (con cupón + email de
-     * bienvenida, igual que register()) y redirige al frontend con un token.
+     * bienvenida, igual que verifyAndRegister()) y redirige al frontend con un token.
      */
     public function handleGoogleCallback(): RedirectResponse
     {

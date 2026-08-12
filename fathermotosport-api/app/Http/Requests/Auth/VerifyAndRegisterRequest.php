@@ -4,7 +4,7 @@ namespace App\Http\Requests\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class RegisterRequest extends FormRequest
+class VerifyAndRegisterRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -14,19 +14,21 @@ class RegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'code' => ['required', 'digits:6'],
             'first_name' => ['required', 'string', 'max:25', 'regex:/^[a-zA-ZÀ-ÿ\s]+$/'],
             'last_name' => ['required', 'string', 'max:25', 'regex:/^[a-zA-ZÀ-ÿ\s]+$/'],
             'birth_date' => ['nullable', 'date', 'before:today', 'after:1900-01-01'],
             'phone' => ['nullable', 'string', 'min:7', 'max:20', 'regex:/^[\+\d\s\-\(\)]+$/'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/'],
-            'recaptcha_token' => ['required', 'string'],
         ];
     }
 
     public function messages(): array
     {
         return [
+            'code.required' => 'Ingresa el código de verificación.',
+            'code.digits' => 'El código debe tener 6 dígitos.',
             'first_name.required' => 'El nombre es obligatorio.',
             'first_name.regex' => 'El nombre solo puede contener letras (máx. 25 caracteres).',
             'first_name.max' => 'El nombre solo puede contener letras (máx. 25 caracteres).',

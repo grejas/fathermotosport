@@ -6,15 +6,20 @@ export interface LoginPayload {
   password: string;
 }
 
-export interface RegisterPayload {
-  first_name?: string;
-  last_name?: string;
+export interface SendVerificationCodePayload {
   email: string;
+  recaptcha_token: string;
+}
+
+export interface VerifyAndRegisterPayload {
+  email: string;
+  code: string;
+  first_name: string;
+  last_name: string;
   phone?: string;
   birth_date?: string;
   password: string;
   password_confirmation: string;
-  recaptcha_token: string;
 }
 
 export async function login(payload: LoginPayload): Promise<AuthResponse> {
@@ -22,8 +27,18 @@ export async function login(payload: LoginPayload): Promise<AuthResponse> {
   return data;
 }
 
-export async function register(payload: RegisterPayload): Promise<AuthResponse> {
-  const { data } = await apiClient.post<AuthResponse>("/auth/register", payload);
+export async function sendVerificationCode(
+  payload: SendVerificationCodePayload
+): Promise<{ message: string }> {
+  const { data } = await apiClient.post<{ message: string }>(
+    "/auth/send-verification-code",
+    payload
+  );
+  return data;
+}
+
+export async function verifyAndRegister(payload: VerifyAndRegisterPayload): Promise<AuthResponse> {
+  const { data } = await apiClient.post<AuthResponse>("/auth/verify-and-register", payload);
   return data;
 }
 

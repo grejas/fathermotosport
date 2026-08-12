@@ -7,7 +7,7 @@ import { Check, X } from "lucide-react";
 import { Link, useRouter } from "@/lib/i18n/navigation";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { useRegister } from "@/lib/hooks/useAuth";
+import { useSendVerificationCode, useVerifyAndRegister } from "@/lib/hooks/useAuth";
 import {
   validateRegister,
   hasErrors,
@@ -36,13 +36,23 @@ const empty = {
   phone: "",
 };
 
+function extractApiError(
+  err: unknown
+): { message?: string; errors?: Record<string, string[]> } | undefined {
+  return (err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })
+    .response?.data;
+}
+
 export function RegisterForm() {
   const t = useTranslations("auth");
   const tCommon = useTranslations("common");
   const tCheckout = useTranslations("checkout");
   const router = useRouter();
-  const register = useRegister();
+  const sendCode = useSendVerificationCode();
+  const verifyAndRegister = useVerifyAndRegister();
+  const [step, setStep] = useState<"form" | "code">("form");
   const [form, setForm] = useState(empty);
+  const [code, setCode] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const captchaRef = useRef<ReCAPTCHA>(null);
@@ -55,7 +65,15 @@ export function RegisterForm() {
     setErrors(validateRegister(next));
   };
 
-  const submit = async (e: React.FormEvent) => {
+  const backToForm = () => {
+    setStep("form");
+    setCode("");
+    setErrors({});
+    setCaptchaToken(null);
+    captchaRef.current?.reset();
+  };
+
+  const submitForm = async (e: React.FormEvent) => {
     e.preventDefault();
     const v = validateRegister(form);
     setErrors(v);
@@ -67,15 +85,39 @@ export function RegisterForm() {
     }
 
     try {
-      const res = await register.mutateAsync({
+      await sendCode.mutateAsync({ email: form.email, recaptcha_token: captchaToken });
+      toast.success(t("code_sent"));
+      setStep("code");
+    } catch (err: unknown) {
+      const data = extractApiError(err);
+      if (data?.errors) {
+        const mapped: FieldErrors = {};
+        Object.entries(data.errors).forEach(([k, val]) => (mapped[k] = val[0]));
+        setErrors(mapped);
+      }
+      toast.error(data?.message ?? t("code_send_error"));
+      captchaRef.current?.reset();
+      setCaptchaToken(null);
+    }
+  };
+
+  const submitCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (code.length !== 6) {
+      setErrors({ code: t("code_required_error") });
+      return;
+    }
+
+    try {
+      const res = await verifyAndRegister.mutateAsync({
         email: form.email,
-        password: form.password,
-        password_confirmation: form.password_confirmation,
+        code,
         first_name: form.first_name.trim(),
         last_name: form.last_name.trim(),
         birth_date: form.birth_date || undefined,
         phone: form.phone || undefined,
-        recaptcha_token: captchaToken,
+        password: form.password,
+        password_confirmation: form.password_confirmation,
       });
       toast.success(
         t("account_created", { amount: res.welcome_coupon?.value ?? "5" }),
@@ -83,21 +125,63 @@ export function RegisterForm() {
       );
       router.push("/profile");
     } catch (err: unknown) {
-      const data = (err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })
-        .response?.data;
+      const data = extractApiError(err);
       if (data?.errors) {
         const mapped: FieldErrors = {};
         Object.entries(data.errors).forEach(([k, val]) => (mapped[k] = val[0]));
         setErrors(mapped);
       }
-      toast.error(data?.message ?? t("account_create_error"));
-      captchaRef.current?.reset();
-      setCaptchaToken(null);
+      toast.error(data?.message ?? t("verify_error"));
     }
   };
 
+  if (step === "code") {
+    return (
+      <form onSubmit={submitCode} className="space-y-4">
+        <div className="text-center">
+          <p className="text-sm font-semibold text-brand-white">{t("verify_code_title")}</p>
+          <p className="mt-1 text-sm text-brand-muted">
+            {t("verify_code_desc", { email: form.email })}
+          </p>
+        </div>
+
+        <Input
+          label={t("code_label")}
+          name="code"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          value={code}
+          onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+          error={errors.code}
+          hint={t("code_expires_hint")}
+          placeholder="123456"
+          maxLength={6}
+          className="text-center text-lg tracking-[0.5em]"
+        />
+
+        <Button
+          type="submit"
+          variant="primary"
+          className="w-full"
+          loading={verifyAndRegister.isPending}
+          disabled={code.length !== 6}
+        >
+          {t("verify_and_create")}
+        </Button>
+
+        <button
+          type="button"
+          onClick={backToForm}
+          className="w-full text-center text-sm text-brand-muted hover:underline"
+        >
+          {t("back_to_form")}
+        </button>
+      </form>
+    );
+  }
+
   return (
-    <form onSubmit={submit} className="space-y-4">
+    <form onSubmit={submitForm} className="space-y-4">
       {/* Obligatorios */}
       <Input
         label={t("email")}
@@ -200,10 +284,10 @@ export function RegisterForm() {
         type="submit"
         variant="primary"
         className="w-full"
-        loading={register.isPending}
+        loading={sendCode.isPending}
         disabled={!captchaToken || !passwordValid}
       >
-        {t("register")}
+        {t("send_code")}
       </Button>
 
       <div className="flex items-center gap-3 py-1">

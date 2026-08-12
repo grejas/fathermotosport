@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Mail\EmailVerificationCodeMail;
 use App\Mail\OrderConfirmedMail;
 use App\Mail\ShippingUpdateMail;
 use App\Mail\WelcomeMail;
@@ -37,6 +38,14 @@ class EmailService
     public function sendWelcome(User $user, Coupon $coupon): void
     {
         $this->dispatch($user->email, new WelcomeMail($user, $coupon));
+    }
+
+    /**
+     * Código de verificación de email (registro en dos pasos).
+     */
+    public function sendVerificationCode(string $email, string $code): void
+    {
+        $this->dispatch($email, new EmailVerificationCodeMail($code));
     }
 
     /**

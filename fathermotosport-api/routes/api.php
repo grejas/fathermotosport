@@ -45,7 +45,9 @@ Route::prefix('v1')->group(function () {
 
     // Autenticación (rate limiting: 5 intentos por minuto y por IP, contra fuerza bruta)
     Route::middleware('throttle:5,1')->group(function () {
-        Route::post('/auth/register', [AuthController::class, 'register']);
+        // Registro en dos pasos: envía un código de 6 dígitos y luego lo verifica.
+        Route::post('/auth/send-verification-code', [AuthController::class, 'sendVerificationCode']);
+        Route::post('/auth/verify-and-register', [AuthController::class, 'verifyAndRegister']);
         Route::post('/auth/login', [AuthController::class, 'login']);
         Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
     });
