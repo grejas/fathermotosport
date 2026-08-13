@@ -2,8 +2,6 @@
 
 namespace App\Providers\Filament;
 
-use App\Filament\Auth\Login;
-use App\Http\Middleware\AdminRateLimiter;
 use App\Http\Middleware\EnsurePanelAccess;
 use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
@@ -30,8 +28,8 @@ class AdminPanelProvider extends PanelProvider
         $panel = $panel
             ->default()
             ->id('admin')
-            ->path('fms-panel')
-            ->login(Login::class)
+            ->path('admin')
+            ->login()
             ->brandName('FatherMotoSport')
             ->colors([
                 'primary' => Color::hex('#E8001D'),
@@ -60,7 +58,6 @@ class AdminPanelProvider extends PanelProvider
                 Widgets\AccountWidget::class,
             ])
             ->middleware([
-                AdminRateLimiter::class,
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,

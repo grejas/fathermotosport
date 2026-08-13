@@ -3,7 +3,6 @@
 namespace App\Mail;
 
 use App\Models\User;
-use Filament\Facades\Filament;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -32,7 +31,7 @@ class WelcomeEmployeeMail extends Mailable
             with: [
                 'employee' => $this->employee,
                 'password' => $this->temporaryPassword,
-                'panelUrl' => Filament::getPanel('admin')->getLoginUrl(),
+                'panelUrl' => rtrim(config('app.url', 'http://localhost:8000'), '/') . '/admin',
             ],
         );
     }

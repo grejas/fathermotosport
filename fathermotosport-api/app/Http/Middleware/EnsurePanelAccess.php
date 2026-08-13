@@ -3,7 +3,6 @@
 namespace App\Http\Middleware;
 
 use Closure;
-use Filament\Facades\Filament;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,7 +18,7 @@ class EnsurePanelAccess
         $user = Auth::user();
 
         if (! $user) {
-            return redirect(Filament::getPanel('admin')->getLoginUrl());
+            return redirect('/admin/login');
         }
 
         if (! $user->isStaff()) {
