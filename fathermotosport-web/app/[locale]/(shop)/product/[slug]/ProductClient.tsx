@@ -45,7 +45,7 @@ export function ProductClient({ slug }: { slug: string }) {
 
   if (isLoading) {
     return (
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 pb-16 pt-24 sm:px-6 lg:grid-cols-2">
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 pb-16 pt-16 sm:px-6 sm:pt-20 lg:grid-cols-2 lg:gap-10 lg:pt-24">
         <Skeleton className="aspect-square w-full rounded-2xl" />
         <div className="space-y-4">
           <Skeleton className="h-4 w-1/4" />
@@ -69,8 +69,8 @@ export function ProductClient({ slug }: { slug: string }) {
   const displayProduct = translated ? { ...product, name: translated.name, description: translated.description } : product;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pb-16 pt-24 sm:px-6">
-      <div className="grid gap-10 lg:grid-cols-2">
+    <div className="mx-auto max-w-7xl px-4 pb-16 pt-16 sm:px-6 sm:pt-20 lg:pt-24">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-10">
         <div>
           {product.spin_url ? (
             <SpinGallery

@@ -33,7 +33,7 @@ export function ProductGallery({ images, name }: { images: ProductImage[]; name:
   return (
     <div className="space-y-3">
       <div
-        className="group relative aspect-square overflow-hidden rounded-2xl border border-white/10 bg-brand-dark"
+        className="group relative aspect-square max-h-[400px] overflow-hidden rounded-2xl border border-white/10 bg-brand-dark sm:max-h-[500px] lg:max-h-none"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
