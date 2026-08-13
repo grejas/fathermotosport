@@ -180,7 +180,7 @@
     "password_req_uppercase": "At least one uppercase letter",
     "password_req_lowercase": "At least one lowercase letter",
     "password_req_number": "At least one number",
-    "password_req_symbol": "At least one symbol (!@#$%^&*)",
+    "password_req_symbol": "At least one symbol or special character",
     "send_code": "Send code",
     "code_sent": "We sent a code to your email.",
     "code_send_error": "Couldn't send the code.",
@@ -191,6 +191,7 @@
     "code_expires_hint": "The code expires in 10 minutes.",
     "verify_and_create": "Verify & create account",
     "verify_error": "Couldn't verify the code.",
+    "invalid_code_error": "The code you entered is incorrect. Check your email and try again.",
     "back_to_form": "Back"
   },
   "favorites": {

@@ -20,7 +20,7 @@ class VerifyAndRegisterRequest extends FormRequest
             'last_name' => ['required', 'string', 'max:25', 'regex:/^[a-zA-ZÀ-ÿ\s]+$/'],
             'birth_date' => ['nullable', 'date', 'before:today', 'after:1900-01-01'],
             'phone' => ['nullable', 'string', 'min:7', 'max:20', 'regex:/^[\+\d\s\-\(\)]+$/'],
-            'password' => ['required', 'string', 'min:8', 'confirmed', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/'],
+            'password' => ['required', 'string', 'min:8', 'confirmed', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).+$/'],
         ];
     }
 
@@ -38,7 +38,7 @@ class VerifyAndRegisterRequest extends FormRequest
             'phone.regex' => 'Ingresa un número válido con código de país (ej: +591 68736384).',
             'phone.min' => 'Ingresa un número válido con código de país (ej: +591 68736384).',
             'phone.max' => 'Ingresa un número válido con código de país (ej: +591 68736384).',
-            'password.regex' => 'La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula, un número y un símbolo (!@#$%^&*).',
+            'password.regex' => 'La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula, un número y un símbolo (cualquier carácter especial).',
         ];
     }
 }

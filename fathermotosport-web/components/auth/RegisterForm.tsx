@@ -126,12 +126,18 @@ export function RegisterForm() {
       router.push("/profile");
     } catch (err: unknown) {
       const data = extractApiError(err);
-      if (data?.errors) {
+      if (data?.errors?.code) {
+        // El código no coincide o expiró: mensaje claro y específico.
+        setErrors({ code: t("invalid_code_error") });
+        toast.error(t("invalid_code_error"));
+      } else if (data?.errors) {
         const mapped: FieldErrors = {};
         Object.entries(data.errors).forEach(([k, val]) => (mapped[k] = val[0]));
         setErrors(mapped);
+        toast.error(data?.message ?? t("verify_error"));
+      } else {
+        toast.error(data?.message ?? t("verify_error"));
       }
-      toast.error(data?.message ?? t("verify_error"));
     }
   };
 

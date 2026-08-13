@@ -16,7 +16,7 @@ const PASSWORD_RULES: { key: PasswordRequirement["key"]; test: (v: string) => bo
   { key: "uppercase", test: (v) => /[A-Z]/.test(v) },
   { key: "lowercase", test: (v) => /[a-z]/.test(v) },
   { key: "number", test: (v) => /\d/.test(v) },
-  { key: "symbol", test: (v) => /[@$!%*?&]/.test(v) },
+  { key: "symbol", test: (v) => /[^a-zA-Z0-9]/.test(v) },
 ];
 
 export const getPasswordRequirements = (password: string): PasswordRequirement[] =>
