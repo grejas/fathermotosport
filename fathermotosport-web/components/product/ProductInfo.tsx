@@ -13,11 +13,15 @@ import { useFavoritesStore } from "@/store/favoritesStore";
 import { useAuthStore } from "@/store/authStore";
 import toast from "react-hot-toast";
 
-const whatsapp = (process.env.NEXT_PUBLIC_WHATSAPP ?? "+59168736384").replace(/[^0-9]/g, "");
-
 export function ProductInfo({ product }: { product: Product }) {
   const t = useTranslations("product");
   const accent = getCategoryColor(product.category?.slug);
+
+  const whatsappNumber = (process.env.NEXT_PUBLIC_WHATSAPP ?? "+59168736384").replace(/\D/g, "");
+  const whatsappMessage = encodeURIComponent(
+    `Hola! Estoy interesado en el producto: *${product.name}*. ¿Podrían darme más información sobre precio, disponibilidad y envío? Gracias!`
+  );
+  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
   const variants = useMemo(() => (product.variants ?? []).filter((v) => v.is_active), [product]);
 
   const sizes = useMemo(() => [...new Set(variants.map((v) => v.size).filter(Boolean))], [variants]);
@@ -190,11 +194,7 @@ export function ProductInfo({ product }: { product: Product }) {
         )}
       </div>
 
-      <a
-        href={`https://wa.me/${whatsapp}?text=${encodeURIComponent(`Hola, me interesa el producto: ${product.name}`)}`}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
+      <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
         <Button variant="glass" className="w-full" icon={<MessageCircle size={18} />}>
           {t("whatsapp")}
         </Button>
