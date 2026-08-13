@@ -32,8 +32,8 @@ export function SuccessClient() {
 
       <p className="mt-2 text-lg text-brand-red">{orderNumber}</p>
       <p className="mt-3 max-w-md text-brand-muted">
-        Recibirás un email de confirmación con los detalles de tu compra. ¡Gracias por confiar en
-        FatherMotoSport!
+        Recibirás un email de confirmación con los detalles de tu compra. ¡Gracias por confiar en{" "}
+        <span translate="no">FatherMotoSport</span>!
       </p>
 
       <div className="mt-8 flex gap-3">

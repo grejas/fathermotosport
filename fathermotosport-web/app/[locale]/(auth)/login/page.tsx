@@ -11,7 +11,9 @@ export default function LoginPage() {
   return (
     <>
       <h1 className="mb-1 text-2xl font-extrabold text-brand-white">{t("login")}</h1>
-      <p className="mb-6 text-sm text-brand-muted">{t("welcome_subtitle")}</p>
+      <p className="mb-6 text-sm text-brand-muted">
+        {t("welcome_subtitle")} <span translate="no">FatherMotoSport</span>
+      </p>
       <Suspense fallback={<Spinner />}>
         <LoginForm />
       </Suspense>

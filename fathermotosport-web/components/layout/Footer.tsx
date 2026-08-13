@@ -45,8 +45,10 @@ export function Footer() {
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-4">
         <div>
           <Link href="/" className="text-xl font-extrabold">
-            <span className="text-brand-red">Father</span>
-            <span className="text-brand-white">Motosport</span>
+            <span translate="no">
+              <span className="text-brand-red">Father</span>
+              <span className="text-brand-white">Motosport</span>
+            </span>
           </Link>
           <p className="mt-3 max-w-xs text-sm text-brand-muted">{t("description")}</p>
         </div>
@@ -108,7 +110,7 @@ export function Footer() {
       </div>
 
       <div className="border-t border-white/10 py-5 text-center text-xs text-brand-muted">
-        © {new Date().getFullYear()} FatherMotoSport. {t("copyright")}
+        © {new Date().getFullYear()} <span translate="no">FatherMotoSport</span>. {t("copyright")}
       </div>
     </footer>
   );
