@@ -50,6 +50,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/auth/verify-and-register', [AuthController::class, 'verifyAndRegister']);
         Route::post('/auth/login', [AuthController::class, 'login']);
         Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
+        Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
     });
 
     // Google OAuth (Socialite). El callback real es /api/v1/auth/google/callback:

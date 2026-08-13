@@ -192,7 +192,13 @@
     "verify_and_create": "Verificar e criar conta",
     "verify_error": "Não foi possível verificar o código.",
     "invalid_code_error": "O código digitado está incorreto. Verifique seu email e tente novamente.",
-    "back_to_form": "Voltar"
+    "back_to_form": "Voltar",
+    "reset_password_title": "Redefinir senha",
+    "reset_password_desc": "Digite sua nova senha para continuar.",
+    "reset_password_button": "Redefinir senha",
+    "reset_password_success": "Sua senha foi redefinida! Agora você já pode entrar.",
+    "reset_password_error": "Não foi possível redefinir a senha.",
+    "invalid_reset_link": "Este link de recuperação é inválido ou está incompleto. Solicite um novo."
   },
   "favorites": {
     "my_favorites": "Meus favoritos",

@@ -192,7 +192,13 @@
     "verify_and_create": "Verify & create account",
     "verify_error": "Couldn't verify the code.",
     "invalid_code_error": "The code you entered is incorrect. Check your email and try again.",
-    "back_to_form": "Back"
+    "back_to_form": "Back",
+    "reset_password_title": "Reset password",
+    "reset_password_desc": "Enter your new password to continue.",
+    "reset_password_button": "Reset password",
+    "reset_password_success": "Your password has been reset! You can now sign in.",
+    "reset_password_error": "Couldn't reset the password.",
+    "invalid_reset_link": "This reset link is invalid or missing data. Request a new one."
   },
   "favorites": {
     "my_favorites": "My favorites",

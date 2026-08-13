@@ -55,3 +55,15 @@ export async function forgotPassword(email: string): Promise<{ message: string }
   const { data } = await apiClient.post<{ message: string }>("/auth/forgot-password", { email });
   return data;
 }
+
+export interface ResetPasswordPayload {
+  token: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
+}
+
+export async function resetPassword(payload: ResetPasswordPayload): Promise<{ message: string }> {
+  const { data } = await apiClient.post<{ message: string }>("/auth/reset-password", payload);
+  return data;
+}

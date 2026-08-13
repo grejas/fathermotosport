@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\ForgotPasswordRequest;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Http\Requests\Auth\SendVerificationCodeRequest;
 use App\Http\Requests\Auth\VerifyAndRegisterRequest;
 use App\Http\Resources\UserResource;
@@ -185,6 +186,38 @@ class AuthController extends Controller
         return response()->json([
             'message' => __($status),
         ]);
+    }
+
+    /**
+     * Aplica el nuevo password usando el token enviado por email.
+     * Devuelve 422 con un mensaje claro si el token es inválido o expiró.
+     */
+    public function resetPassword(ResetPasswordRequest $request): JsonResponse
+    {
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function (User $user, string $password) {
+                $user->forceFill([
+                    'password' => $password,
+                    'last_password_change' => now(),
+                ])->save();
+            }
+        );
+
+        $message = match ($status) {
+            Password::PASSWORD_RESET => 'Tu contraseña fue restablecida correctamente.',
+            Password::INVALID_USER => 'No encontramos una cuenta con ese email.',
+            Password::RESET_THROTTLED => 'Ya solicitaste un restablecimiento hace poco. Esperá unos minutos e intentá de nuevo.',
+            default => 'El enlace de recuperación es inválido o ha expirado.',
+        };
+
+        if ($status !== Password::PASSWORD_RESET) {
+            throw ValidationException::withMessages([
+                'email' => [$message],
+            ]);
+        }
+
+        return response()->json(['message' => $message]);
     }
 
     /**

@@ -192,7 +192,13 @@
     "verify_and_create": "Verificar y crear cuenta",
     "verify_error": "No se pudo verificar el código.",
     "invalid_code_error": "El código ingresado es incorrecto. Verificá tu email e intentá de nuevo.",
-    "back_to_form": "Volver"
+    "back_to_form": "Volver",
+    "reset_password_title": "Restablecer contraseña",
+    "reset_password_desc": "Ingresa tu nueva contraseña para continuar.",
+    "reset_password_button": "Restablecer contraseña",
+    "reset_password_success": "¡Tu contraseña fue restablecida! Ahora podés ingresar.",
+    "reset_password_error": "No se pudo restablecer la contraseña.",
+    "invalid_reset_link": "El enlace de recuperación no es válido o le faltan datos. Solicitá uno nuevo."
   },
   "favorites": {
     "my_favorites": "Mis favoritos",
