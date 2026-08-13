@@ -10,13 +10,18 @@ const LANGS = [
   { code: "en", label: "EN" },
 ] as const;
 
-export function LanguageSelector() {
+export function LanguageSelector({ className }: { className?: string }) {
   const locale = useLocale();
   const pathname = usePathname();
   const router = useRouter();
 
   return (
-    <div className="flex items-center gap-0.5 rounded-lg border border-white/10 bg-white/5 p-0.5">
+    <div
+      className={cn(
+        "flex items-center gap-0.5 rounded-lg border border-white/10 bg-white/5 p-0.5",
+        className
+      )}
+    >
       {LANGS.map(({ code, label }) => (
         <button
           key={code}

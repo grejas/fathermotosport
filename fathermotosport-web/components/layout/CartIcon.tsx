@@ -13,7 +13,7 @@ export function CartIcon() {
   return (
     <button
       onClick={openCart}
-      className="relative rounded-lg p-2 text-brand-white transition hover:bg-white/10"
+      className="relative shrink-0 rounded-lg p-2 text-brand-white transition hover:bg-white/10"
       aria-label="Abrir carrito"
     >
       <ShoppingBag size={22} />

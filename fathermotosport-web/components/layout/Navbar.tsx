@@ -65,7 +65,7 @@ export function Navbar() {
     >
       <nav className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6">
         <Link href="/" className="flex items-center gap-2">
-          <span translate="no" className="text-xl font-extrabold tracking-wide ">
+          <span translate="no" className="text-lg font-extrabold tracking-wide sm:text-xl">
             <span className="text-brand-red">Father</span>
             <span className="text-brand-white">Motosport</span>
           </span>
@@ -114,7 +114,7 @@ export function Navbar() {
 
           <Link
             href="/favorites"
-            className="relative rounded-lg p-2 text-brand-white transition hover:bg-white/10"
+            className="relative shrink-0 rounded-lg p-2 text-brand-white transition hover:bg-white/10"
             aria-label="Favoritos"
           >
             <Heart size={22} />
@@ -125,13 +125,13 @@ export function Navbar() {
             )}
           </Link>
 
-          <LanguageSelector />
+          <LanguageSelector className="hidden shrink-0 sm:flex" />
 
           <CartIcon />
 
           <Link
             href={isAuth ? "/profile" : "/login"}
-            className="ml-1 hidden items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-brand-white transition hover:bg-white/10 sm:flex"
+            className="ml-1 hidden shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-brand-white transition hover:bg-white/10 sm:flex"
           >
             <User size={18} />
             {isAuth ? "Mi cuenta" : t("login")}
@@ -139,7 +139,7 @@ export function Navbar() {
 
           <button
             onClick={() => setMobileOpen((v) => !v)}
-            className="rounded-lg p-2 text-brand-white transition hover:bg-white/10 lg:hidden"
+            className="relative z-10 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-brand-white transition hover:bg-white/10 lg:hidden"
             aria-label="Menú"
           >
             {mobileOpen ? <X size={22} /> : <Menu size={22} />}
@@ -158,6 +158,9 @@ export function Navbar() {
               className="w-full bg-transparent py-2 text-sm text-brand-white outline-none"
             />
           </form>
+          <div className="mb-3 sm:hidden">
+            <LanguageSelector />
+          </div>
           <ul className="flex flex-col gap-1">
             {links.map((l) => (
               <li key={l.key}>
