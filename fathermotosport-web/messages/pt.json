@@ -160,6 +160,8 @@
     "invalid_credentials": "Credenciais incorretas.",
     "confirm_password": "Confirmar senha",
     "min_password_hint": "Mínimo de 8 caracteres",
+    "show_password": "Mostrar senha",
+    "hide_password": "Ocultar senha",
     "optional_data": "Dados opcionais",
     "optional": "Opcional",
     "birth_date": "Data de nascimento",

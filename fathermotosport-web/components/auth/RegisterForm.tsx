@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import ReCAPTCHA from "react-google-recaptcha";
-import { Check, X } from "lucide-react";
+import { Check, Eye, EyeOff, X } from "lucide-react";
 import { Link, useRouter } from "@/lib/i18n/navigation";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -56,6 +56,8 @@ export function RegisterForm() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const captchaRef = useRef<ReCAPTCHA>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false);
   const passwordRequirements = getPasswordRequirements(form.password);
   const passwordValid = isStrongPassword(form.password);
 
@@ -219,10 +221,21 @@ export function RegisterForm() {
       <div>
         <Input
           label={t("password")}
-          type="password"
+          type={showPassword ? "text" : "password"}
           name="password"
           value={form.password}
           onChange={(e) => update("password", e.target.value)}
+          rightIcon={
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={() => setShowPassword((v) => !v)}
+              className="text-brand-muted hover:text-brand-white"
+              aria-label={showPassword ? t("hide_password") : t("show_password")}
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          }
         />
         <ul className="mt-2 space-y-1">
           {passwordRequirements.map((req) => (
@@ -244,11 +257,22 @@ export function RegisterForm() {
       </div>
       <Input
         label={t("confirm_password")}
-        type="password"
+        type={showPasswordConfirmation ? "text" : "password"}
         name="password_confirmation"
         value={form.password_confirmation}
         onChange={(e) => update("password_confirmation", e.target.value)}
         error={errors.password_confirmation}
+        rightIcon={
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={() => setShowPasswordConfirmation((v) => !v)}
+            className="text-brand-muted hover:text-brand-white"
+            aria-label={showPasswordConfirmation ? t("hide_password") : t("show_password")}
+          >
+            {showPasswordConfirmation ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        }
       />
 
       {/* Opcionales */}
@@ -263,7 +287,10 @@ export function RegisterForm() {
             name="birth_date"
             value={form.birth_date}
             onChange={(e) => update("birth_date", e.target.value)}
+            error={errors.birth_date}
             hint={t("birth_date_hint")}
+            min="1926-01-01"
+            max={new Date().toISOString().slice(0, 10)}
           />
           <Input
             label={tCheckout("phone")}

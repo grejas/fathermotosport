@@ -49,11 +49,19 @@ const isValidPhone = (value: string): boolean => {
   return v.length >= 7 && v.length <= 20 && PHONE_REGEX.test(v);
 };
 
+const MIN_BIRTH_DATE = "1926-01-01";
+
+const isValidBirthDate = (value: string): boolean => {
+  const today = new Date().toISOString().slice(0, 10);
+  return value >= MIN_BIRTH_DATE && value <= today;
+};
+
 export function validateRegister(data: {
   first_name: string;
   last_name: string;
   email: string;
   phone?: string;
+  birth_date?: string;
   password: string;
   password_confirmation: string;
 }): FieldErrors {
@@ -68,6 +76,8 @@ export function validateRegister(data: {
     errors.last_name = "El apellido solo puede contener letras (máx. 25 caracteres).";
   if (data.phone && data.phone.trim() && !isValidPhone(data.phone))
     errors.phone = "Ingresa un número válido con código de país (ej: +591 68736384).";
+  if (data.birth_date && !isValidBirthDate(data.birth_date))
+    errors.birth_date = "La fecha debe estar entre 1926 y hoy.";
   return errors;
 }
 
