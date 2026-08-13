@@ -19,7 +19,7 @@ class VerifyAndRegisterRequest extends FormRequest
             'first_name' => ['required', 'string', 'max:25', 'regex:/^[a-zA-ZÀ-ÿ\s]+$/'],
             'last_name' => ['required', 'string', 'max:25', 'regex:/^[a-zA-ZÀ-ÿ\s]+$/'],
             'birth_date' => ['nullable', 'date', 'after:1925-12-31', 'before_or_equal:today'],
-            'phone' => ['nullable', 'string', 'min:7', 'max:20', 'regex:/^[\+\d\s\-\(\)]+$/'],
+            'phone' => ['nullable', 'string', 'min:7', 'max:20', 'regex:/^[\+\d\s\-\(\)]{7,20}$/'],
             'password' => ['required', 'string', 'min:8', 'confirmed', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).+$/'],
         ];
     }
@@ -38,9 +38,9 @@ class VerifyAndRegisterRequest extends FormRequest
             'last_name.required' => 'El apellido es obligatorio.',
             'last_name.regex' => 'El apellido solo puede contener letras (máx. 25 caracteres).',
             'last_name.max' => 'El apellido solo puede contener letras (máx. 25 caracteres).',
-            'phone.regex' => 'Ingresa un número válido con código de país (ej: +591 68736384).',
-            'phone.min' => 'Ingresa un número válido con código de país (ej: +591 68736384).',
-            'phone.max' => 'Ingresa un número válido con código de país (ej: +591 68736384).',
+            'phone.regex' => 'Ingresá un número de teléfono válido con al menos 7 dígitos',
+            'phone.min' => 'Ingresá un número de teléfono válido con al menos 7 dígitos',
+            'phone.max' => 'Ingresá un número de teléfono válido con al menos 7 dígitos',
             'password.regex' => 'La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula, un número y un símbolo (cualquier carácter especial).',
         ];
     }
