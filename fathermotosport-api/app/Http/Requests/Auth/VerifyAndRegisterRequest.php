@@ -14,7 +14,7 @@ class VerifyAndRegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['required', 'email:rfc,dns', 'max:255', 'unique:users,email'],
             'code' => ['required', 'digits:6'],
             'first_name' => ['required', 'string', 'max:25', 'regex:/^[a-zA-ZÀ-ÿ\s]+$/'],
             'last_name' => ['required', 'string', 'max:25', 'regex:/^[a-zA-ZÀ-ÿ\s]+$/'],
@@ -27,6 +27,7 @@ class VerifyAndRegisterRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'email.email' => 'Ingresa un email válido (verificá que el dominio exista).',
             'code.required' => 'Ingresa el código de verificación.',
             'code.digits' => 'El código debe tener 6 dígitos.',
             'first_name.required' => 'El nombre es obligatorio.',
