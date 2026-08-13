@@ -18,7 +18,7 @@ export function ProductGrid({ products, loading, emptyMessage }: ProductGridProp
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="card-product p-0">
             <Skeleton className="aspect-square w-full rounded-b-none" />
@@ -47,7 +47,7 @@ export function ProductGrid({ products, loading, emptyMessage }: ProductGridProp
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, margin: "-50px" }}
-      className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3"
+      className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
     >
       {products.map((p) => (
         <motion.div key={p.id} variants={slideUp}>

@@ -42,7 +42,7 @@ export function ProductCard({ product }: { product: Product }) {
               src={getImageUrl(product.primary_image)}
               alt={product.name}
               fill
-              sizes="(max-width:768px) 50vw, 33vw"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
               className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
@@ -78,13 +78,13 @@ export function ProductCard({ product }: { product: Product }) {
           <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: accent }}>
             {product.brand?.name ?? "—"}
           </p>
-          <h3 className="mt-1 line-clamp-2 min-h-[2.5rem] text-sm font-semibold text-brand-white">
+          <h3 className="mt-1 line-clamp-2 min-h-[2.5rem] text-sm font-semibold text-brand-white sm:text-base">
             {product.name}
           </h3>
 
           <div className="mt-3 flex items-center justify-between">
             <div className="flex items-baseline gap-2">
-              <span className="text-lg font-bold text-brand-white">
+              <span className="text-base font-bold text-brand-white sm:text-lg">
                 {formatPrice(product.sale_price ?? product.price)}
               </span>
               {product.sale_price && (
@@ -98,13 +98,14 @@ export function ProductCard({ product }: { product: Product }) {
               onClick={quickAdd}
               disabled={isOutOfStock}
               className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-lg text-white transition active:scale-90",
+                "flex h-8 w-8 items-center justify-center rounded-lg text-white transition active:scale-90 sm:h-9 sm:w-9",
                 isOutOfStock && "cursor-not-allowed opacity-40"
               )}
               style={{ backgroundColor: accent }}
               aria-label={t("add_to_cart")}
             >
-              <Plus size={18} />
+              <Plus size={16} className="sm:hidden" />
+              <Plus size={18} className="hidden sm:block" />
             </button>
           </div>
         </div>
