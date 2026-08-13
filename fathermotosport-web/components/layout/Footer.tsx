@@ -4,10 +4,6 @@ import { MessageCircle } from "lucide-react";
 
 const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP ?? "+59168736384";
 const whatsappNumber = whatsapp.replace(/\D/g, "");
-const whatsappMessage = encodeURIComponent(
-  `Hola! Quisiera obtener más información sobre sus productos y servicios. ¿Me pueden ayudar?`
-);
-const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
 
 // Redes sociales — URLs reales (sobreescribibles por env). Íconos de marca en SVG.
 const socialLinks = [
@@ -44,6 +40,10 @@ const categoryLinks = [
 export function Footer() {
   const t = useTranslations("footer");
   const tNav = useTranslations("nav");
+  const tWhatsapp = useTranslations("whatsapp");
+
+  const whatsappMessage = encodeURIComponent(tWhatsapp("general_message"));
+  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
 
   return (
     <footer className="border-t border-white/10 bg-brand-dark">

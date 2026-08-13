@@ -90,6 +90,10 @@
     "contact": "Contact",
     "copyright": "All rights reserved."
   },
+  "whatsapp": {
+    "product_message": "Hello! I'm interested in the product: *{name}*. Could you give me more information about price, availability and shipping? Thank you!",
+    "general_message": "Hello! I would like to get more information about your products and services. Can you help me?"
+  },
   "common": {
     "explore_products": "Explore products",
     "or": "or"

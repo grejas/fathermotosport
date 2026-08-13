@@ -15,11 +15,12 @@ import toast from "react-hot-toast";
 
 export function ProductInfo({ product }: { product: Product }) {
   const t = useTranslations("product");
+  const tWhatsapp = useTranslations("whatsapp");
   const accent = getCategoryColor(product.category?.slug);
 
   const whatsappNumber = (process.env.NEXT_PUBLIC_WHATSAPP ?? "+59168736384").replace(/\D/g, "");
   const whatsappMessage = encodeURIComponent(
-    `Hola! Estoy interesado en el producto: *${product.name}*. ¿Podrían darme más información sobre precio, disponibilidad y envío? Gracias!`
+    tWhatsapp("product_message", { name: product.name })
   );
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
   const variants = useMemo(() => (product.variants ?? []).filter((v) => v.is_active), [product]);

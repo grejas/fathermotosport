@@ -90,6 +90,10 @@
     "contact": "Contato",
     "copyright": "Todos os direitos reservados."
   },
+  "whatsapp": {
+    "product_message": "Olá! Estou interessado no produto: *{name}*. Podem me dar mais informações sobre preço, disponibilidade e envio? Obrigado!",
+    "general_message": "Olá! Gostaria de obter mais informações sobre seus produtos e serviços. Podem me ajudar?"
+  },
   "common": {
     "explore_products": "Explorar produtos",
     "or": "ou"
