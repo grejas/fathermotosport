@@ -38,6 +38,7 @@ class VerifyAndRegisterRequest extends FormRequest
             'phone.regex' => 'Ingresa un número válido con código de país (ej: +591 68736384).',
             'phone.min' => 'Ingresa un número válido con código de país (ej: +591 68736384).',
             'phone.max' => 'Ingresa un número válido con código de país (ej: +591 68736384).',
+            'password.regex' => 'La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula, un número y un símbolo (!@#$%^&*).',
         ];
     }
 }
