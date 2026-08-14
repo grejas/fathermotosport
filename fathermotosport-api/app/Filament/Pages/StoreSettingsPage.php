@@ -28,9 +28,10 @@ class StoreSettingsPage extends Page implements HasForms
 
     public ?array $data = [];
 
+    /** Contiene credenciales de pago: solo Administrador. */
     public static function canAccess(): bool
     {
-        return (bool) auth()->user()?->isStaff();
+        return (bool) auth()->user()?->isAdmin();
     }
 
     public function mount(): void
