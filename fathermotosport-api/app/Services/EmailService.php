@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Mail\EmailVerificationCodeMail;
 use App\Mail\OrderConfirmedMail;
 use App\Mail\ShippingUpdateMail;
+use App\Mail\WelcomeEmployeeMail;
 use App\Mail\WelcomeMail;
 use App\Models\Coupon;
 use App\Models\Order;
@@ -62,17 +63,32 @@ class EmailService
         $this->dispatch($email, new ShippingUpdateMail($order, $trackingNumber, $carrier));
     }
 
-    private function dispatch(string $email, $mailable): void
+    /**
+     * Credenciales de acceso para un empleado recién creado desde el panel.
+     * Devuelve true si el envío fue exitoso, para reflejarlo en la
+     * notificación de Filament (un email inválido o un fallo del proveedor
+     * no debe bloquear la creación del empleado, solo quedar en logs).
+     */
+    public function sendWelcomeEmployee(User $employee, string $temporaryPassword): bool
+    {
+        return $this->dispatch($employee->email, new WelcomeEmployeeMail($employee, $temporaryPassword));
+    }
+
+    private function dispatch(string $email, $mailable): bool
     {
         try {
             Mail::to($email)->send($mailable);
+
+            return true;
         } catch (\Throwable $e) {
-            // Un fallo de email nunca debe romper el flujo de compra.
+            // Un fallo de email nunca debe romper el flujo que lo dispara.
             Log::error('Error enviando email', [
                 'email' => $email,
                 'mailable' => $mailable::class,
                 'error' => $e->getMessage(),
             ]);
+
+            return false;
         }
     }
 }

@@ -3,10 +3,9 @@
 namespace App\Filament\Resources\EmployeeResource\Pages;
 
 use App\Filament\Resources\EmployeeResource;
-use App\Mail\WelcomeEmployeeMail;
 use App\Models\Role;
+use App\Services\EmailService;
 use Filament\Resources\Pages\CreateRecord;
-use Illuminate\Support\Facades\Mail;
 
 class CreateEmployee extends CreateRecord
 {
@@ -14,6 +13,9 @@ class CreateEmployee extends CreateRecord
 
     /** Contraseña en texto plano para incluirla en el email de bienvenida. */
     private ?string $plainPassword = null;
+
+    /** Si el email de bienvenida se envió correctamente (para la notificación). */
+    private bool $welcomeEmailSent = false;
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
@@ -30,11 +32,15 @@ class CreateEmployee extends CreateRecord
 
     protected function afterCreate(): void
     {
-        if ($this->plainPassword) {
-            // Email de bienvenida con las credenciales (Resend / driver configurado).
-            Mail::to($this->record->email)
-                ->send(new WelcomeEmployeeMail($this->record, $this->plainPassword));
+        if (! $this->plainPassword) {
+            return;
         }
+
+        // EmailService::sendWelcomeEmployee ya loguea cualquier fallo (email
+        // inválido, rebote al enviar, proveedor caído) sin lanzar excepción:
+        // la creación del empleado nunca se ve afectada por eso.
+        $this->welcomeEmailSent = app(EmailService::class)
+            ->sendWelcomeEmployee($this->record, $this->plainPassword);
     }
 
     protected function getRedirectUrl(): string
@@ -44,6 +50,8 @@ class CreateEmployee extends CreateRecord
 
     protected function getCreatedNotificationTitle(): ?string
     {
-        return 'Empleado creado y notificado por email.';
+        return $this->welcomeEmailSent
+            ? "Email de bienvenida enviado a {$this->record->email}"
+            : 'Empleado creado. No se pudo enviar el email de bienvenida — revisá los logs.';
     }
 }
