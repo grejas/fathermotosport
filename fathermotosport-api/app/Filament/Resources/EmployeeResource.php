@@ -68,7 +68,14 @@ class EmployeeResource extends Resource
                 ->validationMessages([
                     'email' => 'Ingresa un email válido (verificá que el dominio exista).',
                 ]),
-            Forms\Components\TextInput::make('phone')->label('Teléfono')->maxLength(20),
+            Forms\Components\TextInput::make('phone')
+                ->label('Teléfono')
+                ->maxLength(20)
+                ->rules(['nullable', 'regex:/^(\+591[\s]?[67]\d{7}|\+55[\s]?\d{2}[\s]?\d{4,5}[-\s]?\d{4})$/'])
+                ->validationMessages([
+                    'regex' => 'Ingresá un número válido de Bolivia (+591) o Brasil (+55).',
+                ])
+                ->helperText('Formato: +591 XXXXXXXX (Bolivia) o +55 XX XXXXX-XXXX (Brasil).'),
             Forms\Components\TextInput::make('password')
                 ->label('Contraseña')
                 ->password()
