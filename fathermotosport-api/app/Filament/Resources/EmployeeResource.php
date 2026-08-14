@@ -43,23 +43,45 @@ class EmployeeResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\TextInput::make('first_name')->label('Nombre')->required()->maxLength(80),
-            Forms\Components\TextInput::make('last_name')->label('Apellido')->required()->maxLength(80),
+            Forms\Components\TextInput::make('first_name')
+                ->label('Nombre')
+                ->required()
+                ->maxLength(25)
+                ->rules(['regex:/^[a-zA-ZÀ-ÿ\s]+$/'])
+                ->validationMessages([
+                    'regex' => 'El nombre solo puede contener letras (máx. 25 caracteres).',
+                ]),
+            Forms\Components\TextInput::make('last_name')
+                ->label('Apellido')
+                ->required()
+                ->maxLength(25)
+                ->rules(['regex:/^[a-zA-ZÀ-ÿ\s]+$/'])
+                ->validationMessages([
+                    'regex' => 'El apellido solo puede contener letras (máx. 25 caracteres).',
+                ]),
             Forms\Components\TextInput::make('email')
                 ->label('Email')
                 ->email()
                 ->required()
-                ->unique(table: 'users', column: 'email', ignoreRecord: true),
+                ->unique(table: 'users', column: 'email', ignoreRecord: true)
+                ->rules(['email:rfc,dns'])
+                ->validationMessages([
+                    'email' => 'Ingresa un email válido (verificá que el dominio exista).',
+                ]),
             Forms\Components\TextInput::make('phone')->label('Teléfono')->maxLength(20),
             Forms\Components\TextInput::make('password')
                 ->label('Contraseña')
                 ->password()
                 ->revealable()
                 ->minLength(8)
+                ->rules(['nullable', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).+$/'])
+                ->validationMessages([
+                    'regex' => 'La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula, un número y un símbolo.',
+                ])
                 // Requerida al crear; al editar, en blanco = mantener la actual.
                 ->required(fn (string $operation): bool => $operation === 'create')
                 ->dehydrated(fn (?string $state): bool => filled($state))
-                ->helperText('El empleado debería cambiarla al primer ingreso.'),
+                ->helperText('Mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo. El empleado debería cambiarla al primer ingreso.'),
             Forms\Components\Toggle::make('is_active')
                 ->label('Activo')
                 ->default(true),
