@@ -2,7 +2,6 @@
 
 namespace App\Providers\Filament;
 
-use App\Filament\Auth\Login;
 use App\Http\Middleware\EnsurePanelAccess;
 use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
@@ -30,7 +29,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login(Login::class)
+            ->login()
             ->brandName('FatherMotoSport')
             ->colors([
                 'primary' => Color::hex('#E8001D'),
