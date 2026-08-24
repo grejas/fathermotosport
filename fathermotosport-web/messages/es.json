@@ -6,7 +6,6 @@
     "jackets": "Chamarras",
     "parts": "Repuestos",
     "brands": "Marcas",
-    "blog": "Blog",
     "login": "Ingresar",
     "profile": "Perfil",
     "favorites": "Favoritos",
@@ -70,6 +69,8 @@
     "featured_subtitle": "Lo más buscado de la temporada",
     "view_all": "Ver todo",
     "no_featured": "Aún no hay productos destacados.",
+    "blog_title": "Últimas del blog",
+    "blog_view_all": "Ver todo el blog",
     "pay_in_installments": "Paga en cuotas · 100% seguro",
     "payment_desc": "Aceptamos PayPal, Stripe y MercadoPago con encriptación SSL.",
     "view_payment_methods": "Ver métodos de pago"

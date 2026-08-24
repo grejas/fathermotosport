@@ -6,7 +6,6 @@
     "jackets": "Jaquetas",
     "parts": "Peças",
     "brands": "Marcas",
-    "blog": "Blog",
     "login": "Entrar",
     "profile": "Perfil",
     "favorites": "Favoritos",
@@ -70,6 +69,8 @@
     "featured_subtitle": "Mais procurados da temporada",
     "view_all": "Ver tudo",
     "no_featured": "Ainda não há produtos em destaque.",
+    "blog_title": "Últimas do blog",
+    "blog_view_all": "Ver tudo o blog",
     "pay_in_installments": "Pague em parcelas · 100% seguro",
     "payment_desc": "Aceitamos PayPal, Stripe e MercadoPago com criptografia SSL.",
     "view_payment_methods": "Ver métodos de pagamento"
