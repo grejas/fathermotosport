@@ -135,6 +135,11 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasName
         return $this->hasMany(InventoryMovement::class);
     }
 
+    public function posts(): HasMany
+    {
+        return $this->hasMany(Post::class, 'author_id');
+    }
+
     // Scopes
     public function scopeActive(Builder $query): Builder
     {

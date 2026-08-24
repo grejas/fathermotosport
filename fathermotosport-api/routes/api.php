@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CouponController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VisorColorController;
@@ -42,6 +43,10 @@ Route::prefix('v1')->group(function () {
 
     // Colores de visor para cascos
     Route::get('/visor-colors', [VisorColorController::class, 'index']);
+
+    // Blog (artículos publicados)
+    Route::get('/posts', [PostController::class, 'index']);
+    Route::get('/posts/{slug}', [PostController::class, 'show']);
 
     // Autenticación (rate limiting: 5 intentos por minuto y por IP, contra fuerza bruta)
     Route::middleware('throttle:5,1')->group(function () {

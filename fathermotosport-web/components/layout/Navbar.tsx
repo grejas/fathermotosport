@@ -18,6 +18,7 @@ const links = [
   { key: "jackets", href: "/catalog?category=5" },
   { key: "parts", href: "/catalog?category=6" },
   { key: "brands", href: "/catalog" },
+  { key: "blog", href: "/blog" },
 ] as const;
 
 export function Navbar() {

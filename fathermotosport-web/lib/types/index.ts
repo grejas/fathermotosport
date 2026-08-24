@@ -135,6 +135,23 @@ export interface Product {
   created_at?: string;
 }
 
+export interface PostAuthor {
+  id: string;
+  name: string;
+}
+
+export interface Post {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  content: string;
+  cover_image: string | null;
+  author?: PostAuthor;
+  published_at: string | null;
+  created_at?: string;
+}
+
 export interface Address {
   id: string;
   user_id: string | null;
