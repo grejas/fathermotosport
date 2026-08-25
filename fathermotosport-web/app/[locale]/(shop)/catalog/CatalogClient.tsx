@@ -49,7 +49,7 @@ export function CatalogClient() {
   const { data, isLoading } = useQuery({
     queryKey: ["catalog", queryFilters],
     queryFn: () => getProducts(queryFilters),
-    staleTime: 0,
+    staleTime: 30000,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   });

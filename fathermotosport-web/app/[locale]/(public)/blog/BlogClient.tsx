@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { Bebas_Neue } from "next/font/google";
 import { PostGrid } from "@/components/blog/PostGrid";
 import { usePosts } from "@/lib/hooks/usePosts";
+
+const bebasNeue = Bebas_Neue({ weight: "400", subsets: ["latin"] });
 
 export function BlogClient() {
   const [page, setPage] = useState(1);
@@ -14,7 +17,9 @@ export function BlogClient() {
   return (
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-24 sm:px-6">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-brand-white sm:text-3xl">Blog</h1>
+        <h1 className={`${bebasNeue.className} text-4xl uppercase tracking-wide text-brand-white sm:text-5xl`}>
+          Blog
+        </h1>
         <p className="mt-1 text-sm text-brand-muted">Noticias, guías y novedades de FatherMotoSport.</p>
       </div>
 
