@@ -46,7 +46,7 @@ export function BlogPostClient({ post }: { post: Post }) {
     : post;
 
   return (
-    <article className="mx-auto max-w-3xl px-4 pb-16 pt-16 sm:px-6 sm:pt-20 lg:pt-24">
+    <div className="mx-auto max-w-3xl px-4 pb-16 pt-16 sm:px-6 sm:pt-20 lg:pt-24">
       <Link
         href="/blog"
         className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-brand-muted transition hover:text-brand-red"
@@ -54,30 +54,38 @@ export function BlogPostClient({ post }: { post: Post }) {
         <ArrowLeft size={16} /> Volver al blog
       </Link>
 
-      {post.cover_image && (
-        <div className="relative mb-8 aspect-[16/9] w-full overflow-hidden rounded-2xl border border-white/[0.06]">
-          <Image
-            src={getImageUrl(post.cover_image)}
-            alt={displayPost.title}
-            fill
-            priority
-            sizes="(max-width: 768px) 100vw, 768px"
-            className="object-cover"
-          />
-        </div>
-      )}
+      <div className="space-y-6">
+        {post.cover_image && (
+          <div className="card-product hover:border-brand-red/40">
+            <div className="relative aspect-[16/9] w-full overflow-hidden bg-brand-dark">
+              <Image
+                src={getImageUrl(post.cover_image)}
+                alt={displayPost.title}
+                fill
+                priority
+                sizes="(max-width: 768px) 100vw, 768px"
+                className="object-cover"
+              />
+            </div>
+          </div>
+        )}
 
-      <h1 className="text-2xl font-bold leading-snug text-brand-red sm:text-3xl lg:text-4xl">{displayPost.title}</h1>
+        <article className="card-product hover:border-brand-red/40 p-6 sm:p-8 lg:p-10">
+          <h1 className="text-2xl font-bold leading-snug text-brand-white sm:text-3xl lg:text-4xl">
+            {displayPost.title}
+          </h1>
 
-      <div className="mt-8">
-        <ProductDescription html={displayPost.content} />
+          <div className="mt-8">
+            <ProductDescription html={displayPost.content} />
+          </div>
+        </article>
       </div>
 
-      <div className="mt-12">
+      <div className="mt-8">
         <Link href="/blog" className="btn-glass">
           <ArrowLeft size={16} /> Volver al blog
         </Link>
       </div>
-    </article>
+    </div>
   );
 }

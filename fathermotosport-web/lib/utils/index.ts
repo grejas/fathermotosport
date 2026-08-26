@@ -37,11 +37,12 @@ export function formatPrice(price: string | number, currency: "USD" | "BOB" | "B
   }
 }
 
-/** Formatea una fecha ISO a texto en español. */
-export function formatDate(dateString: string): string {
+/** Formatea una fecha ISO a texto localizado. Sin locale, mantiene español (comportamiento previo). */
+export function formatDate(dateString: string, locale: string = "es"): string {
   const date = new Date(dateString);
   if (isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat("es-ES", {
+  const intlLocales: Record<string, string> = { es: "es-ES", pt: "pt-BR", en: "en-US" };
+  return new Intl.DateTimeFormat(intlLocales[locale] ?? "es-ES", {
     day: "numeric",
     month: "long",
     year: "numeric",

@@ -56,7 +56,7 @@ export function PostCard({ post }: { post: Post }) {
         </div>
 
         <div className="p-4">
-          <h3 className="line-clamp-2 min-h-[3.25rem] pb-0.5 text-sm font-semibold leading-snug text-brand-red sm:text-base">
+          <h3 className="line-clamp-2 min-h-[3.25rem] pb-0.5 text-sm font-semibold leading-snug text-brand-white sm:text-base">
             {displayTitle}
           </h3>
 

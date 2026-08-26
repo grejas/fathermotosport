@@ -60,7 +60,7 @@ function BlogSectionCard({ post }: { post: Post }) {
         </div>
 
         <div className="p-5">
-          <h3 className="line-clamp-2 min-h-[3.25rem] pb-0.5 text-base font-semibold leading-snug text-brand-red">
+          <h3 className="line-clamp-2 min-h-[3.25rem] pb-0.5 text-base font-semibold leading-snug text-brand-white transition-colors duration-300 group-hover:text-brand-red">
             {displayTitle}
           </h3>
           {displayExcerpt && (
@@ -68,7 +68,7 @@ function BlogSectionCard({ post }: { post: Post }) {
           )}
           {post.published_at && (
             <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-brand-gold">
-              {formatDate(post.published_at)}
+              {formatDate(post.published_at, locale)}
             </p>
           )}
         </div>
