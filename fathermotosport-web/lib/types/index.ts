@@ -95,7 +95,14 @@ export interface Review {
   comment: string | null;
   is_approved: boolean;
   user?: { id: string; name: string; avatar: string | null };
+  product?: { id: string; name: string; slug: string };
   created_at: string;
+}
+
+export interface ReviewsSummary {
+  average: number;
+  total: number;
+  distribution: { rating: number; count: number; percent: number }[];
 }
 
 export interface Product {

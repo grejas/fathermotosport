@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VisorColorController;
 use Illuminate\Support\Facades\Route;
@@ -47,6 +48,10 @@ Route::prefix('v1')->group(function () {
     // Blog (artículos publicados)
     Route::get('/posts', [PostController::class, 'index']);
     Route::get('/posts/{slug}', [PostController::class, 'show']);
+
+    // Reseñas (globales, de todos los productos)
+    Route::get('/reviews', [ReviewController::class, 'index']);
+    Route::get('/reviews/summary', [ReviewController::class, 'summary']);
 
     // Autenticación (rate limiting: 5 intentos por minuto y por IP, contra fuerza bruta)
     Route::middleware('throttle:5,1')->group(function () {
@@ -128,6 +133,9 @@ Route::prefix('v1')->group(function () {
 
         // Carrito autenticado
         Route::post('/cart/merge', [CartController::class, 'merge']);
+
+        // Reseñas
+        Route::post('/products/{product:slug}/reviews', [ReviewController::class, 'store']);
 
         /*
         |----------------------------------------------------------------------

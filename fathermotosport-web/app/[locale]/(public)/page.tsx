@@ -4,6 +4,7 @@ import { CategoryGrid } from "@/components/home/CategoryGrid";
 import { FeaturedProducts } from "@/components/home/FeaturedProducts";
 import { PaymentBanner } from "@/components/home/PaymentBanner";
 import { FooterStrip } from "@/components/home/FooterStrip";
+import { ReviewsSection } from "@/components/home/ReviewsSection";
 import { BlogSection } from "@/components/home/BlogSection";
 import { FooterBanner } from "@/components/layout/FooterBanner";
 
@@ -16,6 +17,7 @@ export default function HomePage() {
       <FeaturedProducts />
       <PaymentBanner />
       <FooterStrip />
+      <ReviewsSection />
       <BlogSection />
       <FooterBanner />
     </>

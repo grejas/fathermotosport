@@ -248,5 +248,26 @@
     "spain": "Spain",
     "usa": "United States",
     "other": "Other country"
+  },
+  "reviews": {
+    "section_title": "What our customers say",
+    "leave_review": "Leave your review",
+    "login_to_review": "Sign in to leave your review",
+    "submit": "Submit review",
+    "success_message": "Thank you! Your review will be visible once approved.",
+    "already_reviewed": "You already reviewed this product.",
+    "submit_error": "Couldn't submit your review. Please try again.",
+    "select_product_error": "Select the product you want to review.",
+    "select_rating_error": "Select a rating.",
+    "empty_state": "Be the first to leave a review.",
+    "search_product_placeholder": "Search product to review…",
+    "loading_products": "Loading products…",
+    "no_results": "No results.",
+    "title_placeholder": "Title (optional)",
+    "comment_placeholder": "Comment (optional)",
+    "stars_label": "stars",
+    "anonymous_customer": "Customer",
+    "about_product": "About",
+    "count": "{count, plural, one {# review} other {# reviews}}"
   }
 }

@@ -248,5 +248,26 @@
     "spain": "España",
     "usa": "Estados Unidos",
     "other": "Otro país"
+  },
+  "reviews": {
+    "section_title": "Lo que dicen nuestros clientes",
+    "leave_review": "Deja tu reseña",
+    "login_to_review": "Inicia sesión para dejar tu reseña",
+    "submit": "Enviar reseña",
+    "success_message": "¡Gracias! Tu reseña será visible después de ser aprobada.",
+    "already_reviewed": "Ya reseñaste este producto.",
+    "submit_error": "No se pudo enviar tu reseña. Intenta de nuevo.",
+    "select_product_error": "Selecciona el producto que querés reseñar.",
+    "select_rating_error": "Selecciona una calificación.",
+    "empty_state": "Sé el primero en dejar una reseña.",
+    "search_product_placeholder": "Buscar producto a reseñar…",
+    "loading_products": "Cargando productos…",
+    "no_results": "Sin resultados.",
+    "title_placeholder": "Título (opcional)",
+    "comment_placeholder": "Comentario (opcional)",
+    "stars_label": "estrellas",
+    "anonymous_customer": "Cliente",
+    "about_product": "Sobre",
+    "count": "{count, plural, one {# reseña} other {# reseñas}}"
   }
 }

@@ -248,5 +248,26 @@
     "spain": "Espanha",
     "usa": "Estados Unidos",
     "other": "Outro país"
+  },
+  "reviews": {
+    "section_title": "O que dizem nossos clientes",
+    "leave_review": "Deixe sua avaliação",
+    "login_to_review": "Entre para deixar sua avaliação",
+    "submit": "Enviar avaliação",
+    "success_message": "Obrigado! Sua avaliação ficará visível após ser aprovada.",
+    "already_reviewed": "Você já avaliou este produto.",
+    "submit_error": "Não foi possível enviar sua avaliação. Tente novamente.",
+    "select_product_error": "Selecione o produto que deseja avaliar.",
+    "select_rating_error": "Selecione uma classificação.",
+    "empty_state": "Seja o primeiro a deixar uma avaliação.",
+    "search_product_placeholder": "Buscar produto para avaliar…",
+    "loading_products": "Carregando produtos…",
+    "no_results": "Nenhum resultado.",
+    "title_placeholder": "Título (opcional)",
+    "comment_placeholder": "Comentário (opcional)",
+    "stars_label": "estrelas",
+    "anonymous_customer": "Cliente",
+    "about_product": "Sobre",
+    "count": "{count, plural, one {# avaliação} other {# avaliações}}"
   }
 }
