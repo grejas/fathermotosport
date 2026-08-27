@@ -59,7 +59,7 @@ export function CatalogFilters({ brands, value, onChange, onClear }: Props) {
     });
 
   return (
-    <aside className="w-full shrink-0 space-y-6 lg:w-[220px]">
+    <aside className="w-full space-y-6">
       <div>
         <h4 className="mb-2 text-sm font-bold text-brand-white">{t("type")}</h4>
         <div className="flex flex-col gap-1">

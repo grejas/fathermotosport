@@ -1,15 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/lib/i18n/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { LayoutGrid, List } from "lucide-react";
+import { LayoutGrid, List, Filter, ChevronLeft } from "lucide-react";
 import { getProducts } from "@/lib/api/products";
 import { getBrands } from "@/lib/api/catalog";
 import { ProductGrid } from "@/components/product/ProductGrid";
 import { CatalogFilters, type CatalogFilterState } from "@/components/product/CatalogFilters";
+import { Drawer } from "@/components/ui/Drawer";
+import { Button } from "@/components/ui/Button";
+import { cn } from "@/lib/utils";
 import type { ProductFilters } from "@/lib/types";
 
 const emptyFilters: CatalogFilterState = {
@@ -20,6 +23,9 @@ const emptyFilters: CatalogFilterState = {
   certifications: [],
 };
 
+// Recuerda si el usuario colapsó el sidebar de filtros en desktop, entre visitas.
+const SIDEBAR_COLLAPSED_KEY = "fms_catalog_sidebar_collapsed";
+
 export function CatalogClient() {
   const t = useTranslations("catalog");
   const router = useRouter();
@@ -28,6 +34,23 @@ export function CatalogClient() {
   const [sort, setSort] = useState<ProductFilters["sort"]>("newest");
   const [filters, setFilters] = useState<CatalogFilterState>(emptyFilters);
   const [page, setPage] = useState(1);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarHydrated, setSidebarHydrated] = useState(false);
+
+  // Lee la preferencia guardada recién en el cliente (evita mismatch de
+  // hidratación); el efecto de escritura de abajo espera a que esto termine
+  // para no pisar el valor leído con el default.
+  useEffect(() => {
+    const stored = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+    if (stored === "true") setSidebarCollapsed(true);
+    setSidebarHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!sidebarHydrated) return;
+    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(sidebarCollapsed));
+  }, [sidebarCollapsed, sidebarHydrated]);
 
   const category = params.get("category") ?? undefined;
   const search = params.get("search") ?? undefined;
@@ -65,17 +88,46 @@ export function CatalogClient() {
     router.push("/catalog");
   };
 
+  const handleFiltersChange = (f: CatalogFilterState) => {
+    setFilters(f);
+    setPage(1);
+  };
+
   return (
-    <div className="mx-auto flex max-w-7xl flex-col gap-8 px-4 pb-16 pt-24 sm:px-6 lg:flex-row">
-      <CatalogFilters
-        brands={brands ?? []}
-        value={filters}
-        onChange={(f) => {
-          setFilters(f);
-          setPage(1);
-        }}
-        onClear={clearFilters}
-      />
+    <div className="mx-auto flex max-w-7xl flex-col gap-8 px-4 pb-16 pt-24 sm:px-6 lg:flex-row lg:items-start">
+      {/* Sidebar de filtros — solo desktop, colapsable. En mobile se accede
+          vía el botón "Filtros" + Drawer más abajo. */}
+      <div
+        className={cn(
+          "hidden shrink-0 transition-all duration-300 lg:block",
+          sidebarCollapsed ? "lg:w-12" : "lg:w-[220px]"
+        )}
+      >
+        <button
+          onClick={() => setSidebarCollapsed((v) => !v)}
+          className={cn(
+            "mb-4 flex w-full items-center rounded-lg border border-white/10 bg-white/5 p-2.5 text-brand-muted transition hover:border-brand-red/40 hover:text-brand-white",
+            sidebarCollapsed ? "justify-center" : "justify-between px-3"
+          )}
+          aria-label={sidebarCollapsed ? t("expand_filters") : t("collapse_filters")}
+          aria-expanded={!sidebarCollapsed}
+        >
+          {!sidebarCollapsed && <span className="text-sm font-semibold text-brand-white">{t("filters")}</span>}
+          <ChevronLeft
+            size={18}
+            className={cn("shrink-0 transition-transform duration-300", sidebarCollapsed && "rotate-180")}
+          />
+        </button>
+
+        {!sidebarCollapsed && (
+          <CatalogFilters
+            brands={brands ?? []}
+            value={filters}
+            onChange={handleFiltersChange}
+            onClear={clearFilters}
+          />
+        )}
+      </div>
 
       <div className="flex-1">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
@@ -89,6 +141,13 @@ export function CatalogClient() {
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setMobileFiltersOpen(true)}
+              className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-brand-white transition hover:border-brand-red/40 lg:hidden"
+            >
+              <Filter size={16} /> {t("filters")}
+            </button>
+
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value as ProductFilters["sort"])}
@@ -140,6 +199,19 @@ export function CatalogClient() {
           </div>
         )}
       </div>
+
+      <Drawer
+        open={mobileFiltersOpen}
+        onClose={() => setMobileFiltersOpen(false)}
+        title={t("filters")}
+        footer={
+          <Button variant="primary" className="w-full" onClick={() => setMobileFiltersOpen(false)}>
+            {t("apply_filters")}
+          </Button>
+        }
+      >
+        <CatalogFilters brands={brands ?? []} value={filters} onChange={handleFiltersChange} onClear={clearFilters} />
+      </Drawer>
     </div>
   );
 }
