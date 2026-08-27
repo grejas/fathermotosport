@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Eye } from "lucide-react";
+import { useRouter } from "@/lib/i18n/navigation";
 import { useProduct } from "@/lib/hooks/useProducts";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { Product3DGallery } from "@/components/product/Product3DGallery";
@@ -18,8 +19,22 @@ import { translateText } from "@/lib/utils/translate";
 export function ProductClient({ slug }: { slug: string }) {
   const t = useTranslations("product");
   const locale = useLocale();
+  const router = useRouter();
   const { data: product, isLoading, isError } = useProduct(slug);
   const [showVisorModal, setShowVisorModal] = useState(false);
+
+  // Si el usuario llegó navegando desde el catálogo, router.back() lo devuelve
+  // exactamente a esa página conservando filtros/orden/página (estado local
+  // de CatalogClient), a diferencia de un <Link href="/catalog"> que siempre
+  // remonta el catálogo desde cero. Si no hay historial previo en la pestaña
+  // (entrada directa al producto), cae a /catalog en vez de no hacer nada.
+  const handleBackToCatalog = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/catalog");
+    }
+  };
   const [translated, setTranslated] = useState<{ name: string; description: string | null } | null>(null);
 
   // Traduce silenciosamente name/description al idioma activo (pt/en) usando la
@@ -70,6 +85,13 @@ export function ProductClient({ slug }: { slug: string }) {
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-16 sm:px-6 sm:pt-20 lg:pt-24">
+      <button
+        onClick={handleBackToCatalog}
+        className="mb-6 inline-flex items-center rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-brand-white transition-all duration-300 hover:border-brand-red/40 hover:bg-white/10 hover:text-brand-red"
+      >
+        Volver al catálogo
+      </button>
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-10">
         <div>
           {product.spin_url ? (
