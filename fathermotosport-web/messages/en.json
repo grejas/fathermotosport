@@ -176,6 +176,9 @@
     "optional": "Optional",
     "birth_date": "Date of birth",
     "birth_date_hint": "For personalized offers",
+    "country": "Country",
+    "country_placeholder": "Select your country",
+    "country_required_error": "Country is required.",
     "register_with_google": "Sign up with Google",
     "account_created": "Account created! You have a ${amount} coupon waiting for you 🎉",
     "account_create_error": "Couldn't create the account.",
@@ -271,6 +274,7 @@
     "comment_placeholder": "Comment (optional)",
     "stars_label": "stars",
     "anonymous_customer": "Customer",
+    "unknown_country": "Country not specified",
     "about_product": "About",
     "count": "{count, plural, one {# review} other {# reviews}}"
   }

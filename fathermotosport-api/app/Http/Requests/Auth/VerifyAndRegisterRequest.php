@@ -21,6 +21,7 @@ class VerifyAndRegisterRequest extends FormRequest
             'last_name' => ['required', 'string', 'max:25', 'regex:/^[a-zA-ZÀ-ÿ\s]+$/'],
             'birth_date' => ['nullable', 'date', 'after:1925-12-31', 'before_or_equal:today'],
             'phone' => ['nullable', 'string', new ValidPhone],
+            'country' => ['required', 'string', 'size:2'],
             'password' => ['required', 'string', 'min:8', 'confirmed', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).+$/'],
         ];
     }
@@ -29,6 +30,8 @@ class VerifyAndRegisterRequest extends FormRequest
     {
         return [
             'email.email' => 'Ingresa un email válido (verificá que el dominio exista).',
+            'country.required' => 'El país es obligatorio.',
+            'country.size' => 'Selecciona un país válido.',
             'birth_date.after' => 'La fecha debe estar entre 1926 y hoy.',
             'birth_date.before_or_equal' => 'La fecha debe estar entre 1926 y hoy.',
             'code.required' => 'Ingresa el código de verificación.',

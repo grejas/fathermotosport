@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Star } from "lucide-react";
+import { Globe, Star } from "lucide-react";
 import type { Review } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import { translateText } from "@/lib/utils/translate";
@@ -28,6 +28,7 @@ export function ReviewCard({ review }: { review: Review }) {
   const locale = useLocale();
   const t = useTranslations("reviews");
   const name = review.user?.name ?? t("anonymous_customer");
+  const countryCode = review.user?.country?.toLowerCase() || null;
   const [translated, setTranslated] = useState<{ title: string | null; comment: string | null } | null>(null);
 
   // Mismo patrón que ProductClient.tsx: traduce silenciosamente title/comment
@@ -65,7 +66,23 @@ export function ReviewCard({ review }: { review: Review }) {
           {initials(name)}
         </span>
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-brand-white">{name}</p>
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-brand-white">
+            <span className="truncate">{name}</span>
+            {countryCode ? (
+              <span
+                aria-hidden
+                className={`fi fi-${countryCode} h-3.5 w-5 shrink-0 rounded-sm bg-cover bg-center`}
+              />
+            ) : (
+              <Globe
+                size={13}
+                className="shrink-0 text-brand-muted"
+                aria-label={t("unknown_country")}
+              >
+                <title>{t("unknown_country")}</title>
+              </Globe>
+            )}
+          </p>
           <p className="text-xs text-brand-muted">{formatDate(review.created_at, locale)}</p>
         </div>
         <div className="ml-auto flex shrink-0">

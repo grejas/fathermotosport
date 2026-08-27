@@ -22,7 +22,7 @@ class ReviewController extends Controller
 
         $reviews = Review::query()
             ->approved()
-            ->with(['user:id,first_name,last_name', 'product:id,name,slug'])
+            ->with(['user:id,first_name,last_name,country', 'product:id,name,slug'])
             ->latest()
             ->paginate($perPage)
             ->withQueryString();

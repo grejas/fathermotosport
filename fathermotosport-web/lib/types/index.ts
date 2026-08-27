@@ -13,6 +13,7 @@ export interface User {
   full_name: string;
   email: string;
   phone: string | null;
+  country?: string | null;
   birth_date?: string | null;
   avatar: string | null;
   status: "active" | "inactive" | "banned";
@@ -94,7 +95,7 @@ export interface Review {
   title: string | null;
   comment: string | null;
   is_approved: boolean;
-  user?: { id: string; name: string; avatar: string | null };
+  user?: { id: string; name: string; avatar: string | null; country?: string | null };
   product?: { id: string; name: string; slug: string };
   created_at: string;
   /** Si es true, ReviewCard nunca la pasa por translateText() — se muestra tal cual fue escrita. */

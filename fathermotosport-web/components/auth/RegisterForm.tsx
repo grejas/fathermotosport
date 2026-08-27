@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Country } from "country-state-city";
 import ReCAPTCHA from "react-google-recaptcha";
 import { Check, Eye, EyeOff, X } from "lucide-react";
 import { Link, useRouter } from "@/lib/i18n/navigation";
@@ -34,6 +35,7 @@ const empty = {
   last_name: "",
   birth_date: "",
   phone: "",
+  country: "",
 };
 
 function extractApiError(
@@ -60,6 +62,10 @@ export function RegisterForm() {
   const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false);
   const passwordRequirements = getPasswordRequirements(form.password);
   const passwordValid = isStrongPassword(form.password);
+  const countries = useMemo(
+    () => [...Country.getAllCountries()].sort((a, b) => a.name.localeCompare(b.name)),
+    []
+  );
 
   const update = (field: keyof typeof empty, value: string) => {
     const next = { ...form, [field]: value };
@@ -78,6 +84,7 @@ export function RegisterForm() {
   const submitForm = async (e: React.FormEvent) => {
     e.preventDefault();
     const v = validateRegister(form);
+    if (!form.country) v.country = t("country_required_error");
     setErrors(v);
     if (hasErrors(v)) return;
 
@@ -118,6 +125,7 @@ export function RegisterForm() {
         last_name: form.last_name.trim(),
         birth_date: form.birth_date || undefined,
         phone: form.phone || undefined,
+        country: form.country,
         password: form.password,
         password_confirmation: form.password_confirmation,
       });
@@ -217,6 +225,29 @@ export function RegisterForm() {
           error={errors.last_name}
           maxLength={25}
         />
+      </div>
+      <div>
+        <label className="mb-1.5 block text-sm font-medium text-brand-white">{t("country")}</label>
+        <select
+          name="country"
+          value={form.country}
+          onChange={(e) => {
+            const next = { ...form, country: e.target.value };
+            setForm(next);
+            setErrors({ ...errors, country: undefined });
+          }}
+          className="input-brand"
+        >
+          <option value="" disabled>
+            {t("country_placeholder")}
+          </option>
+          {countries.map((c) => (
+            <option key={c.isoCode} value={c.isoCode}>
+              {c.flag} {c.name}
+            </option>
+          ))}
+        </select>
+        {errors.country && <p className="mt-1.5 text-xs text-brand-red">{errors.country}</p>}
       </div>
       <div>
         <Input

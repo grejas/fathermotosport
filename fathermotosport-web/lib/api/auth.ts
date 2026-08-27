@@ -18,6 +18,7 @@ export interface VerifyAndRegisterPayload {
   last_name: string;
   phone?: string;
   birth_date?: string;
+  country: string;
   password: string;
   password_confirmation: string;
 }

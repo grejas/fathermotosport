@@ -91,6 +91,7 @@ class AuthController extends Controller
             'email' => $request->email,
             'phone' => $request->phone,
             'birth_date' => $request->birth_date,
+            'country' => $request->country,
             'password' => Hash::make($request->password),
             'status' => 'active',
             'email_verified_at' => now(),

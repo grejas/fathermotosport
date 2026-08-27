@@ -176,6 +176,9 @@
     "optional": "Opcional",
     "birth_date": "Fecha de nacimiento",
     "birth_date_hint": "Para ofertas personalizadas",
+    "country": "País",
+    "country_placeholder": "Selecciona tu país",
+    "country_required_error": "El país es obligatorio.",
     "register_with_google": "Registrarme con Google",
     "account_created": "¡Cuenta creada! Tienes un cupón de ${amount} esperándote 🎉",
     "account_create_error": "No se pudo crear la cuenta.",
@@ -271,6 +274,7 @@
     "comment_placeholder": "Comentario (opcional)",
     "stars_label": "estrellas",
     "anonymous_customer": "Cliente",
+    "unknown_country": "País no especificado",
     "about_product": "Sobre",
     "count": "{count, plural, one {# reseña} other {# reseñas}}"
   }
