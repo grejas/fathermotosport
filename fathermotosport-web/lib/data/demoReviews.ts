@@ -42,7 +42,7 @@ export const demoReviews: Review[] = [
       "O design chama a atenção por onde eu passo, mas além disso funciona muito bem: boa ventilação e o visor tem um campo de visão excelente.",
     is_approved: true,
     skip_translation: true,
-    user: { id: "demo-user-2", name: "Daniel Rojas", avatar: null },
+    user: { id: "demo-user-2", name: "João Oliveira", avatar: null },
     product: {
       id: "demo-product-2",
       name: "AGV Pista GPR Italia Forgiato",
@@ -75,7 +75,7 @@ export const demoReviews: Review[] = [
       "I use it for long rides and the ventilation really shows even in warm weather. It's also quite quiet at highway speed.",
     is_approved: true,
     skip_translation: true,
-    user: { id: "demo-user-4", name: "Andrés Vargas", avatar: null },
+    user: { id: "demo-user-4", name: "James Anderson", avatar: null },
     product: {
       id: "demo-product-4",
       name: "Casco Shoei X-Fourteen BMW",
@@ -92,7 +92,7 @@ export const demoReviews: Review[] = [
       "As luvas ficaram perfeitas nas mãos, bom contato com os comandos da moto e a proteção nos nós dos dedos é sólida sem atrapalhar os movimentos.",
     is_approved: true,
     skip_translation: true,
-    user: { id: "demo-user-5", name: "Luis Fernández", avatar: null },
+    user: { id: "demo-user-5", name: "Lucas Ferreira", avatar: null },
     product: {
       id: "demo-product-5",
       name: "GUANTES ALPINESTARS GP PRO R4",
@@ -109,7 +109,7 @@ export const demoReviews: Review[] = [
       "La finition de cette édition est superbe, on sent le souci du détail. La livraison a pris plus de temps que prévu mais le casque en vaut la peine.",
     is_approved: true,
     skip_translation: true,
-    user: { id: "demo-user-6", name: "Jorge Castillo", avatar: null },
+    user: { id: "demo-user-6", name: "Julien Moreau", avatar: null },
     product: {
       id: "demo-product-6",
       name: "Casco AGV Pista GP R Joan Mir World Champion",
