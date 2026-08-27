@@ -31,9 +31,11 @@ export function ReviewCard({ review }: { review: Review }) {
   const [translated, setTranslated] = useState<{ title: string | null; comment: string | null } | null>(null);
 
   // Mismo patrón que ProductClient.tsx: traduce silenciosamente title/comment
-  // al idioma activo (pt/en); en 'es' no se traduce nada.
+  // al idioma activo (pt/en); en 'es' no se traduce nada. Si skip_translation
+  // es true (reseña escrita originalmente en otro idioma), nunca se traduce,
+  // bajo ningún locale.
   useEffect(() => {
-    if (locale === "es") {
+    if (review.skip_translation || locale === "es") {
       setTranslated(null);
       return;
     }

@@ -33,14 +33,15 @@ export const demoReviews: Review[] = [
     },
     created_at: "2026-02-14T10:15:00.000Z",
   },
-  // TEMPORAL: reseña demo #2
+  // TEMPORAL: reseña demo #2 — escrita originalmente en portugués, no traducir
   {
     id: "demo-2",
     rating: 5,
-    title: "Diseño espectacular",
+    title: "Design espetacular",
     comment:
-      "El diseño llama la atención por donde pase, pero además cumple: buena ventilación y el visor tiene un campo de visión excelente.",
+      "O design chama a atenção por onde eu passo, mas além disso funciona muito bem: boa ventilação e o visor tem um campo de visão excelente.",
     is_approved: true,
+    skip_translation: true,
     user: { id: "demo-user-2", name: "Daniel Rojas", avatar: null },
     product: {
       id: "demo-product-2",
@@ -65,14 +66,15 @@ export const demoReviews: Review[] = [
     },
     created_at: "2026-04-08T09:05:00.000Z",
   },
-  // TEMPORAL: reseña demo #4
+  // TEMPORAL: reseña demo #4 — escrita originalmente en inglés, no traducir
   {
     id: "demo-4",
     rating: 5,
-    title: "Ventilación excelente",
+    title: "Great ventilation",
     comment:
-      "Lo uso para viajes largos y la ventilación se nota incluso en clima cálido. Además es bastante silencioso a alta velocidad.",
+      "I use it for long rides and the ventilation really shows even in warm weather. It's also quite quiet at highway speed.",
     is_approved: true,
+    skip_translation: true,
     user: { id: "demo-user-4", name: "Andrés Vargas", avatar: null },
     product: {
       id: "demo-product-4",
@@ -81,14 +83,15 @@ export const demoReviews: Review[] = [
     },
     created_at: "2026-05-05T17:30:00.000Z",
   },
-  // TEMPORAL: reseña demo #5
+  // TEMPORAL: reseña demo #5 — escrita originalmente en portugués, no traducir
   {
     id: "demo-5",
     rating: 5,
-    title: "Agarre y protección de primera",
+    title: "Ótimo ajuste e proteção",
     comment:
-      "Se sienten muy seguros en las manos, buen tacto con los controles y la protección en los nudillos es sólida sin restar movilidad.",
+      "As luvas ficaram perfeitas nas mãos, bom contato com os comandos da moto e a proteção nos nós dos dedos é sólida sem atrapalhar os movimentos.",
     is_approved: true,
+    skip_translation: true,
     user: { id: "demo-user-5", name: "Luis Fernández", avatar: null },
     product: {
       id: "demo-product-5",
@@ -97,14 +100,15 @@ export const demoReviews: Review[] = [
     },
     created_at: "2026-05-25T12:00:00.000Z",
   },
-  // TEMPORAL: reseña demo #6
+  // TEMPORAL: reseña demo #6 — escrita originalmente en francés, no traducir
   {
     id: "demo-6",
     rating: 4,
-    title: "Edición espectacular, entrega lenta",
+    title: "Édition magnifique, livraison lente",
     comment:
-      "El acabado de esta edición es una belleza, se nota el detalle. La entrega tardó más de lo esperado pero el casco lo vale.",
+      "La finition de cette édition est superbe, on sent le souci du détail. La livraison a pris plus de temps que prévu mais le casque en vaut la peine.",
     is_approved: true,
+    skip_translation: true,
     user: { id: "demo-user-6", name: "Jorge Castillo", avatar: null },
     product: {
       id: "demo-product-6",

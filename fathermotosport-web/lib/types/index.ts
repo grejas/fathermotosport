@@ -97,6 +97,8 @@ export interface Review {
   user?: { id: string; name: string; avatar: string | null };
   product?: { id: string; name: string; slug: string };
   created_at: string;
+  /** Si es true, ReviewCard nunca la pasa por translateText() — se muestra tal cual fue escrita. */
+  skip_translation?: boolean;
 }
 
 export interface ReviewsSummary {
