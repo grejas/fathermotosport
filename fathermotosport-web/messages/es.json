@@ -276,6 +276,9 @@
     "anonymous_customer": "Cliente",
     "unknown_country": "País no especificado",
     "about_product": "Sobre",
+    "tab_label": "Reseñas",
+    "show_more": "Ver más reseñas",
+    "show_less": "Ver menos",
     "count": "{count, plural, one {# reseña} other {# reseñas}}"
   }
 }

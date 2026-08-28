@@ -7,8 +7,10 @@ export interface CreateReviewPayload {
   comment?: string;
 }
 
-export async function getReviews(page = 1): Promise<PaginatedResponse<Review>> {
-  const { data } = await apiClient.get<PaginatedResponse<Review>>("/reviews", { params: { page } });
+export async function getReviews(page = 1, perPage = 60): Promise<PaginatedResponse<Review>> {
+  const { data } = await apiClient.get<PaginatedResponse<Review>>("/reviews", {
+    params: { page, per_page: perPage },
+  });
   return data;
 }
 
