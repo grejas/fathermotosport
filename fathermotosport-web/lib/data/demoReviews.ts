@@ -25,7 +25,7 @@ export const demoReviews: Review[] = [
     comment:
       "La calidad de los materiales y el acabado son impresionantes. Se siente firme en la cabeza y no genera puntos de presión ni en viajes largos.",
     is_approved: true,
-    user: { id: "demo-user-1", name: "Carlos Mendoza", avatar: null },
+    user: { id: "demo-user-1", name: "Carlos Mendoza", avatar: null, country: "BO" },
     product: {
       id: "demo-product-1",
       name: "AGV Pista GP R Project 2.0 46",
@@ -42,7 +42,7 @@ export const demoReviews: Review[] = [
       "O design chama a atenção por onde eu passo, mas além disso funciona muito bem: boa ventilação e o visor tem um campo de visão excelente.",
     is_approved: true,
     skip_translation: true,
-    user: { id: "demo-user-2", name: "João Oliveira", avatar: null },
+    user: { id: "demo-user-2", name: "João Oliveira", avatar: null, country: "BR" },
     product: {
       id: "demo-product-2",
       name: "AGV Pista GPR Italia Forgiato",
@@ -58,7 +58,7 @@ export const demoReviews: Review[] = [
     comment:
       "Excelente terminación y se nota la calidad, aunque me quedó un poco ajustado al principio. Con un par de usos se fue acomodando bien.",
     is_approved: true,
-    user: { id: "demo-user-3", name: "Miguel Herrera", avatar: null },
+    user: { id: "demo-user-3", name: "Miguel Herrera", avatar: null, country: "PE" },
     product: {
       id: "demo-product-3",
       name: "Casco AGV Pista GP R Yamaha R1M",
@@ -75,7 +75,7 @@ export const demoReviews: Review[] = [
       "I use it for long rides and the ventilation really shows even in warm weather. It's also quite quiet at highway speed.",
     is_approved: true,
     skip_translation: true,
-    user: { id: "demo-user-4", name: "James Anderson", avatar: null },
+    user: { id: "demo-user-4", name: "James Anderson", avatar: null, country: "US" },
     product: {
       id: "demo-product-4",
       name: "Casco Shoei X-Fourteen BMW",
@@ -92,7 +92,7 @@ export const demoReviews: Review[] = [
       "As luvas ficaram perfeitas nas mãos, bom contato com os comandos da moto e a proteção nos nós dos dedos é sólida sem atrapalhar os movimentos.",
     is_approved: true,
     skip_translation: true,
-    user: { id: "demo-user-5", name: "Lucas Ferreira", avatar: null },
+    user: { id: "demo-user-5", name: "Lucas Ferreira", avatar: null, country: "BR" },
     product: {
       id: "demo-product-5",
       name: "GUANTES ALPINESTARS GP PRO R4",
@@ -109,7 +109,7 @@ export const demoReviews: Review[] = [
       "La finition de cette édition est superbe, on sent le souci du détail. La livraison a pris plus de temps que prévu mais le casque en vaut la peine.",
     is_approved: true,
     skip_translation: true,
-    user: { id: "demo-user-6", name: "Julien Moreau", avatar: null },
+    user: { id: "demo-user-6", name: "Julien Moreau", avatar: null, country: "FR" },
     product: {
       id: "demo-product-6",
       name: "Casco AGV Pista GP R Joan Mir World Champion",
@@ -125,7 +125,7 @@ export const demoReviews: Review[] = [
     comment:
       "El carbono se ve espectacular y es notablemente más liviano que otros cascos que probé antes. Compra 100% recomendada para quien busca algo premium.",
     is_approved: true,
-    user: { id: "demo-user-7", name: "Mateo Salazar", avatar: null },
+    user: { id: "demo-user-7", name: "Mateo Salazar", avatar: null, country: "CL" },
     product: {
       id: "demo-product-7",
       name: "Casco AGV Pista GP R Carbon Iridium",
