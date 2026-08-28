@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { Star } from "lucide-react";
 import { Link } from "@/lib/i18n/navigation";
@@ -71,18 +71,27 @@ function ProductSelect({
   );
 }
 
-export function ReviewForm() {
+export function ReviewForm({ product: fixedProduct }: { product?: Product } = {}) {
   const t = useTranslations("reviews");
   const isAuth = useAuthStore((s) => s.isAuth);
   const { mutate, isPending } = useCreateReview();
 
-  const [product, setProduct] = useState<Product | null>(null);
+  const [product, setProduct] = useState<Product | null>(fixedProduct ?? null);
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [title, setTitle] = useState("");
   const [comment, setComment] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Mantiene el producto fijo sincronizado si el usuario navega a otro
+  // producto sin remount (ej. desde RelatedProducts), ya que ProductClient
+  // reutiliza esta misma instancia de ReviewForm. Se usa fixedProduct?.slug
+  // (no el objeto) porque ProductClient recrea el objeto `product` en cada
+  // render una vez que llega la traducción, y eso dispararía este efecto
+  // en cada render perdiendo lo que el usuario esté escribiendo.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (fixedProduct) setProduct(fixedProduct); }, [fixedProduct?.slug]);
 
   if (!isAuth) {
     return (
@@ -142,7 +151,7 @@ export function ReviewForm() {
 
   return (
     <form onSubmit={handleSubmit} className="rounded-xl border border-white/10 bg-brand-card p-5">
-      <ProductSelect value={product} onChange={setProduct} />
+      {!fixedProduct && <ProductSelect value={product} onChange={setProduct} />}
 
       <div className="mb-4 flex items-center gap-1">
         {Array.from({ length: 5 }).map((_, i) => {
