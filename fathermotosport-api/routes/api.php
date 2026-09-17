@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\BrandController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CouponController;
+use App\Http\Controllers\Api\FlashPromoController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PostController;
@@ -44,6 +45,9 @@ Route::prefix('v1')->group(function () {
 
     // Colores de visor para cascos
     Route::get('/visor-colors', [VisorColorController::class, 'index']);
+
+    // Promoción flash recurrente (estado de la ventana actual)
+    Route::get('/flash-promo', [FlashPromoController::class, 'show']);
 
     // Blog (artículos publicados)
     Route::get('/posts', [PostController::class, 'index']);

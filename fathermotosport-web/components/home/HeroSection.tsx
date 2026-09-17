@@ -50,7 +50,13 @@ export function HeroSection() {
   }, [heroBanner, locale]);
 
   return (
-    <section ref={root} className="relative flex min-h-[92vh] items-center overflow-hidden">
+    <section
+      ref={root}
+      // first:pt-20 despeja el navbar fijo (h-16) SOLO cuando el hero es el primer
+      // elemento (sin banner de promo arriba). Con banner presente, el banner ya
+      // provee su propio pt-20 y el hero no agrega espacio extra.
+      className="relative flex min-h-[84vh] items-center overflow-hidden first:pt-20"
+    >
       {/* Fondo: imagen del banner del admin, detrás de partículas y contenido.
           La imagen es cuadrada (874x874); se limita al 55% del ancho y se alinea
           a la derecha para que el casco no invada el texto de la izquierda. */}

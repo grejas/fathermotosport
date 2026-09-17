@@ -11,6 +11,7 @@ import { SpinGallery } from "@/components/product/SpinGallery";
 import { ProductInfo } from "@/components/product/ProductInfo";
 import { ProductTabs } from "@/components/product/ProductTabs";
 import { RelatedProducts } from "@/components/product/RelatedProducts";
+import { ProductFlashPromo } from "@/components/product/ProductFlashPromo";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Button } from "@/components/ui/Button";
 import { VisorColorsModal } from "@/components/3d/VisorColorsModal";
@@ -91,6 +92,8 @@ export function ProductClient({ slug }: { slug: string }) {
       >
         Volver al catálogo
       </button>
+
+      <ProductFlashPromo categoryId={product.category?.id} categorySlug={product.category?.slug} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-10">
         <div>

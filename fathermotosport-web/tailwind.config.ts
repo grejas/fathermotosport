@@ -36,6 +36,8 @@ const config: Config = {
         marquee: "marquee 30s linear infinite",
         "fade-in": "fade-in 0.6s ease-out forwards",
         "slide-up": "slide-up 0.6s ease-out forwards",
+        "flash-shine": "flash-shine 3.5s ease-in-out infinite",
+        "flash-glow": "flash-glow 1.6s ease-in-out infinite",
       },
       keyframes: {
         float: {
@@ -57,6 +59,14 @@ const config: Config = {
         "slide-up": {
           "0%": { opacity: "0", transform: "translateY(24px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "flash-shine": {
+          "0%": { transform: "translateX(-120%)" },
+          "60%, 100%": { transform: "translateX(120%)" },
+        },
+        "flash-glow": {
+          "0%, 100%": { boxShadow: "0 0 0 0 rgba(201,168,76,0.55)", transform: "scale(1)" },
+          "50%": { boxShadow: "0 0 18px 4px rgba(201,168,76,0.15)", transform: "scale(1.06)" },
         },
       },
       boxShadow: {

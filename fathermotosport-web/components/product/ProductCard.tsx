@@ -7,12 +7,21 @@ import { Box, Plus } from "lucide-react";
 import type { Product } from "@/lib/types";
 import { cn, formatPrice, getCategoryColor, getImageUrl } from "@/lib/utils";
 import { useCartStore } from "@/store/cartStore";
+import { useFlashPromos } from "@/lib/hooks/useFlashPromo";
+import { flashPromoAppliesTo } from "@/lib/api/flashPromo";
 import toast from "react-hot-toast";
 
 export function ProductCard({ product }: { product: Product }) {
   const t = useTranslations("product");
+  const tFlash = useTranslations("flash_promo");
   const accent = getCategoryColor(product.category?.slug);
   const addItem = useCartStore((s) => s.addItem);
+
+  // Todas las cards comparten una sola consulta (react-query dedupe por queryKey).
+  const { data: flashPromos } = useFlashPromos();
+  const matchingPromo = (flashPromos ?? []).find((p) =>
+    flashPromoAppliesTo(p, product.category?.id, product.category?.slug)
+  );
 
   // Agotado solo si NINGUNA variante activa tiene stock.
   const isOutOfStock = !product.variants?.some((v) => v.is_active && v.stock > 0);
@@ -70,6 +79,15 @@ export function ProductCard({ product }: { product: Product }) {
               title={t("model_3d_available")}
             >
               <Box size={11} /> 3D
+            </span>
+          )}
+
+          {matchingPromo && (
+            <span
+              className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-brand-carbon/70 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-gold ring-1 ring-brand-gold/30 backdrop-blur"
+              title={matchingPromo.promo_text ?? undefined}
+            >
+              🎁 {tFlash("card_badge")}
             </span>
           )}
         </div>

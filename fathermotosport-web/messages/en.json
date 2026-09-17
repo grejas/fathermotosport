@@ -79,8 +79,18 @@
     "payment_desc": "We accept PayPal, Stripe and MercadoPago with SSL encryption.",
     "view_payment_methods": "View payment methods"
   },
+  "flash_promo": {
+    "badge": "Flash Promo",
+    "ends_in": "Ends in:",
+    "days": "days",
+    "hours": "hours",
+    "minutes": "min",
+    "seconds": "sec",
+    "card_badge": "Active promo"
+  },
   "benefits": {
     "free_shipping": "Free shipping",
+    "international_shipping": "Shipping across the Americas and Europe",
     "free_shipping_desc": "On all your orders",
     "warranty": "Warranty",
     "warranty_desc": "Original products",
