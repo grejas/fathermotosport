@@ -52,10 +52,15 @@ export function HeroSection() {
   return (
     <section
       ref={root}
-      // first:pt-20 despeja el navbar fijo (h-16) SOLO cuando el hero es el primer
-      // elemento (sin banner de promo arriba). Con banner presente, el banner ya
-      // provee su propio pt-20 y el hero no agrega espacio extra.
-      className="relative flex min-h-[84vh] items-center overflow-hidden first:pt-20"
+      // El hero mide lo que mide su contenido (sin min-h) y se ancla arriba con
+      // items-start. El combo min-h-[84vh] + items-center que había antes era lo que
+      // dejaba el hueco muerto encima de "Colección 2026", con y sin promo.
+      // El espacio se controla solo con padding, en dos escenarios por breakpoint:
+      //   · pt-6  / md:pt-10       => CON promo: separación del banner de arriba.
+      //   · first:pt-24 / md:first:pt-32 => SIN promo el hero es :first-child y tiene que
+      //     despejar él mismo el navbar fijo (h-16 = 64px); el resto es aire.
+      //   · pb-16 / md:pb-24       => separación con el marquee de abajo.
+      className="relative flex items-start overflow-hidden pt-6 pb-16 first:pt-24 md:pt-10 md:pb-24 md:first:pt-32"
     >
       {/* Fondo: imagen del banner del admin, detrás de partículas y contenido.
           La imagen es cuadrada (874x874); se limita al 55% del ancho y se alinea

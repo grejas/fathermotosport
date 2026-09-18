@@ -84,8 +84,8 @@ function PromoSlide({ promo, onExpire, dots }: { promo: FlashPromo; onExpire: ()
           {/* Una sola fila en mobile (ícono + texto + contador en línea, como el banner
               compacto de producto). En md: crece al layout grande con justify-between. */}
           <div className="relative flex items-center justify-between gap-3 md:gap-4">
-            {/* Grupo ícono + texto: en mobile toma el espacio disponible y el texto trunca;
-                en desktop se ajusta al contenido. */}
+            {/* Grupo ícono + texto: en mobile toma el espacio disponible y el texto envuelve
+                a 2 líneas (como ProductFlashPromo); en desktop se ajusta al contenido. */}
             <div className="flex min-w-0 flex-1 items-center gap-2.5 md:flex-initial md:gap-4">
               <span
                 aria-hidden
@@ -98,7 +98,7 @@ function PromoSlide({ promo, onExpire, dots }: { promo: FlashPromo; onExpire: ()
                   {t("badge")}
                 </span>
                 <p
-                  className={`${bebasNeue.className} mt-0.5 truncate text-base uppercase leading-none tracking-wide text-white md:mt-1 md:overflow-visible md:whitespace-nowrap md:text-2xl`}
+                  className={`${bebasNeue.className} mt-0.5 line-clamp-2 text-base uppercase leading-tight tracking-wide text-white md:mt-1 md:line-clamp-none md:overflow-visible md:whitespace-nowrap md:text-2xl`}
                   style={{ textShadow: "0 2px 10px rgba(0,0,0,0.7)" }}
                 >
                   {renderPromoText(promo.promo_text!)}

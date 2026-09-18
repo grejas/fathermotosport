@@ -101,7 +101,16 @@ class FlashPromoResource extends Resource
                         ->label('Texto de la promoción')
                         ->placeholder('Ej: Llévate una visera gratis con cualquier casco')
                         ->rows(2)
-                        ->maxLength(500)
+                        // 50 caracteres es el máximo que entra completo en el banner de
+                        // mobile sin recortarse. El line-clamp del front queda solo como
+                        // red de seguridad por si se edita promo_text directo en la BD.
+                        ->maxLength(50)
+                        ->live(debounce: 300)
+                        ->hint(fn (?string $state): string => mb_strlen($state ?? '').'/50')
+                        ->hintColor(fn (?string $state): string => mb_strlen($state ?? '') > 50 ? 'danger' : 'gray')
+                        ->validationMessages([
+                            'max' => 'El texto no puede superar los 50 caracteres.',
+                        ])
                         ->required()
                         ->columnSpanFull(),
 
