@@ -202,26 +202,11 @@ class FlashPromoResource extends Resource
                     ->badge()
                     ->formatStateUsing(fn (bool $state): string => $state ? '🔁 Recurrente' : 'Única')
                     ->color(fn (bool $state): string => $state ? 'info' : 'gray'),
-                // Identifica la cadena recurrente: mismas 8 primeras letras = misma cadena.
-                Tables\Columns\TextColumn::make('recurring_group_id')
-                    ->label('Cadena')
-                    ->placeholder('—')
-                    ->formatStateUsing(fn (?string $state): string => $state ? strtoupper(substr($state, 0, 8)) : '—')
-                    ->badge()
-                    ->color('warning')
-                    ->toggleable(),
                 Tables\Columns\IconColumn::make('is_active')->label('Activa')->boolean(),
             ])
             ->filters([
                 Tables\Filters\TernaryFilter::make('is_active')->label('Activa'),
                 Tables\Filters\TernaryFilter::make('is_recurring')->label('Recurrente'),
-            ])
-            ->groups([
-                Tables\Grouping\Group::make('recurring_group_id')
-                    ->label('Cadena recurrente')
-                    ->getTitleFromRecordUsing(fn (FlashPromo $r): string => $r->recurring_group_id
-                        ? 'Cadena '.strtoupper(substr($r->recurring_group_id, 0, 8))
-                        : 'Promos únicas'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

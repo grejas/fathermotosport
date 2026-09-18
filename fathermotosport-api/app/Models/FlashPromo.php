@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Str;
 
 class FlashPromo extends Model
 {
@@ -18,7 +17,6 @@ class FlashPromo extends Model
         'is_active',
         'is_recurring',
         'rest_minutes',
-        'recurring_group_id',
     ];
 
     protected $casts = [
@@ -28,18 +26,6 @@ class FlashPromo extends Model
         'is_recurring' => 'boolean',
         'rest_minutes' => 'integer',
     ];
-
-    protected static function booted(): void
-    {
-        // Una promo recurrente sin cadena asignada estrena un recurring_group_id.
-        // Las ocurrencias que genera el scheduler ya vienen con su group_id, así que
-        // este hook no las sobreescribe.
-        static::saving(function (self $promo): void {
-            if ($promo->is_recurring && empty($promo->recurring_group_id)) {
-                $promo->recurring_group_id = (string) Str::uuid();
-            }
-        });
-    }
 
     /**
      * Categorías a las que aplica la promo. Si no tiene ninguna, aplica a TODA la tienda.

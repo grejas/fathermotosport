@@ -8,67 +8,61 @@ use Illuminate\Support\Carbon;
 
 class GenerateFlashPromoOccurrences extends Command
 {
+    // Se mantiene el nombre para no romper el scheduler/cron ya configurado.
     protected $signature = 'flash-promos:generate-next-occurrences';
 
-    protected $description = 'Genera la siguiente ocurrencia de cada promoción flash recurrente cuya cadena ya terminó.';
+    protected $description = 'Avanza cada promoción flash recurrente terminada a su ventana vigente (misma fila, UPDATE).';
 
     public function handle(): int
     {
         $now = Carbon::now();
 
-        // Todas las cadenas recurrentes con su ocurrencia más reciente y sus categorías.
-        $groups = FlashPromo::query()
+        // Promos recurrentes, activas, cuya ventana ya terminó. Cada una se ACTUALIZA
+        // en su misma fila (no se crean filas nuevas). is_active=false => se detiene
+        // (respeta la desactivación manual).
+        $promos = FlashPromo::query()
             ->where('is_recurring', true)
-            ->whereNotNull('recurring_group_id')
-            ->with('categories:id')
-            ->get()
-            ->groupBy('recurring_group_id');
+            ->where('is_active', true)
+            ->where('ends_at', '<', $now)
+            ->get();
 
-        $created = 0;
+        $updated = 0;
 
-        foreach ($groups as $groupId => $occurrences) {
-            // La ocurrencia más reciente de la cadena (mayor ends_at).
-            $latest = $occurrences->sortByDesc('ends_at')->first();
+        foreach ($promos as $promo) {
+            $durationSeconds = $promo->ends_at->getTimestamp() - $promo->starts_at->getTimestamp();
+            $restSeconds = max(0, (int) ($promo->rest_minutes ?? 0)) * 60;
+            $periodSeconds = $durationSeconds + $restSeconds; // ciclo completo: activa + descanso
 
-            // Respeta la desactivación manual: si la última se apagó, la cadena se detiene.
-            if (! $latest->is_active) {
+            // Configuración inválida (duración 0): no se puede ciclar, se salta.
+            if ($periodSeconds <= 0 || $durationSeconds <= 0) {
                 continue;
             }
 
-            // Genera hacia adelante hasta tener una ocurrencia que aún no haya terminado
-            // (self-healing si el scheduler estuvo caído un rato). Cap de seguridad.
-            $cursor = $latest;
-            $categoryIds = $latest->categories->pluck('id')->all();
-            $guard = 0;
+            $elapsed = $now->getTimestamp() - $promo->starts_at->getTimestamp();
 
-            while ($cursor->ends_at->lessThanOrEqualTo($now) && $guard < 500) {
-                $durationSeconds = $cursor->ends_at->getTimestamp() - $cursor->starts_at->getTimestamp();
-                $rest = (int) ($cursor->rest_minutes ?? 0);
+            // Índice del ciclo actual. Saltamos directo a la ventana más cercana a AHORA
+            // (la activa ahora, o la próxima futura) sin replicar los ciclos intermedios.
+            $k = intdiv(max(0, $elapsed), $periodSeconds);
 
-                $newStart = $cursor->ends_at->copy()->addMinutes($rest);
-                $newEnd = $newStart->copy()->addSeconds($durationSeconds);
-
-                $next = FlashPromo::create([
-                    'starts_at' => $newStart,
-                    'ends_at' => $newEnd,
-                    'promo_text' => $cursor->promo_text,
-                    'is_active' => true,
-                    'is_recurring' => true,
-                    'rest_minutes' => $cursor->rest_minutes,
-                    'recurring_group_id' => $groupId,
-                ]);
-
-                if (! empty($categoryIds)) {
-                    $next->categories()->sync($categoryIds);
-                }
-
-                $created++;
-                $guard++;
-                $cursor = $next;
+            // Si ya pasó la parte activa del ciclo k (estamos en su descanso), la ventana
+            // correcta es la del ciclo siguiente.
+            if ($elapsed > $k * $periodSeconds + $durationSeconds) {
+                $k++;
             }
+
+            $newStart = $promo->starts_at->copy()->addSeconds($k * $periodSeconds);
+            $newEnd = $newStart->copy()->addSeconds($durationSeconds);
+
+            // UPDATE de la misma fila: solo se corren las fechas a la ventana vigente.
+            $promo->update([
+                'starts_at' => $newStart,
+                'ends_at' => $newEnd,
+            ]);
+
+            $updated++;
         }
 
-        $this->info("Ocurrencias de promoción flash generadas: {$created}.");
+        $this->info("Promociones flash recurrentes actualizadas: {$updated}.");
 
         return self::SUCCESS;
     }
