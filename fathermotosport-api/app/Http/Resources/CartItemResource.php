@@ -18,7 +18,6 @@ class CartItemResource extends JsonResource
             'variant' => $this->whenLoaded('variant', fn () => [
                 'id' => $this->variant->id,
                 'sku' => $this->variant->sku,
-                'color' => $this->variant->color,
                 'size' => $this->variant->size,
                 'stock' => $this->variant->stock,
                 'in_stock' => $this->variant->stock > 0,
@@ -27,6 +26,7 @@ class CartItemResource extends JsonResource
                     fn () => [
                         'id' => $this->variant->product->id,
                         'name' => $this->variant->product->name,
+                        'color' => $this->variant->product->color,
                         'slug' => $this->variant->product->slug,
                         'primary_image' => $this->variant->product->primary_image,
                     ]

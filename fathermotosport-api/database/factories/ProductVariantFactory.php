@@ -18,7 +18,6 @@ class ProductVariantFactory extends Factory
     {
         return [
             'product_id' => Product::factory(),
-            'color' => fake()->randomElement(['Negro', 'Blanco', 'Rojo', 'Azul', 'Gris']),
             'size' => fake()->randomElement(['S', 'M', 'L', 'XL', 'XXL']),
             'finish' => fake()->randomElement(['Mate', 'Brillante', 'Carbono', 'Cromado']),
             'sku' => 'VAR-TEST-'.Str::upper(Str::random(8)),

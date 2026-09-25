@@ -104,7 +104,8 @@
     "categories": "Categories",
     "payments": "Payments",
     "contact": "Contact",
-    "copyright": "All rights reserved."
+    "copyright": "All rights reserved.",
+    "returns_policy": "Shipping and Returns Policy"
   },
   "whatsapp": {
     "product_message": "Hello! I'm interested in the product: *{name}*. Could you give me more information about price, availability and shipping? Thank you!",
@@ -164,7 +165,25 @@
     "empty_cart_error": "Your cart is empty.",
     "order_created": "Order created!",
     "order_error": "Couldn't create the order.",
-    "free": "Free"
+    "free": "Free",
+    "shipping_calculating": "Calculating shipping…",
+    "shipping_weight": "Order weight: {weight} kg",
+    "shipping_days": "Estimated delivery: {min}-{max} days",
+    "shipping_unavailable": "We do not have a shipping rate for {country} yet. Message us on WhatsApp and we will arrange it.",
+    "shipping_to_coordinate": "To be arranged",
+    "pay_with_paypal": "Pay with PayPal",
+    "redirecting_paypal": "Redirecting to PayPal…",
+    "paypal_no_approval_url": "PayPal did not return a payment link. Please try again.",
+    "paypal_capturing": "Confirming your PayPal payment…",
+    "paypal_missing_token": "The PayPal payment reference is missing from the return link.",
+    "paypal_not_completed": "PayPal returned the status \"{status}\". Your order is still awaiting payment.",
+    "paypal_capture_error": "We could not confirm the PayPal payment.",
+    "paypal_capture_failed_title": "We could not confirm the payment",
+    "paypal_cancelled_title": "Payment cancelled",
+    "paypal_cancelled_text": "You cancelled the payment on PayPal. Your order was saved as pending: you can pay for it from My orders.",
+    "paypal_order_reference": "Order: {id}",
+    "paypal_see_orders": "See my orders",
+    "pay_with": "Pay with"
   },
   "auth": {
     "login": "Sign in",
@@ -251,20 +270,46 @@
     "close": "Close"
   },
   "countries": {
-    "bolivia": "Bolivia",
-    "brazil": "Brazil",
-    "argentina": "Argentina",
-    "chile": "Chile",
-    "peru": "Peru",
-    "colombia": "Colombia",
-    "mexico": "Mexico",
-    "ecuador": "Ecuador",
-    "paraguay": "Paraguay",
-    "uruguay": "Uruguay",
-    "venezuela": "Venezuela",
-    "spain": "Spain",
-    "usa": "United States",
-    "other": "Other country"
+    "AR": "Argentina",
+    "AT": "Austria",
+    "BE": "Belgium",
+    "BO": "Bolivia",
+    "BR": "Brazil",
+    "CA": "Canada",
+    "CH": "Switzerland",
+    "CL": "Chile",
+    "CO": "Colombia",
+    "CR": "Costa Rica",
+    "CZ": "Czech Republic",
+    "DE": "Germany",
+    "DK": "Denmark",
+    "DO": "Dominican Republic",
+    "EC": "Ecuador",
+    "ES": "Spain",
+    "FI": "Finland",
+    "FR": "France",
+    "GB": "United Kingdom",
+    "GR": "Greece",
+    "GT": "Guatemala",
+    "HN": "Honduras",
+    "HU": "Hungary",
+    "IE": "Ireland",
+    "IT": "Italy",
+    "MX": "Mexico",
+    "NI": "Nicaragua",
+    "NL": "Netherlands",
+    "NO": "Norway",
+    "PA": "Panama",
+    "PE": "Peru",
+    "PL": "Poland",
+    "PT": "Portugal",
+    "PY": "Paraguay",
+    "RO": "Romania",
+    "SE": "Sweden",
+    "SV": "El Salvador",
+    "US": "United States",
+    "UY": "Uruguay",
+    "VE": "Venezuela"
   },
   "reviews": {
     "section_title": "What our customers say",
@@ -290,5 +335,46 @@
     "show_more": "Show more reviews",
     "show_less": "Show less",
     "count": "{count, plural, one {# review} other {# reviews}}"
+  },
+  "shipping_returns": {
+    "free_shipping": "Free shipping",
+    "free_returns": "Free returns",
+    "summary_shipping": "Free shipping across the Americas and Europe.",
+    "summary_damaged": "If your item arrives damaged, you have 48 hours from delivery to report it. We send you a new one at no cost or refund your money, your choice.",
+    "summary_withdrawal": "You can also return any item within 7 days of delivery, even if it is not damaged, as long as it is unused, undamaged and complete, with its original packaging and all its accessories.",
+    "full_policy_link": "See full returns policy"
+  },
+  "returns_policy": {
+    "title": "Shipping and Returns Policy",
+    "intro": "Free shipping across the Americas and Europe. The conditions for returns, replacements and order cancellations are set out below.",
+    "damaged_title": "Returns for damaged items",
+    "damaged_items": [
+      "Damaged or defective items must be reported within 48 hours of delivery.",
+      "The report must include photographs of the damage.",
+      "The customer chooses between a replacement item at no cost or a full refund.",
+      "Both the replacement shipment and the return of the damaged item are free for the customer."
+    ],
+    "withdrawal_title": "Right to change your mind",
+    "withdrawal_items": [
+      "Returns with no reason given may be requested within 7 days of delivery.",
+      "The item must be unused and free of any damage caused by the customer.",
+      "The return must be complete: original packaging and every accessory and component included.",
+      "Items that do not meet these conditions do not qualify for a refund."
+    ],
+    "process_title": "How the process works",
+    "process_items": [
+      "Request the return through the channels listed at the end of this page, with your order number and the reason.",
+      "We arrange the pickup or the return shipment.",
+      "Once the item is received and checked, the refund or replacement is processed."
+    ],
+    "cancellations_title": "Cancellations",
+    "cancellations_items": [
+      "An order may be cancelled at any time before it starts being processed for shipping.",
+      "If the order has already been dispatched, the return process described above applies."
+    ],
+    "help": "To start a return or ask about your order, contact us through either of these channels:",
+    "contact_whatsapp": "WhatsApp",
+    "copy_email": "Copy address",
+    "copied": "Copied"
   }
 }

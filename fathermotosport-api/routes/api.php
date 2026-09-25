@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\ShippingController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VisorColorController;
 use Illuminate\Support\Facades\Route;
@@ -38,6 +39,9 @@ Route::prefix('v1')->group(function () {
     Route::get('/categories/{slug}', [CategoryController::class, 'show']);
 
     Route::get('/brands', [BrandController::class, 'index']);
+
+    // Costo de envío según país y peso del pedido
+    Route::get('/shipping/calculate', [ShippingController::class, 'calculate']);
 
     // Banners (home / hero / sidebar / footer)
     Route::get('/banners', [BannerController::class, 'index']);
@@ -83,9 +87,20 @@ Route::prefix('v1')->group(function () {
     Route::post('/orders', [OrderController::class, 'store']);
     Route::get('/orders/{id}', [OrderController::class, 'show']);
 
+    // PayPal: la integración está completa (controlador, servicio, webhook y páginas de
+    // retorno) pero APAGADA hasta configurar el servidor (FRONTEND_URL, credenciales y
+    // PAYPAL_WEBHOOK_ID). Para encenderla, descomentar este grupo —va antes del catch-all,
+    // porque Laravel resuelve por orden de registro— y poner ["paypal"] en
+    // ENABLED_PAYMENT_METHODS del checkout.
+    //
+    // Route::middleware('throttle:10,1')->group(function () {
+    //     Route::post('/payments/paypal/create', [PaymentController::class, 'paypalCreate']);
+    //     // {paypalOrderId} es el id de la orden de PayPal (el ?token= de la URL de retorno).
+    //     Route::post('/payments/paypal/capture/{paypalOrderId}', [PaymentController::class, 'paypalCapture']);
+    // });
+
     // Pagos — DESHABILITADOS hasta contar con credenciales reales de las pasarelas.
     // Todas las rutas /payments/* devuelven un 503 limpio dirigiendo al cliente a WhatsApp.
-    // Para reactivar: comentar este grupo y descomentar las rutas originales de abajo.
     Route::any('payments/{any}', function () {
         return response()->json([
             'success' => false,
@@ -94,9 +109,7 @@ Route::prefix('v1')->group(function () {
         ], 503);
     })->where('any', '.*');
 
-    // Rutas de pago originales (reactivar cuando existan credenciales):
-    // Route::post('/payments/paypal/create', [PaymentController::class, 'paypalCreate']);
-    // Route::post('/payments/paypal/capture/{orderId}', [PaymentController::class, 'paypalCapture']);
+    // Rutas de pago pendientes (reactivar cuando existan credenciales):
     // Route::post('/payments/stripe/intent', [PaymentController::class, 'stripeIntent']);
     // Route::post('/payments/stripe/confirm', [PaymentController::class, 'stripeConfirm']);
     // Route::post('/payments/mercadopago/create', [PaymentController::class, 'mercadopagoCreate']);

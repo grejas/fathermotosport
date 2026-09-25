@@ -62,8 +62,10 @@ class PaypalService
                 'brand_name' => 'FatherMotoSport',
                 'shipping_preference' => 'NO_SHIPPING',
                 'user_action' => 'PAY_NOW',
-                'return_url' => "{$frontend}/checkout/paypal/success?order={$order->id}",
-                'cancel_url' => "{$frontend}/checkout/paypal/cancel?order={$order->id}",
+                // El token va en la URL de retorno para que el comprador invitado
+                // pueda confirmar el pago sin iniciar sesión.
+                'return_url' => "{$frontend}/checkout/paypal/success?order={$order->id}&t={$order->access_token}",
+                'cancel_url' => "{$frontend}/checkout/paypal/cancel?order={$order->id}&t={$order->access_token}",
             ],
         ])->throw()->json();
 
@@ -81,7 +83,10 @@ class PaypalService
      */
     public function captureOrder(string $paypalOrderId): array
     {
+        // El cuerpo vacío debe ser un JSON válido ("{}"): sin esto PayPal responde
+        // MALFORMED_REQUEST_JSON y la captura nunca se completa.
         return $this->client()
+            ->withBody('{}', 'application/json')
             ->post("/v2/checkout/orders/{$paypalOrderId}/capture")
             ->throw()
             ->json();

@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class Order extends Model
 {
@@ -15,6 +17,7 @@ class Order extends Model
 
     protected $fillable = [
         'order_number',
+        'access_token',
         'user_id',
         'address_id',
         'guest_email',
@@ -22,6 +25,8 @@ class Order extends Model
         'subtotal',
         'discount',
         'shipping',
+        'shipping_option_id',
+        'shipping_method_name',
         'tax',
         'total',
         'payment_status',
@@ -45,7 +50,35 @@ class Order extends Model
             if (empty($order->order_number)) {
                 $order->order_number = static::generateOrderNumber();
             }
+
+            // Token del comprador (sobre todo el invitado, que no tiene cuenta).
+            if (empty($order->access_token)) {
+                $order->access_token = Str::random(48);
+            }
         });
+    }
+
+    /**
+     * ¿Quien pide puede ver/pagar este pedido? Vale por token de acceso (comprador
+     * invitado o enlace del email) o por sesión: el dueño del pedido y el staff.
+     */
+    public function isAccessibleBy(?User $user, ?string $token): bool
+    {
+        if (filled($token) && filled($this->access_token) && hash_equals($this->access_token, $token)) {
+            return true;
+        }
+
+        if (! $user) {
+            return false;
+        }
+
+        return $user->isAdmin() || $user->isEmpleado() || ($this->user_id !== null && $this->user_id === $user->id);
+    }
+
+    /** Token de acceso que llega por query (?token=) o por la cabecera X-Order-Token. */
+    public static function tokenFromRequest(Request $request): ?string
+    {
+        return $request->header('X-Order-Token') ?? $request->query('token');
     }
 
     /**

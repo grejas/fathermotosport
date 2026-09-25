@@ -62,12 +62,10 @@ export interface ProductImage {
 export interface ProductVariant {
   id: string;
   product_id: string;
-  color: string | null;
   size: string | null;
   finish: string | null;
   sku: string;
   stock: number;
-  price: string | null;
   in_stock: boolean;
   is_active: boolean;
 }
@@ -113,6 +111,8 @@ export interface Product {
   sku: string;
   barcode: string | null;
   name: string;
+  /** Un producto = un color (informativo, no seleccionable). */
+  color: string | null;
   slug: string;
   short_description: string | null;
   description: string | null;
@@ -199,6 +199,8 @@ export type PaymentMethod = "paypal" | "stripe" | "mercadopago";
 export interface Order {
   id: string;
   order_number: string;
+  /** Token del pedido: permite al comprador invitado verlo y pagarlo sin cuenta. */
+  access_token?: string | null;
   user_id: string | null;
   guest_email: string | null;
   status: OrderStatus;
@@ -225,6 +227,26 @@ export interface Order {
   created_at?: string;
 }
 
+/** Una opción de envío (método) disponible para un país y peso. */
+export interface ShippingOption {
+  id: number;
+  method_name: string;
+  price: string;
+  currency: string;
+  estimated_days_min: number | null;
+  estimated_days_max: number | null;
+}
+
+/** Respuesta de /shipping/calculate. available=false = sin opciones para ese destino. */
+export interface ShippingQuote {
+  available: boolean;
+  country_code: string;
+  country_name: string | null;
+  weight_kg: number;
+  options: ShippingOption[];
+  message?: string;
+}
+
 export interface CartItem {
   id: string;
   product_variant_id: string;
@@ -234,11 +256,10 @@ export interface CartItem {
   variant?: {
     id: string;
     sku: string;
-    color: string | null;
     size: string | null;
     stock: number;
     in_stock: boolean;
-    product?: { id: string; name: string; slug: string; primary_image: string | null };
+    product?: { id: string; name: string; color: string | null; slug: string; primary_image: string | null };
   };
 }
 

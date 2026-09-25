@@ -44,9 +44,8 @@ class CartController extends Controller
             ]);
         }
 
-        $price = ! is_null($variant->price)
-            ? $variant->price
-            : ($variant->product->sale_price ?? $variant->product->price);
+        // El precio es del producto (no varía por talla).
+        $price = $variant->product->sale_price ?? $variant->product->price;
 
         if ($existing) {
             $existing->update(['quantity' => $desiredQty, 'price' => $price]);

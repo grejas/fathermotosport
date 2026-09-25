@@ -7,14 +7,17 @@ use App\Models\InventoryMovement;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\ProductVariant;
+use App\Models\ShippingOption;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class OrderService
 {
-    public function __construct(private CouponService $coupons)
-    {
+    public function __construct(
+        private CouponService $coupons,
+        private ShippingWeightService $weights,
+    ) {
     }
 
     /**
@@ -86,8 +89,13 @@ class OrderService
                 $validCoupon = $validation['coupon'];
             }
 
-            // 5. Crear el pedido. Envío y tax siempre 0.00 (envío gratis).
-            $total = max(0, round($subtotal - $discount, 2));
+            // 5. Resolver el envío elegido. El precio SIEMPRE sale de la base: nunca se
+            // confía en lo que manda el navegador. Sin opción elegida, envío 0 (se coordina aparte).
+            $shippingOption = $this->resolveShippingOption($data, $lines);
+            $shipping = $shippingOption ? (float) $shippingOption->price : 0.00;
+
+            // 6. Crear el pedido. El total incluye el envío; tax sigue en 0.00.
+            $total = max(0, round($subtotal - $discount, 2)) + $shipping;
 
             $order = Order::create([
                 'user_id' => $user?->id,
@@ -96,9 +104,11 @@ class OrderService
                 'status' => 'pending',
                 'subtotal' => $subtotal,
                 'discount' => $discount,
-                'shipping' => 0.00,
+                'shipping' => $shipping,
+                'shipping_option_id' => $shippingOption?->id,
+                'shipping_method_name' => $shippingOption?->method_name,
                 'tax' => 0.00,
-                'total' => $total,
+                'total' => round($total, 2),
                 'payment_status' => 'pending',
                 'shipping_status' => 'pending',
                 'payment_method' => $data['payment_method'],
@@ -106,7 +116,7 @@ class OrderService
                 'notes' => $data['notes'] ?? null,
             ]);
 
-            // 6. Crear items, descontar stock y registrar movimientos de inventario.
+            // 7. Crear items, descontar stock y registrar movimientos de inventario.
             foreach ($lines as $line) {
                 /** @var ProductVariant $variant */
                 $variant = $line['variant'];
@@ -118,7 +128,8 @@ class OrderService
                     'unit_price' => $line['unit_price'],
                     'subtotal' => $line['subtotal'],
                     'size' => $variant->size,
-                    'color' => $variant->color,
+                    // El color es del producto (un producto = un color).
+                    'color' => $variant->product->color,
                 ]);
 
                 $variant->decrement('stock', $line['quantity']);
@@ -142,14 +153,49 @@ class OrderService
     }
 
     /**
-     * Precio unitario: precio propio de la variante, o el precio vigente del producto.
+     * Valida la opción de envío elegida contra la base: debe seguir activa y cubrir el
+     * país del pedido y el peso real de los items. Devuelve null si no se eligió ninguna.
+     *
+     * @param  array<int, array{variant: ProductVariant, quantity: int}>  $lines
+     *
+     * @throws ValidationException
+     */
+    private function resolveShippingOption(array $data, array $lines): ?ShippingOption
+    {
+        if (empty($data['shipping_option_id'])) {
+            return null;
+        }
+
+        $countryCode = $data['shipping_country_code'] ?? null;
+
+        if (blank($countryCode)) {
+            throw ValidationException::withMessages([
+                'shipping_country_code' => ['Falta el país de destino para validar el envío elegido.'],
+            ]);
+        }
+
+        $weight = $this->weights->forItems(array_map(fn (array $line) => [
+            'variant_id' => $line['variant']->id,
+            'quantity' => $line['quantity'],
+        ], $lines));
+
+        $option = ShippingOption::findAvailable((int) $data['shipping_option_id'], $countryCode, $weight);
+
+        if (! $option) {
+            throw ValidationException::withMessages([
+                'shipping_option_id' => ['La opción de envío elegida ya no está disponible para ese destino y peso.'],
+            ]);
+        }
+
+        return $option;
+    }
+
+    /**
+     * Precio unitario: siempre el precio vigente del producto. El precio no varía por
+     * talla; product_variants.price queda en la BD sin uso y se ignora.
      */
     private function resolveUnitPrice(ProductVariant $variant): float
     {
-        if (! is_null($variant->price)) {
-            return (float) $variant->price;
-        }
-
         $product = $variant->product;
 
         return (float) ($product->sale_price ?? $product->price);

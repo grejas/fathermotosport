@@ -9,6 +9,7 @@ use App\Models\Payment;
 use App\Services\Payments\MercadoPagoService;
 use App\Services\Payments\PaypalService;
 use App\Services\Payments\StripeService;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -29,9 +30,52 @@ class PaymentController extends Controller
     {
         $order = Order::findOrFail($request->validate(['order_id' => 'required|uuid'])['order_id']);
 
-        $paypalOrder = $this->paypal->createOrder($order);
+        // Solo el comprador (token del pedido o sesión con permiso) puede iniciar el pago.
+        if (! $order->isAccessibleBy($request->user('sanctum'), Order::tokenFromRequest($request))) {
+            abort(403, 'No puedes pagar este pedido.');
+        }
 
-        $this->recordPayment($order, 'paypal', $paypalOrder['id'], 'USD');
+        if ($order->payment_status === 'paid') {
+            return response()->json(['message' => 'Este pedido ya fue pagado.'], 409);
+        }
+
+        if (in_array($order->status, ['cancelled', 'refunded'], true)) {
+            return response()->json(['message' => 'Este pedido ya no se puede pagar.'], 409);
+        }
+
+        // Reutiliza la orden de PayPal creada hace menos de 30 minutos: evita generar
+        // una nueva (y un cobro doble) si el cliente recarga o vuelve atrás.
+        $pendiente = Payment::where('order_id', $order->id)
+            ->where('provider', 'paypal')
+            ->where('status', 'pending')
+            ->where('created_at', '>=', now()->subMinutes(30))
+            ->latest()
+            ->first();
+
+        if ($pendiente && filled($pendiente->gateway_response['approval_url'] ?? null)) {
+            return response()->json([
+                'paypal_order_id' => $pendiente->transaction_id,
+                'approval_url' => $pendiente->gateway_response['approval_url'],
+                'reused' => true,
+            ]);
+        }
+
+        try {
+            $paypalOrder = $this->paypal->createOrder($order);
+        } catch (RequestException $e) {
+            Log::error('PayPal rechazó la creación de la orden.', [
+                'order' => $order->id,
+                'status' => $e->response->status(),
+                'body' => $e->response->json(),
+            ]);
+
+            return response()->json([
+                'message' => 'No pudimos iniciar el pago con PayPal. Intentá de nuevo o contactanos por WhatsApp.',
+            ], 502);
+        }
+
+        $payment = $this->recordPayment($order, 'paypal', $paypalOrder['id'], 'USD');
+        $payment->update(['gateway_response' => ['approval_url' => $paypalOrder['approval_url']]]);
 
         return response()->json([
             'paypal_order_id' => $paypalOrder['id'],
@@ -39,21 +83,85 @@ class PaymentController extends Controller
         ]);
     }
 
-    public function paypalCapture(string $orderId): JsonResponse
+    /**
+     * $paypalOrderId es el id de la orden de PayPal (el ?token= del retorno).
+     * Devuelve solo el estado del pedido: nunca el pedido completo con datos personales.
+     */
+    public function paypalCapture(Request $request, string $paypalOrderId): JsonResponse
     {
-        $result = $this->paypal->captureOrder($orderId);
+        $payment = Payment::with('order')->where('transaction_id', $paypalOrderId)->firstOrFail();
+        $order = $payment->order;
+
+        if (! $order || ! $order->isAccessibleBy($request->user('sanctum'), Order::tokenFromRequest($request))) {
+            abort(403, 'No puedes confirmar el pago de este pedido.');
+        }
+
+        // Idempotente: si ya se capturó (por el retorno o por el webhook), no se repite.
+        if ($order->payment_status === 'paid') {
+            return $this->estadoDelPago('COMPLETED', $order->fresh());
+        }
+
+        try {
+            $result = $this->paypal->captureOrder($paypalOrderId);
+        } catch (RequestException $e) {
+            // Ej. el cliente volvió sin aprobar el pago (ORDER_NOT_APPROVED).
+            Log::warning('PayPal rechazó la captura.', [
+                'order' => $order->id,
+                'paypal_order' => $paypalOrderId,
+                'status' => $e->response->status(),
+                'body' => $e->response->json(),
+            ]);
+
+            return response()->json([
+                'status' => data_get($e->response->json(), 'details.0.issue', 'CAPTURE_FAILED'),
+                'message' => 'PayPal no pudo confirmar el pago. Tu pedido quedó pendiente.',
+            ], 422);
+        }
+
         $status = $result['status'] ?? null;
 
-        $payment = Payment::where('transaction_id', $orderId)->first();
+        if ($status === 'COMPLETED') {
+            if (! $this->montoCoincide($result, $order)) {
+                Log::error('Captura de PayPal con monto distinto al del pedido.', [
+                    'order' => $order->id,
+                    'esperado' => $order->total,
+                    'paypal' => $result,
+                ]);
 
-        if ($status === 'COMPLETED' && $payment) {
+                return response()->json([
+                    'status' => $status,
+                    'message' => 'El monto cobrado no coincide con el del pedido. Contactanos por WhatsApp.',
+                ], 409);
+            }
+
             $this->markPaid($payment, $result);
         }
 
+        return $this->estadoDelPago($status, $order->fresh());
+    }
+
+    /** Respuesta mínima del pago: sin dirección, email ni items. */
+    private function estadoDelPago(?string $status, ?Order $order): JsonResponse
+    {
         return response()->json([
             'status' => $status,
-            'order' => $payment?->order?->fresh(),
+            'order' => $order ? [
+                'id' => $order->id,
+                'order_number' => $order->order_number,
+                'payment_status' => $order->payment_status,
+                'status' => $order->status,
+                'total' => $order->total,
+            ] : null,
         ]);
+    }
+
+    /** Compara el importe capturado por PayPal con el total del pedido. */
+    private function montoCoincide(array $result, Order $order): bool
+    {
+        $capturas = data_get($result, 'purchase_units.*.payments.captures.*.amount.value');
+        $cobrado = array_sum(array_map('floatval', $capturas ?: []));
+
+        return abs($cobrado - (float) $order->total) < 0.01;
     }
 
     // ───────────────────────── Stripe ─────────────────────────
@@ -116,17 +224,30 @@ class PaymentController extends Controller
         }
 
         $event = $request->input('event_type');
-        $captureId = $request->input('resource.id');
-        $reference = $request->input('resource.supplementary_data.related_ids.order_id') ?? $request->input('resource.id');
 
-        if (in_array($event, ['CHECKOUT.ORDER.APPROVED', 'PAYMENT.CAPTURE.COMPLETED'], true)) {
-            $payment = Payment::where('transaction_id', $reference)->first();
-            if ($payment) {
-                $this->markPaid($payment, $request->all());
-            }
+        // Solo la captura confirma el cobro. CHECKOUT.ORDER.APPROVED significa que el
+        // comprador aprobó, pero el dinero todavía no se movió: si se marcara pagado ahí,
+        // un pedido podría quedar como pagado sin haber cobrado nada.
+        if ($event !== 'PAYMENT.CAPTURE.COMPLETED') {
+            return response()->json(['received' => true, 'handled' => false]);
         }
 
-        return response()->json(['received' => true]);
+        // En este evento resource.id es el id de la captura; el de la orden de PayPal
+        // (el que guardamos como transaction_id) viene en supplementary_data.
+        $reference = $request->input('resource.supplementary_data.related_ids.order_id')
+            ?? $request->input('resource.id');
+
+        $payment = Payment::where('transaction_id', $reference)->first();
+
+        if (! $payment) {
+            Log::warning('Webhook de captura de PayPal sin pago asociado.', ['referencia' => $reference]);
+
+            return response()->json(['received' => true, 'handled' => false]);
+        }
+
+        $this->markPaid($payment, $request->all());
+
+        return response()->json(['received' => true, 'handled' => true]);
     }
 
     public function stripeWebhook(Request $request): JsonResponse

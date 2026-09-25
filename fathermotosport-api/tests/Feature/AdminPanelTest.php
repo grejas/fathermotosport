@@ -55,6 +55,7 @@ class AdminPanelTest extends TestCase
             '/admin/banners',
             '/admin/inventory-movements',
             '/admin/shipping-methods',
+            '/admin/shipping-options',
             '/admin/reviews',
             '/admin/store-settings-page',
         ];

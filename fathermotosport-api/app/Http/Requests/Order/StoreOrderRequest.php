@@ -16,7 +16,7 @@ class StoreOrderRequest extends FormRequest
         return [
             // Guest checkout: el email es obligatorio solo si no hay usuario autenticado.
             'guest_email' => [
-                $this->user() ? 'nullable' : 'required',
+                $this->user('sanctum') ? 'nullable' : 'required',
                 'email',
                 'max:255',
             ],
@@ -35,6 +35,8 @@ class StoreOrderRequest extends FormRequest
             'address.address_line' => ['required', 'string', 'max:255'],
             'address.reference' => ['nullable', 'string', 'max:255'],
 
+            'shipping_option_id' => ['nullable', 'integer', 'exists:shipping_options,id'],
+            'shipping_country_code' => ['required_with:shipping_option_id', 'nullable', 'string', 'size:2'],
             'payment_method' => ['required', 'in:paypal,stripe,mercadopago'],
             'coupon_code' => ['nullable', 'string', 'max:50'],
             'notes' => ['nullable', 'string', 'max:1000'],

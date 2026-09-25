@@ -5,6 +5,8 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ProductResource\Pages;
 use App\Models\Brand;
 use App\Models\Product;
+use App\Models\ProductVariant;
+use App\Support\SizeCatalog;
 use Filament\Forms;
 use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Form;
@@ -78,7 +80,15 @@ class ProductResource extends Resource
                         ->relationship('category', 'name')
                         ->searchable()
                         ->preload()
-                        ->required(),
+                        ->required()
+                        // live: las opciones de "Talla" en las variantes dependen de la categoría.
+                        ->live(),
+                    // Un producto = un color. Si el modelo viene en otro color, es otro producto.
+                    Forms\Components\TextInput::make('color')
+                        ->label('Color')
+                        ->placeholder('Ej: Azul Negro')
+                        ->maxLength(100)
+                        ->helperText('Informativo. Otro color del mismo modelo = otro producto (podés usar "Duplicar").'),
                     Forms\Components\TextInput::make('sku')
                         ->label('SKU')
                         ->required()
@@ -239,68 +249,57 @@ class ProductResource extends Resource
                 ->schema([
                     // relationship('variants') es CRÍTICO: carga las variantes existentes
                     // al editar y las persiste al guardar.
+                    // Cada fila es Talla + Stock + Activa. El SKU se genera al guardar
+                    // ({SKU_PRODUCTO}-{TALLA}). El precio es siempre el del producto; el
+                    // acabado ya no se edita acá y conserva su valor en la BD.
                     Forms\Components\Repeater::make('variants')
                         ->relationship('variants')
                         ->label('Variantes del producto')
                         ->schema([
-                            Forms\Components\TextInput::make('color')
-                                ->label('Color')
-                                ->live(onBlur: true)
-                                ->afterStateUpdated(fn (Get $get, Set $set) => $set(
-                                    'sku',
-                                    static::generarSkuVariante($get('../../sku'), $get('size'), $get('color'))
-                                )),
-                            Forms\Components\TextInput::make('size')
+                            // Las opciones salen de SizeCatalog según la categoría del producto.
+                            // Si la categoría no usa talla, el campo se oculta (size = NULL),
+                            // salvo que la variante ya tenga una talla guardada.
+                            Forms\Components\Select::make('size')
                                 ->label('Talla')
-                                ->placeholder('Ej: M, L, XL, 57-58, Único...')
-                                ->nullable()
-                                ->live(onBlur: true)
-                                ->afterStateUpdated(fn (Get $get, Set $set) => $set(
-                                    'sku',
-                                    static::generarSkuVariante($get('../../sku'), $get('size'), $get('color'))
-                                )),
-                            Forms\Components\Select::make('finish')
-                                ->label('Acabado')
-                                ->options([
-                                    'Mate' => 'Mate', 'Brillante' => 'Brillante',
-                                    'Carbono' => 'Carbono', 'Cromado' => 'Cromado',
-                                ])
-                                ->nullable(),
-                            Forms\Components\TextInput::make('sku')
-                                ->label('SKU Variante')
-                                ->required()
-                                ->default(fn () => 'VAR-'.Str::upper(Str::random(6)))
+                                ->options(fn (Get $get, ?string $state) => static::opcionesTalla($get('../../category_id'), $state))
+                                ->visible(fn (Get $get, ?string $state) => filled($state)
+                                    || SizeCatalog::forCategoryId($get('../../category_id')) !== [])
+                                ->required(fn (Get $get) => SizeCatalog::forCategoryId($get('../../category_id')) !== [])
                                 ->distinct()
-                                ->unique(table: 'product_variants', column: 'sku', ignoreRecord: true)
-                                ->suffixAction(
-                                    Action::make('regen_var_sku')
-                                        ->icon('heroicon-o-arrow-path')
-                                        ->tooltip('Regenerar')
-                                        ->action(fn (Get $get, Set $set) => $set(
-                                            'sku',
-                                            static::generarSkuVariante($get('../../sku'), $get('size'), $get('color'))
-                                        )),
-                                ),
+                                ->placeholder('Elegí una talla'),
                             Forms\Components\TextInput::make('stock')
                                 ->label('Stock')
                                 ->numeric()
                                 ->required()
                                 ->minValue(0)
                                 ->default(0),
-                            Forms\Components\TextInput::make('price')
-                                ->label('Precio')
-                                ->numeric()
-                                ->nullable()
-                                ->prefix('$')
-                                ->helperText('Vacío = precio del producto'),
-                            Forms\Components\Toggle::make('is_active')->label('Activa')->default(true),
+                            // Permite ocultar una talla puntual (ej. XXL descontinuada) sin tocar las demás.
+                            Forms\Components\Toggle::make('is_active')
+                                ->label('Activa')
+                                ->default(true)
+                                ->inline(false),
                         ])
                         ->columns(3)
                         ->defaultItems(1)
-                        ->addActionLabel('+ Agregar variante')
+                        ->addActionLabel('+ Agregar talla')
                         ->reorderable(false)
-                        ->collapsible()
-                        ->itemLabel(fn (array $state): ?string => $state['sku'] ?? 'Nueva variante'),
+                        ->mutateRelationshipDataBeforeCreateUsing(function (array $data, Get $get): array {
+                            $data['sku'] = static::skuVarianteUnico($get('sku'), $data['size'] ?? null);
+
+                            return $data;
+                        })
+                        ->mutateRelationshipDataBeforeSaveUsing(function (array $data, ProductVariant $record, Get $get): array {
+                            // Al guardar, toda variante existente cuyo SKU no siga el patrón
+                            // vigente {SKU_PRODUCTO}-{TALLA} se regenera (cambie o no la talla,
+                            // y también si cambió el SKU del producto).
+                            $size = array_key_exists('size', $data) ? $data['size'] : $record->size;
+
+                            if (filled($get('sku')) && ! ProductVariant::skuMatchesPattern($record->sku, $get('sku'), $size)) {
+                                $data['sku'] = static::skuVarianteUnico($get('sku'), $size, $record->id);
+                            }
+
+                            return $data;
+                        }),
                 ]),
         ]);
     }
@@ -329,22 +328,47 @@ class ProductResource extends Resource
     }
 
     /**
-     * Genera el SKU de una variante: {SKU_PRODUCTO}-{TALLA}-{INICIAL_COLOR}.
-     * Si falta el SKU del producto usa un fallback aleatorio.
+     * Genera el SKU de una variante: {SKU_PRODUCTO}-{TALLA} (o solo {SKU_PRODUCTO}
+     * si no hay talla). Si falta el SKU del producto usa un fallback aleatorio.
      */
-    protected static function generarSkuVariante(?string $productSku, ?string $size, ?string $color): string
+    protected static function generarSkuVariante(?string $productSku, ?string $size): string
     {
         $base = filled($productSku) ? $productSku : ('VAR-'.Str::upper(Str::random(6)));
 
-        $partes = [$base];
-        if (filled($size)) {
-            $partes[] = Str::upper($size);
-        }
-        if (filled($color)) {
-            $partes[] = Str::upper(Str::substr(trim($color), 0, 1));
+        return ProductVariant::skuFor($base, $size);
+    }
+
+    /**
+     * SKU de variante que no choca con otro de product_variants (agrega -2, -3…).
+     * $ignoreId excluye a la propia variante al regenerar el SKU de una existente.
+     */
+    protected static function skuVarianteUnico(?string $productSku, ?string $size, ?string $ignoreId = null): string
+    {
+        $base = static::generarSkuVariante($productSku, $size);
+        $sku = $base;
+        $n = 2;
+
+        while (ProductVariant::where('sku', $sku)->when($ignoreId, fn ($q) => $q->whereKeyNot($ignoreId))->exists()) {
+            $sku = $base.'-'.$n++;
         }
 
-        return implode('-', $partes);
+        return $sku;
+    }
+
+    /**
+     * Opciones del Select de talla. Si la variante ya tiene una talla fuera de la lista
+     * (datos viejos, ej. "M L XL"), se agrega marcada como no estándar para no perderla.
+     */
+    protected static function opcionesTalla(int|string|null $categoryId, ?string $actual): array
+    {
+        $tallas = SizeCatalog::forCategoryId($categoryId);
+        $opciones = array_combine($tallas, $tallas);
+
+        if (filled($actual) && ! in_array($actual, $tallas, true)) {
+            $opciones = [$actual => $actual.' (no estándar)'] + $opciones;
+        }
+
+        return $opciones;
     }
 
     /**

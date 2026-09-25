@@ -1,49 +1,45 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/lib/i18n/navigation";
-import { ShieldCheck, Tag } from "lucide-react";
+import { ShieldCheck, Tag, Truck } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { PaymentMethods } from "./PaymentMethods";
+import { PaypalButton } from "./PaypalButton";
 import { OrderSummary } from "./OrderSummary";
-import { useCartStore } from "@/store/cartStore";
+import { useCartStore, cartWeightKg } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
 import { createOrder } from "@/lib/api/orders";
+import { createPaypalOrder } from "@/lib/api/payments";
 import { validateCoupon } from "@/lib/api/coupons";
+import { calculateShipping } from "@/lib/api/shipping";
+import {
+  SHIPPING_COUNTRIES,
+  countryFlag,
+  shippingCountryName,
+} from "@/lib/data/shippingCountries";
 import { validateCheckout, hasErrors, type FieldErrors } from "@/lib/validators";
-import type { PaymentMethod } from "@/lib/types";
+import { cn, formatPrice } from "@/lib/utils";
+import type { PaymentMethod, ShippingQuote } from "@/lib/types";
 import toast from "react-hot-toast";
 
-// Los pagos online están deshabilitados hasta contar con credenciales reales
-// de las pasarelas. Mientras tanto se coordina el pago por WhatsApp.
-// Para reactivar: poner PAYMENTS_ENABLED = true.
-const PAYMENTS_ENABLED = false;
+// Métodos de pago habilitados. Los que no estén acá se muestran en gris
+// ("Próximamente") y el checkout ofrece coordinar el pago por WhatsApp.
+//
+// Vacío = ningún pago online activo. La integración de PayPal está completa pero
+// apagada hasta configurar el servidor (FRONTEND_URL, credenciales y PAYPAL_WEBHOOK_ID)
+// y reactivar sus rutas en routes/api.php. Para encenderla: ["paypal"].
+const ENABLED_PAYMENT_METHODS: readonly PaymentMethod[] = [];
 const WHATSAPP_URL = "https://wa.me/59168736384";
-
-const countries = [
-  { value: "Bolivia", key: "bolivia" },
-  { value: "Brasil", key: "brazil" },
-  { value: "Argentina", key: "argentina" },
-  { value: "Chile", key: "chile" },
-  { value: "Peru", key: "peru" },
-  { value: "Colombia", key: "colombia" },
-  { value: "Mexico", key: "mexico" },
-  { value: "Ecuador", key: "ecuador" },
-  { value: "Paraguay", key: "paraguay" },
-  { value: "Uruguay", key: "uruguay" },
-  { value: "Venezuela", key: "venezuela" },
-  { value: "España", key: "spain" },
-  { value: "USA", key: "usa" },
-  { value: "Otro", key: "other" },
-] as const;
 
 export function CheckoutForm() {
   const t = useTranslations("checkout");
   const tAuth = useTranslations("auth");
-  const tCountries = useTranslations("countries");
   const tCart = useTranslations("cart");
+  const tCountries = useTranslations("countries");
+  const locale = useLocale();
   const router = useRouter();
   const items = useCartStore((s) => s.items);
   const subtotal = useCartStore((s) => s.subtotal());
@@ -56,17 +52,80 @@ export function CheckoutForm() {
     last_name: "",
     email: "",
     phone: "",
-    country: "Bolivia" as string,
+    // Código ISO, igual que el selector de países del registro.
+    country: "BO" as string,
     state: "",
     city: "",
     address_line: "",
     reference: "",
   });
-  const [method, setMethod] = useState<PaymentMethod>("paypal");
+  const [method, setMethod] = useState<PaymentMethod>(ENABLED_PAYMENT_METHODS[0] ?? "paypal");
   const [coupon, setCoupon] = useState("");
   const [discount, setDiscount] = useState(0);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
+  const [shipping, setShipping] = useState<ShippingQuote | null>(null);
+  const [shippingLoading, setShippingLoading] = useState(false);
+  const [optionId, setOptionId] = useState<number | null>(null);
+
+  // Lista fija de 40 destinos (América y Europa), con el nombre en el idioma activo
+  // y ordenada según ese idioma. El registro sigue usando la lista completa del mundo.
+  const countries = useMemo(
+    () =>
+      SHIPPING_COUNTRIES.map((c) => ({ code: c.code, label: tCountries(c.code) })).sort((a, b) =>
+        a.label.localeCompare(b.label, locale)
+      ),
+    [tCountries, locale]
+  );
+  // Nombre traducido para lo que ve el cliente.
+  const countryLabel = useMemo(
+    () => countries.find((c) => c.code === form.country)?.label ?? form.country,
+    [countries, form.country]
+  );
+  // Nombre canónico en español: es lo que se guarda en la dirección del pedido,
+  // para que el panel no reciba el país en tres idiomas distintos.
+  const countryName = shippingCountryName(form.country) ?? form.country;
+
+  const methodEnabled = ENABLED_PAYMENT_METHODS.includes(method);
+  const weightKg = useMemo(() => cartWeightKg(items), [items]);
+  const options = shipping?.options ?? [];
+  const selectedOption = options.find((o) => o.id === optionId) ?? null;
+  const shippingCost = selectedOption ? parseFloat(selectedOption.price) : null;
+
+  // Recalcula el envío cada vez que cambian el país destino o los items del carrito.
+  useEffect(() => {
+    if (!form.country || !items.length) {
+      setShipping(null);
+      return;
+    }
+    let cancelled = false;
+    setShippingLoading(true);
+    calculateShipping({
+      countryCode: form.country,
+      items: items.map((i) => ({ variantId: i.variantId, quantity: i.quantity })),
+      weightKg,
+    })
+      .then((quote) => {
+        if (cancelled) return;
+        setShipping(quote);
+        // Queda elegida la opción más barata; si la anterior sigue disponible, se respeta.
+        setOptionId((current) =>
+          quote.options.some((o) => o.id === current) ? current : quote.options[0]?.id ?? null
+        );
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setShipping(null);
+        setOptionId(null);
+      })
+      .finally(() => {
+        if (!cancelled) setShippingLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [form.country, items, weightKg]);
 
   // Autocompleta datos si el usuario está logueado.
   useEffect(() => {
@@ -126,19 +185,41 @@ export function CheckoutForm() {
         address: {
           full_name: `${form.first_name} ${form.last_name}`.trim(),
           phone: form.phone,
-          country: form.country,
+          // La dirección guarda el nombre del país (como hasta ahora); el código ISO
+          // solo se usa para calcular el envío.
+          country: countryName,
           state: form.state || undefined,
           city: form.city,
           address_line: form.address_line,
           reference: form.reference || undefined,
         },
         payment_method: method,
+        shipping_option_id: selectedOption?.id,
+        shipping_country_code: selectedOption ? form.country : undefined,
         coupon_code: coupon.trim() || undefined,
       });
 
+      // El pedido ya existe y el stock quedó descontado: el carrito se vacía acá,
+      // antes de salir del sitio hacia PayPal.
       clearCart();
+
+      if (method === "paypal") {
+        // El token del pedido autoriza el pago cuando se compra sin cuenta.
+        const paypal = await createPaypalOrder(res.order.id, res.order.access_token ?? undefined);
+        if (!paypal.approval_url) {
+          throw new Error(t("paypal_no_approval_url"));
+        }
+        toast.success(t("redirecting_paypal"));
+        // Salida a PayPal: no es una ruta interna, por eso no se usa el router.
+        window.location.href = paypal.approval_url;
+        return;
+      }
+
       toast.success(t("order_created"));
-      router.push(`/checkout/success?order=${res.order.id}&number=${res.order.order_number}`);
+      router.push(
+        `/checkout/success?order=${res.order.id}&number=${res.order.order_number}` +
+          (res.order.access_token ? `&t=${res.order.access_token}` : "")
+      );
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { message?: string } } }).response?.data?.message ??
@@ -174,8 +255,8 @@ export function CheckoutForm() {
                 className="input-brand"
               >
                 {countries.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {tCountries(c.key)}
+                  <option key={c.code} value={c.code}>
+                    {countryFlag(c.code)} {c.label}
                   </option>
                 ))}
               </select>
@@ -189,13 +270,65 @@ export function CheckoutForm() {
         </section>
 
         <section>
-          <h3 className="mb-3 text-lg font-bold text-brand-white">{t("payment_method")}</h3>
-          {PAYMENTS_ENABLED ? (
-            <PaymentMethods value={method} onChange={setMethod} />
+          <h3 className="mb-3 text-lg font-bold text-brand-white">{tCart("shipping")}</h3>
+          {shippingLoading ? (
+            <p className="text-sm text-brand-muted">{t("shipping_calculating")}</p>
+          ) : shipping?.available ? (
+            <div className="space-y-2">
+              <p className="text-xs text-brand-muted">
+                {t("shipping_weight", { weight: shipping.weight_kg })}
+              </p>
+              {options.map((option) => {
+                const selected = option.id === optionId;
+                const price = parseFloat(option.price);
+                return (
+                  <label
+                    key={option.id}
+                    className={cn(
+                      "flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition",
+                      selected
+                        ? "border-brand-red bg-brand-red/5"
+                        : "border-white/10 bg-brand-card hover:border-white/30"
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="shipping_option"
+                      value={option.id}
+                      checked={selected}
+                      onChange={() => setOptionId(option.id)}
+                      className="h-4 w-4 accent-brand-red"
+                    />
+                    <Truck size={18} className={selected ? "text-brand-red" : "text-brand-muted"} />
+                    <span className="flex-1">
+                      <span className="block text-sm font-semibold text-brand-white">
+                        {option.method_name}
+                      </span>
+                      {option.estimated_days_min !== null && option.estimated_days_max !== null && (
+                        <span className="block text-xs text-brand-muted">
+                          {t("shipping_days", {
+                            min: option.estimated_days_min,
+                            max: option.estimated_days_max,
+                          })}
+                        </span>
+                      )}
+                    </span>
+                    <span
+                      className={cn(
+                        "text-sm font-bold",
+                        price > 0 ? "text-brand-white" : "text-cat-boots"
+                      )}
+                    >
+                      {price > 0 ? formatPrice(option.price) : t("free")}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
           ) : (
             <div className="rounded-xl border border-brand-gold/30 bg-brand-gold/5 p-4">
               <p className="text-sm font-semibold text-brand-gold">
-                {t("coming_soon_whatsapp")}
+                {t("shipping_unavailable", { country: countryLabel })}
               </p>
               <a
                 href={WHATSAPP_URL}
@@ -205,9 +338,29 @@ export function CheckoutForm() {
               >
                 {t("write_whatsapp")}
               </a>
-              <div className="pointer-events-none mt-4 select-none opacity-40" aria-hidden>
-                <PaymentMethods value={method} onChange={setMethod} />
-              </div>
+            </div>
+          )}
+        </section>
+
+        <section>
+          <h3 className="mb-3 text-lg font-bold text-brand-white">{t("payment_method")}</h3>
+          <PaymentMethods
+            value={method}
+            onChange={setMethod}
+            enabled={ENABLED_PAYMENT_METHODS}
+            comingSoonLabel={t("payments_coming_soon")}
+          />
+          {!methodEnabled && (
+            <div className="mt-3 rounded-xl border border-brand-gold/30 bg-brand-gold/5 p-4">
+              <p className="text-sm font-semibold text-brand-gold">{t("coming_soon_whatsapp")}</p>
+              <a
+                href={WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
+              >
+                {t("write_whatsapp")}
+              </a>
             </div>
           )}
         </section>
@@ -229,12 +382,26 @@ export function CheckoutForm() {
       </div>
 
       <div className="lg:sticky lg:top-20 lg:self-start">
-        <OrderSummary discount={discount}>
-          {PAYMENTS_ENABLED ? (
+        <OrderSummary
+          discount={discount}
+          shipping={shippingCost}
+          shippingMethod={selectedOption?.method_name}
+          shippingNote={shippingLoading ? t("shipping_calculating") : t("shipping_to_coordinate")}
+        >
+          {methodEnabled ? (
             <>
-              <Button type="submit" variant="primary" className="mt-4 w-full" loading={loading}>
-                {t("confirm_order")}
-              </Button>
+              {method === "paypal" ? (
+                <PaypalButton
+                  className="mt-4"
+                  label={t("pay_with")}
+                  ariaLabel={t("pay_with_paypal")}
+                  loading={loading}
+                />
+              ) : (
+                <Button type="submit" variant="primary" className="mt-4 w-full" loading={loading}>
+                  {t("confirm_order")}
+                </Button>
+              )}
               <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-brand-muted">
                 <ShieldCheck size={14} className="text-cat-boots" /> {t("ssl_secure")}
               </p>

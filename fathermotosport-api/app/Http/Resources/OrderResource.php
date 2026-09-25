@@ -12,12 +12,16 @@ class OrderResource extends JsonResource
         return [
             'id' => $this->id,
             'order_number' => $this->order_number,
+            // Solo llega a quien ya está autorizado a ver el pedido; es lo que permite
+            // al comprador invitado volver a consultarlo sin cuenta.
+            'access_token' => $this->access_token,
             'user_id' => $this->user_id,
             'guest_email' => $this->guest_email,
             'status' => $this->status,
             'subtotal' => $this->subtotal,
             'discount' => $this->discount,
             'shipping' => $this->shipping,
+            'shipping_method_name' => $this->shipping_method_name,
             'tax' => $this->tax,
             'total' => $this->total,
             'payment_status' => $this->payment_status,

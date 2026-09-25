@@ -114,8 +114,16 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="border-t border-white/10 py-5 text-center text-xs text-brand-muted">
-        © {new Date().getFullYear()} <span translate="no">FatherMotoSport</span>. {t("copyright")}
+      <div className="flex flex-col items-center gap-2 border-t border-white/10 py-5 text-center text-xs text-brand-muted sm:flex-row sm:justify-center sm:gap-3">
+        <span>
+          © {new Date().getFullYear()} <span translate="no">FatherMotoSport</span>. {t("copyright")}
+        </span>
+        <span aria-hidden className="hidden sm:inline">
+          ·
+        </span>
+        <Link href="/returns-policy" className="transition hover:text-brand-red">
+          {t("returns_policy")}
+        </Link>
       </div>
     </footer>
   );

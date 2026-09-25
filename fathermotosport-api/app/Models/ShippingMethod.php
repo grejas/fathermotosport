@@ -6,21 +6,18 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * Catálogo de transportistas (DHL, FedEx, Correo nacional) para el tracking de envíos.
+ * El precio y los plazos que ve el cliente están en ShippingOption.
+ */
 class ShippingMethod extends Model
 {
     protected $fillable = [
         'name',
-        'price',
-        'country',
-        'delivery_days_min',
-        'delivery_days_max',
         'is_active',
     ];
 
     protected $casts = [
-        'price' => 'decimal:2',
-        'delivery_days_min' => 'integer',
-        'delivery_days_max' => 'integer',
         'is_active' => 'boolean',
     ];
 

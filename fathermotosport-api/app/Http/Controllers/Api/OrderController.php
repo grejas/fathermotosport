@@ -25,7 +25,7 @@ class OrderController extends Controller
      */
     public function store(StoreOrderRequest $request): JsonResponse
     {
-        $order = $this->orders->createOrder($request->validated(), $request->user());
+        $order = $this->orders->createOrder($request->validated(), $request->user('sanctum'));
 
         // Confirmación por email a todos los compradores (guest o registrados).
         $this->emails->sendOrderConfirmation($order);
@@ -48,8 +48,9 @@ class OrderController extends Controller
         $order = Order::with(['items.variant.product', 'address', 'payments', 'shipment'])
             ->findOrFail($id);
 
-        $user = $request->user();
-        if ($user && $order->user_id && $order->user_id !== $user->id && ! $user->isAdmin() && ! $user->isEmpleado()) {
+        // Antes alcanzaba con conocer el UUID: ahora hace falta el token del pedido
+        // (comprador invitado) o una sesión con permiso (dueño o staff).
+        if (! $order->isAccessibleBy($request->user('sanctum'), Order::tokenFromRequest($request))) {
             abort(403, 'No puedes ver este pedido.');
         }
 
@@ -61,7 +62,7 @@ class OrderController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
-        $orders = Order::where('user_id', $request->user()->id)
+        $orders = Order::where('user_id', $request->user('sanctum')->id)
             ->with(['items.variant.product', 'address', 'payments'])
             ->latest()
             ->paginate(10);

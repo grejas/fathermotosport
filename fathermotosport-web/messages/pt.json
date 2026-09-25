@@ -104,7 +104,8 @@
     "categories": "Categorias",
     "payments": "Pagamentos",
     "contact": "Contato",
-    "copyright": "Todos os direitos reservados."
+    "copyright": "Todos os direitos reservados.",
+    "returns_policy": "Política de Frete e Devoluções"
   },
   "whatsapp": {
     "product_message": "Olá! Estou interessado no produto: *{name}*. Podem me dar mais informações sobre preço, disponibilidade e envio? Obrigado!",
@@ -164,7 +165,25 @@
     "empty_cart_error": "Seu carrinho está vazio.",
     "order_created": "Pedido criado!",
     "order_error": "Não foi possível criar o pedido.",
-    "free": "Grátis"
+    "free": "Grátis",
+    "shipping_calculating": "Calculando frete…",
+    "shipping_weight": "Peso do pedido: {weight} kg",
+    "shipping_days": "Entrega estimada: {min}-{max} dias",
+    "shipping_unavailable": "Ainda não temos uma tarifa de frete para {country}. Fale conosco no WhatsApp e combinamos o envio.",
+    "shipping_to_coordinate": "A combinar",
+    "pay_with_paypal": "Pagar com PayPal",
+    "redirecting_paypal": "Redirecionando para o PayPal…",
+    "paypal_no_approval_url": "O PayPal não retornou um link de pagamento. Tente de novo.",
+    "paypal_capturing": "Confirmando o seu pagamento com o PayPal…",
+    "paypal_missing_token": "Falta a referência do pagamento do PayPal no link de retorno.",
+    "paypal_not_completed": "O PayPal retornou o status \"{status}\". O seu pedido ficou pendente de pagamento.",
+    "paypal_capture_error": "Não foi possível confirmar o pagamento com o PayPal.",
+    "paypal_capture_failed_title": "Não conseguimos confirmar o pagamento",
+    "paypal_cancelled_title": "Pagamento cancelado",
+    "paypal_cancelled_text": "Você cancelou o pagamento no PayPal. O seu pedido foi salvo como pendente: você pode pagá-lo em Meus pedidos.",
+    "paypal_order_reference": "Pedido: {id}",
+    "paypal_see_orders": "Ver meus pedidos",
+    "pay_with": "Pagar com"
   },
   "auth": {
     "login": "Entrar",
@@ -251,20 +270,46 @@
     "close": "Fechar"
   },
   "countries": {
-    "bolivia": "Bolívia",
-    "brazil": "Brasil",
-    "argentina": "Argentina",
-    "chile": "Chile",
-    "peru": "Peru",
-    "colombia": "Colômbia",
-    "mexico": "México",
-    "ecuador": "Equador",
-    "paraguay": "Paraguai",
-    "uruguay": "Uruguai",
-    "venezuela": "Venezuela",
-    "spain": "Espanha",
-    "usa": "Estados Unidos",
-    "other": "Outro país"
+    "AR": "Argentina",
+    "AT": "Áustria",
+    "BE": "Bélgica",
+    "BO": "Bolívia",
+    "BR": "Brasil",
+    "CA": "Canadá",
+    "CH": "Suíça",
+    "CL": "Chile",
+    "CO": "Colômbia",
+    "CR": "Costa Rica",
+    "CZ": "República Tcheca",
+    "DE": "Alemanha",
+    "DK": "Dinamarca",
+    "DO": "República Dominicana",
+    "EC": "Equador",
+    "ES": "Espanha",
+    "FI": "Finlândia",
+    "FR": "França",
+    "GB": "Reino Unido",
+    "GR": "Grécia",
+    "GT": "Guatemala",
+    "HN": "Honduras",
+    "HU": "Hungria",
+    "IE": "Irlanda",
+    "IT": "Itália",
+    "MX": "México",
+    "NI": "Nicarágua",
+    "NL": "Países Baixos",
+    "NO": "Noruega",
+    "PA": "Panamá",
+    "PE": "Peru",
+    "PL": "Polônia",
+    "PT": "Portugal",
+    "PY": "Paraguai",
+    "RO": "Romênia",
+    "SE": "Suécia",
+    "SV": "El Salvador",
+    "US": "Estados Unidos",
+    "UY": "Uruguai",
+    "VE": "Venezuela"
   },
   "reviews": {
     "section_title": "O que dizem nossos clientes",
@@ -290,5 +335,46 @@
     "show_more": "Ver mais avaliações",
     "show_less": "Ver menos avaliações",
     "count": "{count, plural, one {# avaliação} other {# avaliações}}"
+  },
+  "shipping_returns": {
+    "free_shipping": "Frete grátis",
+    "free_returns": "Devolução grátis",
+    "summary_shipping": "Frete grátis para toda a América e Europa.",
+    "summary_damaged": "Se o seu artigo chegar danificado, você tem 48 horas desde a entrega para reportar. Enviamos um novo sem custo ou devolvemos o seu dinheiro, você escolhe.",
+    "summary_withdrawal": "Você também pode devolver qualquer artigo dentro de 7 dias após a entrega, mesmo que não esteja danificado, desde que esteja sem uso, sem danos e completo, com a embalagem original e todos os seus acessórios.",
+    "full_policy_link": "Ver política completa de devoluções"
+  },
+  "returns_policy": {
+    "title": "Política de Frete e Devoluções",
+    "intro": "Frete grátis para toda a América e Europa. A seguir, as condições de devolução, substituição e cancelamento de pedidos.",
+    "damaged_title": "Devoluções por artigo danificado",
+    "damaged_items": [
+      "O prazo para reportar um artigo danificado ou com defeito é de 48 horas desde a entrega.",
+      "O relato deve incluir fotografias do dano.",
+      "O cliente escolhe entre o envio de um artigo novo sem custo ou o reembolso integral do seu dinheiro.",
+      "O envio de substituição e a devolução do artigo danificado não têm custo para o cliente."
+    ],
+    "withdrawal_title": "Direito de arrependimento",
+    "withdrawal_items": [
+      "O prazo para solicitar uma devolução sem justificar o motivo é de 7 dias desde a entrega do pedido.",
+      "O artigo deve estar sem uso e sem danos atribuíveis ao cliente.",
+      "A devolução deve ser completa: embalagem original e todos os acessórios e componentes incluídos.",
+      "Artigos que não cumpram essas condições não se qualificam para o reembolso."
+    ],
+    "process_title": "Como funciona o processo",
+    "process_items": [
+      "Solicite a devolução pelos canais indicados no final desta página, com o número do pedido e o motivo.",
+      "Combinamos a coleta ou o envio de devolução.",
+      "Assim que o artigo for recebido e verificado, o reembolso ou a substituição é processado."
+    ],
+    "cancellations_title": "Cancelamentos",
+    "cancellations_items": [
+      "O pedido pode ser cancelado a qualquer momento antes de começar a ser preparado para envio.",
+      "Se o pedido já foi despachado, aplica-se o processo de devolução descrito acima."
+    ],
+    "help": "Para iniciar uma devolução ou consultar sobre o seu pedido, fale conosco por um destes canais:",
+    "contact_whatsapp": "WhatsApp",
+    "copy_email": "Copiar endereço",
+    "copied": "Copiado"
   }
 }

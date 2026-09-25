@@ -33,7 +33,7 @@ class LowStockWidget extends BaseWidget
                 Tables\Columns\TextColumn::make('product.name')->label('Producto')->limit(30),
                 Tables\Columns\TextColumn::make('variant')
                     ->label('Variante')
-                    ->getStateUsing(fn (ProductVariant $r) => trim(($r->size ?? '') . ' ' . ($r->color ?? '')) ?: $r->sku),
+                    ->getStateUsing(fn (ProductVariant $r) => trim(($r->size ?? '') . ' ' . ($r->product?->color ?? '')) ?: $r->sku),
                 Tables\Columns\TextColumn::make('stock')
                     ->label('Stock actual')
                     ->badge()

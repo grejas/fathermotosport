@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -24,11 +25,17 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+        // La tabla users usa first_name/last_name (no el 'name' del esqueleto de Laravel)
+        // y el rol de cliente, que es con el que se registra cualquier comprador.
         return [
-            'name' => fake()->name(),
+            // Requiere que RoleSeeder ya haya corrido (DatabaseSeeder lo incluye).
+            'role_id' => fn () => Role::where('name', 'Cliente')->value('id'),
+            'first_name' => fake()->firstName(),
+            'last_name' => fake()->lastName(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
+            'status' => 'active',
             'remember_token' => Str::random(10),
         ];
     }

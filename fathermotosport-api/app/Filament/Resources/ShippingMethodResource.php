@@ -10,6 +10,10 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 
+/**
+ * Catálogo de transportistas para el tracking. Las tarifas que ve el cliente se
+ * administran en "Opciones de envío" (ShippingOptionResource).
+ */
 class ShippingMethodResource extends Resource
 {
     protected static ?string $model = ShippingMethod::class;
@@ -20,30 +24,24 @@ class ShippingMethodResource extends Resource
 
     protected static ?string $navigationGroup = 'Ventas';
 
-    protected static ?string $navigationLabel = 'Métodos de envío';
+    protected static ?string $navigationLabel = 'Transportistas';
 
-    protected static ?string $modelLabel = 'Método de envío';
+    protected static ?string $modelLabel = 'Transportista';
 
-    protected static ?string $pluralModelLabel = 'Métodos de envío';
+    protected static ?string $pluralModelLabel = 'Transportistas';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\TextInput::make('name')->label('Nombre')->required(),
-            Forms\Components\Select::make('country')
-                ->label('País')
-                ->options(['Bolivia' => 'Bolivia', 'Brasil' => 'Brasil'])
-                ->required(),
-            Forms\Components\TextInput::make('price')
-                ->label('Precio')
-                ->numeric()
-                ->prefix('$')
-                ->default(0.00)
-                ->hint('0 = Envío gratuito'),
-            Forms\Components\TextInput::make('delivery_days_min')->label('Días mín.')->numeric()->default(2),
-            Forms\Components\TextInput::make('delivery_days_max')->label('Días máx.')->numeric()->default(5),
+            Forms\Components\TextInput::make('name')
+                ->label('Nombre')
+                ->placeholder('Ej: DHL')
+                ->required()
+                ->maxLength(255)
+                ->unique(ignoreRecord: true)
+                ->helperText('Se usa al cargar el tracking de un envío.'),
             Forms\Components\Toggle::make('is_active')->label('Activo')->default(true),
         ])->columns(2);
     }
@@ -52,18 +50,14 @@ class ShippingMethodResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')->label('Nombre')->searchable(),
-                Tables\Columns\TextColumn::make('country')->label('País')->badge(),
-                Tables\Columns\TextColumn::make('price')
-                    ->label('Precio')
-                    ->formatStateUsing(fn ($state) => $state > 0 ? '$' . number_format($state, 2) : 'Gratis')
-                    ->badge()
-                    ->color(fn ($state) => $state > 0 ? 'warning' : 'success'),
-                Tables\Columns\TextColumn::make('delivery_days_min')
-                    ->label('Entrega')
-                    ->formatStateUsing(fn ($state, ShippingMethod $r) => "{$r->delivery_days_min}-{$r->delivery_days_max} días"),
+                Tables\Columns\TextColumn::make('name')->label('Nombre')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('shipments_count')
+                    ->label('Envíos')
+                    ->counts('shipments')
+                    ->badge(),
                 Tables\Columns\IconColumn::make('is_active')->label('Activo')->boolean(),
             ])
+            ->defaultSort('name')
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),

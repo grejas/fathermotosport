@@ -46,6 +46,7 @@ class ProductFactory extends Factory
             'category_id' => Category::inRandomOrder()->first()?->id,
             'sku' => 'FMS-TEST-'.Str::upper(Str::random(8)),
             'name' => $name,
+            'color' => fake()->randomElement(['Negro', 'Blanco', 'Rojo', 'Azul', 'Gris']),
             'slug' => Str::slug($name).'-'.Str::random(4),
             'short_description' => 'Casco de prueba generado para testing de paginación del catálogo.',
             'description' => '<p>'.fake()->paragraphs(3, true).'</p>',

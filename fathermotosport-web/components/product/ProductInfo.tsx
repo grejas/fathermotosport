@@ -7,7 +7,9 @@ import type { Product, ProductVariant } from "@/lib/types";
 import { cn, formatPrice, getCategoryColor } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { SizeGuideModal } from "@/components/product/SizeGuideModal";
+import { SizeGuideModal, hasSizeGuide } from "@/components/product/SizeGuideModal";
+import { ShippingReturns } from "@/components/product/ShippingReturns";
+import { sortSizes } from "@/lib/utils/sizes";
 import { useCartStore } from "@/store/cartStore";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { useAuthStore } from "@/store/authStore";
@@ -25,21 +27,28 @@ export function ProductInfo({ product }: { product: Product }) {
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
   const variants = useMemo(() => (product.variants ?? []).filter((v) => v.is_active), [product]);
 
-  const sizes = useMemo(() => [...new Set(variants.map((v) => v.size).filter(Boolean))], [variants]);
-  const colors = useMemo(() => [...new Set(variants.map((v) => v.color).filter(Boolean))], [variants]);
-
-  const [size, setSize] = useState<string | null>(sizes[0] ?? null);
-  const [color, setColor] = useState<string | null>(colors[0] ?? null);
+  const sizes = useMemo(
+    () => sortSizes([...new Set(variants.map((v) => v.size).filter((s): s is string => !!s))]),
+    [variants]
+  );
+  // Selección inicial: la primera talla (en orden) que tenga stock.
+  const [size, setSize] = useState<string | null>(
+    () => sizes.find((s) => variants.some((v) => v.size === s && v.stock > 0)) ?? sizes[0] ?? null
+  );
   const [qty, setQty] = useState(1);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
 
-  const selectedVariant: ProductVariant | undefined = useMemo(
-    () =>
-      variants.find(
-        (v) => (size ? v.size === size : true) && (color ? v.color === color : true)
-      ) ?? variants[0],
-    [variants, size, color]
-  );
+  // El color es del producto, así que la variante depende solo de la talla.
+  // Productos sin talla (ej. viseras): la primera variante con stock.
+  const selectedVariant: ProductVariant | undefined =
+    sizes.length > 0
+      ? variants.find((v) => v.size === size)
+      : variants.find((v) => v.stock > 0) ?? variants[0];
+
+  const selectSize = (s: string) => {
+    setSize(s);
+    setQty(1);
+  };
 
   const addItem = useCartStore((s) => s.addItem);
   const toggleFav = useFavoritesStore((s) => s.toggle);
@@ -51,11 +60,12 @@ export function ProductInfo({ product }: { product: Product }) {
   const totalStock = variants.reduce((sum, v) => sum + v.stock, 0);
   const displayStock = selectedVariant ? selectedVariant.stock : totalStock;
   const inStock = displayStock > 0;
+  const canAdd = !!selectedVariant && selectedVariant.stock > 0;
   const rating = Math.round(product.rating_avg ?? 0);
 
   const handleAdd = () => {
-    if (!selectedVariant || !inStock) {
-      toast.error("Sin stock disponible");
+    if (!selectedVariant || !canAdd) {
+      toast.error(t("no_stock"));
       return;
     }
     addItem(product, selectedVariant, qty);
@@ -69,6 +79,11 @@ export function ProductInfo({ product }: { product: Product }) {
           {product.brand?.name}
         </p>
         <h1 className="mt-1 text-3xl font-extrabold text-brand-white">{product.name}</h1>
+        {product.color && (
+          <p className="mt-1 text-sm text-brand-muted">
+            {t("color")}: <span className="text-brand-white">{product.color}</span>
+          </p>
+        )}
 
         <div className="mt-2 flex items-center gap-3">
           <div className="flex">
@@ -106,12 +121,11 @@ export function ProductInfo({ product }: { product: Product }) {
           <p className="mb-2 text-sm font-semibold text-brand-white">{t("size")}</p>
           <div className="flex flex-wrap gap-2">
             {sizes.map((s) => {
-              const v = variants.find((x) => x.size === s && (color ? x.color === color : true));
-              const disabled = !v || v.stock === 0;
+              const disabled = !variants.some((x) => x.size === s && x.stock > 0);
               return (
                 <button
                   key={s}
-                  onClick={() => setSize(s)}
+                  onClick={() => selectSize(s)}
                   disabled={disabled}
                   className={cn(
                     "min-w-[44px] rounded-lg border px-3 py-2 text-sm font-medium transition",
@@ -126,39 +140,22 @@ export function ProductInfo({ product }: { product: Product }) {
               );
             })}
           </div>
-          <button
-            onClick={() => setSizeGuideOpen(true)}
-            className="mt-2 flex items-center gap-1.5 text-xs font-medium text-brand-muted transition hover:text-brand-white"
-          >
-            <Ruler size={14} />
-            {t("size_guide")}
-          </button>
-          <SizeGuideModal open={sizeGuideOpen} onClose={() => setSizeGuideOpen(false)} />
-        </div>
-      )}
-
-      {colors.length > 0 && (
-        <div>
-          <p className="mb-2 text-sm font-semibold text-brand-white">
-            {t("color")}: {color}
-          </p>
-          <div className="flex gap-2">
-            {colors.map((c) => (
+          {hasSizeGuide(product.category?.slug) && (
+            <>
               <button
-                key={c}
-                onClick={() => setColor(c)}
-                title={c ?? ""}
-                className={cn(
-                  "h-9 rounded-lg border px-3 text-xs transition",
-                  color === c
-                    ? "border-brand-red bg-brand-red/10 text-brand-white"
-                    : "border-white/10 text-brand-muted hover:border-white/30"
-                )}
+                onClick={() => setSizeGuideOpen(true)}
+                className="mt-2 flex items-center gap-1.5 text-xs font-medium text-brand-muted transition hover:text-brand-white"
               >
-                {c}
+                <Ruler size={14} />
+                {t("size_guide")}
               </button>
-            ))}
-          </div>
+              <SizeGuideModal
+                open={sizeGuideOpen}
+                onClose={() => setSizeGuideOpen(false)}
+                categorySlug={product.category?.slug}
+              />
+            </>
+          )}
         </div>
       )}
 
@@ -181,7 +178,7 @@ export function ProductInfo({ product }: { product: Product }) {
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row">
-        <Button variant="primary" className="flex-1" onClick={handleAdd} disabled={!inStock}>
+        <Button variant="primary" className="flex-1" onClick={handleAdd} disabled={!canAdd}>
           {t("add_to_cart")}
         </Button>
         {isAuth && (
@@ -194,6 +191,8 @@ export function ProductInfo({ product }: { product: Product }) {
           </Button>
         )}
       </div>
+
+      <ShippingReturns />
 
       <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
         <Button variant="glass" className="w-full" icon={<MessageCircle size={18} />}>

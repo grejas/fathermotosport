@@ -15,6 +15,9 @@ export interface CreateOrderPayload {
     reference?: string;
   };
   payment_method: PaymentMethod;
+  /** Opción de envío elegida; el backend revalida el precio contra su propia base. */
+  shipping_option_id?: number;
+  shipping_country_code?: string;
   coupon_code?: string;
   notes?: string;
 }
@@ -30,8 +33,14 @@ export async function createOrder(payload: CreateOrderPayload): Promise<CreateOr
   return data;
 }
 
-export async function getOrder(id: string): Promise<Order> {
-  const { data } = await apiClient.get<{ data: Order }>(`/orders/${id}`);
+/**
+ * Pedido por id. El comprador invitado pasa el access_token que recibió al comprar;
+ * un usuario logueado no lo necesita (va por sesión).
+ */
+export async function getOrder(id: string, accessToken?: string): Promise<Order> {
+  const { data } = await apiClient.get<{ data: Order }>(`/orders/${id}`, {
+    headers: accessToken ? { "X-Order-Token": accessToken } : undefined,
+  });
   return data.data;
 }
 

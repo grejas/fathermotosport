@@ -14,6 +14,17 @@ export interface LocalCartItem {
   price: number;
   quantity: number;
   stock: number;
+  /** Peso del producto en kg. null = sin peso cargado (el envío asume DEFAULT_WEIGHT_KG). */
+  weightKg: number | null;
+}
+
+/** Mismo valor que ShippingWeightService::DEFAULT_WEIGHT_KG en el backend. */
+export const DEFAULT_WEIGHT_KG = 1;
+
+/** Peso total del carrito en kg, asumiendo el valor por defecto donde falte. */
+export function cartWeightKg(items: LocalCartItem[]): number {
+  const total = items.reduce((sum, i) => sum + (i.weightKg ?? DEFAULT_WEIGHT_KG) * i.quantity, 0);
+  return Math.round(total * 1000) / 1000;
 }
 
 interface CartState {
@@ -52,7 +63,8 @@ export const useCartStore = create<CartState>()(
 
       addItem: (product, variant, quantity = 1) => {
         const variantId = variant.id;
-        const price = parseFloat(variant.price ?? product.sale_price ?? product.price);
+        // El precio es del producto (no varía por talla).
+        const price = parseFloat(product.sale_price ?? product.price);
         const existing = get().items.find((i) => i.variantId === variantId);
 
         if (existing) {
@@ -73,11 +85,13 @@ export const useCartStore = create<CartState>()(
                 name: product.name,
                 slug: product.slug,
                 image: product.primary_image,
-                color: variant.color,
+                // El color es del producto, no algo que el cliente elige.
+                color: product.color ?? null,
                 size: variant.size,
                 price,
                 quantity: Math.min(quantity, variant.stock),
                 stock: variant.stock,
+                weightKg: product.weight ? parseFloat(product.weight) : null,
               },
             ],
           });

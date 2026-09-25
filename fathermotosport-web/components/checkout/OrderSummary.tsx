@@ -7,15 +7,27 @@ import { formatPrice, getImageUrl } from "@/lib/utils";
 
 interface OrderSummaryProps {
   discount?: number;
+  /** Costo de envío calculado; null = todavía no hay tarifa para ese destino. */
+  shipping?: number | null;
+  /** Texto a mostrar en la fila de envío cuando no hay un monto (calculando, a coordinar…). */
+  shippingNote?: string;
+  /** Nombre del método elegido ("Express DHL"), bajo la etiqueta de envío. */
+  shippingMethod?: string | null;
   children?: React.ReactNode;
 }
 
-export function OrderSummary({ discount = 0, children }: OrderSummaryProps) {
+export function OrderSummary({
+  discount = 0,
+  shipping = null,
+  shippingNote,
+  shippingMethod,
+  children,
+}: OrderSummaryProps) {
   const t = useTranslations("checkout");
   const tCart = useTranslations("cart");
   const items = useCartStore((s) => s.items);
   const subtotal = useCartStore((s) => s.subtotal());
-  const total = Math.max(0, subtotal - discount);
+  const total = Math.max(0, subtotal - discount) + (shipping ?? 0);
 
   return (
     <div className="rounded-2xl border border-white/10 bg-brand-card p-5">
@@ -55,8 +67,17 @@ export function OrderSummary({ discount = 0, children }: OrderSummaryProps) {
           </div>
         )}
         <div className="flex justify-between text-brand-muted">
-          <span>{tCart("shipping")}</span>
-          <span className="font-semibold text-cat-boots">{t("free")}</span>
+          <span>
+            {tCart("shipping")}
+            {shippingMethod ? <span className="block text-xs">{shippingMethod}</span> : null}
+          </span>
+          {shipping === null ? (
+            <span className="text-right text-xs text-brand-muted">{shippingNote ?? "—"}</span>
+          ) : shipping === 0 ? (
+            <span className="font-semibold text-cat-boots">{t("free")}</span>
+          ) : (
+            <span className="text-brand-white">{formatPrice(shipping)}</span>
+          )}
         </div>
         <div className="flex justify-between border-t border-white/10 pt-2 text-base font-bold text-brand-white">
           <span>{tCart("total")}</span>

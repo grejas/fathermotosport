@@ -19,6 +19,7 @@ class StoreProductRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
+            'color' => ['nullable', 'string', 'max:100'],
             'description' => ['required', 'string'],
             'short_description' => ['nullable', 'string', 'max:255'],
             'brand_id' => ['required', 'integer', 'exists:brands,id'],
