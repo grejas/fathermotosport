@@ -89,12 +89,68 @@ class OrderAccessTest extends TestCase
 
         Sanctum::actingAs(User::factory()->create());
         $this->getJson("/api/v1/orders/{$order['id']}")->assertForbidden();
+        $this->postJson('/api/v1/payments/paypal/create', ['order_id' => $order['id']])->assertForbidden();
     }
 
-    /**
-     * La misma regla que protege el pago (PaymentController), probada sobre el modelo:
-     * las rutas de pago están apagadas, así que no se puede verificar por HTTP todavía.
-     */
+    public function test_paypal_create_requires_authorization_and_refuses_paid_orders(): void
+    {
+        $order = $this->postJson('/api/v1/orders', $this->payload())->json('order');
+
+        // Sin token no se puede iniciar el pago.
+        $this->postJson('/api/v1/payments/paypal/create', ['order_id' => $order['id']])->assertForbidden();
+
+        // Ya pagado: 409 antes de llamar a PayPal (evita el cobro doble).
+        Order::whereKey($order['id'])->update(['payment_status' => 'paid']);
+        $this->postJson('/api/v1/payments/paypal/create', ['order_id' => $order['id']], [
+            'X-Order-Token' => $order['access_token'],
+        ])->assertStatus(409);
+    }
+
+    public function test_capture_is_idempotent_when_the_order_is_already_paid(): void
+    {
+        $order = $this->postJson('/api/v1/orders', $this->payload())->json('order');
+
+        Payment::create([
+            'order_id' => $order['id'],
+            'provider' => 'paypal',
+            'transaction_id' => 'PAYPAL-TEST-123',
+            'currency' => 'USD',
+            'amount' => $order['total'],
+            'status' => 'approved',
+        ]);
+        Order::whereKey($order['id'])->update(['payment_status' => 'paid']);
+
+        // No llama a PayPal: responde con el estado guardado.
+        $this->postJson('/api/v1/payments/paypal/capture/PAYPAL-TEST-123', [], [
+            'X-Order-Token' => $order['access_token'],
+        ])
+            ->assertOk()
+            ->assertJsonPath('status', 'COMPLETED')
+            ->assertJsonPath('order.payment_status', 'paid')
+            // La respuesta no expone datos personales del pedido.
+            ->assertJsonMissingPath('order.guest_email')
+            ->assertJsonMissingPath('order.address');
+    }
+
+    public function test_capture_rejects_a_token_that_does_not_match(): void
+    {
+        $order = $this->postJson('/api/v1/orders', $this->payload())->json('order');
+
+        Payment::create([
+            'order_id' => $order['id'],
+            'provider' => 'paypal',
+            'transaction_id' => 'PAYPAL-TEST-456',
+            'currency' => 'USD',
+            'amount' => $order['total'],
+            'status' => 'pending',
+        ]);
+
+        $this->postJson('/api/v1/payments/paypal/capture/PAYPAL-TEST-456', [], [
+            'X-Order-Token' => 'token-incorrecto',
+        ])->assertForbidden();
+    }
+
+    /** La misma regla de acceso, a nivel de modelo. */
     public function test_order_access_rule_accepts_token_owner_and_staff_only(): void
     {
         $dueno = User::factory()->create();

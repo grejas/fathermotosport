@@ -87,20 +87,19 @@ Route::prefix('v1')->group(function () {
     Route::post('/orders', [OrderController::class, 'store']);
     Route::get('/orders/{id}', [OrderController::class, 'show']);
 
-    // PayPal: la integración está completa (controlador, servicio, webhook y páginas de
-    // retorno) pero APAGADA hasta configurar el servidor (FRONTEND_URL, credenciales y
-    // PAYPAL_WEBHOOK_ID). Para encenderla, descomentar este grupo —va antes del catch-all,
-    // porque Laravel resuelve por orden de registro— y poner ["paypal"] en
-    // ENABLED_PAYMENT_METHODS del checkout.
-    //
-    // Route::middleware('throttle:10,1')->group(function () {
-    //     Route::post('/payments/paypal/create', [PaymentController::class, 'paypalCreate']);
-    //     // {paypalOrderId} es el id de la orden de PayPal (el ?token= de la URL de retorno).
-    //     Route::post('/payments/paypal/capture/{paypalOrderId}', [PaymentController::class, 'paypalCapture']);
-    // });
+    // PayPal ACTIVO. Va antes del catch-all de abajo porque Laravel resuelve las rutas
+    // por orden de registro: estas dos pasan y el resto de /payments/* sigue bloqueado.
+    // El modo (sandbox o live) y las credenciales salen del .env del servidor.
+    // throttle: cada petición llama a la API de PayPal.
+    Route::middleware('throttle:10,1')->group(function () {
+        Route::post('/payments/paypal/create', [PaymentController::class, 'paypalCreate']);
+        // {paypalOrderId} es el id de la orden de PayPal (el ?token= de la URL de retorno),
+        // no el id de nuestro pedido.
+        Route::post('/payments/paypal/capture/{paypalOrderId}', [PaymentController::class, 'paypalCapture']);
+    });
 
-    // Pagos — DESHABILITADOS hasta contar con credenciales reales de las pasarelas.
-    // Todas las rutas /payments/* devuelven un 503 limpio dirigiendo al cliente a WhatsApp.
+    // Resto de pagos (stripe, mercadopago) — DESHABILITADOS hasta contar con credenciales.
+    // Devuelven un 503 limpio dirigiendo al cliente a WhatsApp.
     Route::any('payments/{any}', function () {
         return response()->json([
             'success' => false,

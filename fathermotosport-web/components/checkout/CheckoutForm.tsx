@@ -27,11 +27,8 @@ import toast from "react-hot-toast";
 
 // Métodos de pago habilitados. Los que no estén acá se muestran en gris
 // ("Próximamente") y el checkout ofrece coordinar el pago por WhatsApp.
-//
-// Vacío = ningún pago online activo. La integración de PayPal está completa pero
-// apagada hasta configurar el servidor (FRONTEND_URL, credenciales y PAYPAL_WEBHOOK_ID)
-// y reactivar sus rutas en routes/api.php. Para encenderla: ["paypal"].
-const ENABLED_PAYMENT_METHODS: readonly PaymentMethod[] = [];
+// Para habilitar otro: agregarlo a esta lista (ej. ["paypal", "stripe"]).
+const ENABLED_PAYMENT_METHODS: readonly PaymentMethod[] = ["paypal"];
 const WHATSAPP_URL = "https://wa.me/59168736384";
 
 export function CheckoutForm() {
