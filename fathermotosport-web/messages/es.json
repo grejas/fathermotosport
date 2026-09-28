@@ -183,7 +183,8 @@
     "paypal_cancelled_text": "Cancelaste el pago en PayPal. Tu pedido quedó guardado como pendiente: podés volver a pagarlo desde Mis pedidos.",
     "paypal_order_reference": "Pedido: {id}",
     "paypal_see_orders": "Ver mis pedidos",
-    "pay_with": "Pagar con"
+    "pay_with": "Pagar con",
+    "email_from_account": "Este es el email de tu cuenta."
   },
   "auth": {
     "login": "Ingresar",

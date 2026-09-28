@@ -183,7 +183,8 @@
     "paypal_cancelled_text": "You cancelled the payment on PayPal. Your order was saved as pending: you can pay for it from My orders.",
     "paypal_order_reference": "Order: {id}",
     "paypal_see_orders": "See my orders",
-    "pay_with": "Pay with"
+    "pay_with": "Pay with",
+    "email_from_account": "This is your account email."
   },
   "auth": {
     "login": "Sign in",

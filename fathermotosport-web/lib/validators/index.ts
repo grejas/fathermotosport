@@ -83,8 +83,14 @@ export function validateRegister(data: {
   return errors;
 }
 
+/**
+ * Errores por campo (no un único "full_name"), para poder señalar exactamente
+ * cuál falta en el formulario. email undefined = el cliente tiene sesión iniciada
+ * y su email sale de la cuenta.
+ */
 export function validateCheckout(data: {
-  full_name: string;
+  first_name: string;
+  last_name?: string;
   email?: string;
   phone: string;
   country: string;
@@ -92,7 +98,7 @@ export function validateCheckout(data: {
   address_line: string;
 }): FieldErrors {
   const errors: FieldErrors = {};
-  if (!minLength(data.full_name, 1)) errors.full_name = "Nombre obligatorio.";
+  if (!minLength(data.first_name, 1)) errors.first_name = "Nombre obligatorio.";
   if (data.email !== undefined && !isEmail(data.email)) errors.email = "Email válido obligatorio.";
   if (!minLength(data.phone, 1)) errors.phone = "Teléfono obligatorio.";
   if (!minLength(data.country, 1)) errors.country = "Selecciona un país.";

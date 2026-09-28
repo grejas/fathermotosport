@@ -157,7 +157,9 @@ export function CheckoutForm() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const validation = validateCheckout({
-      full_name: `${form.first_name} ${form.last_name}`.trim(),
+      first_name: form.first_name,
+      last_name: form.last_name,
+      // Con sesión iniciada el email sale de la cuenta y no se valida acá.
       email: isAuth ? undefined : form.email,
       phone: form.phone,
       country: form.country,
@@ -166,7 +168,11 @@ export function CheckoutForm() {
     });
     setErrors(validation);
     if (hasErrors(validation)) {
-      toast.error(t("form_errors"));
+      // Mensaje del primer campo que falta, en vez del genérico: antes el cliente
+      // veía "revisá los campos" sin saber cuál.
+      const primerError = Object.values(validation).find(Boolean);
+      toast.error(primerError ?? t("form_errors"));
+      document.querySelector<HTMLElement>(`[name="${Object.keys(validation)[0]}"]`)?.focus();
       return;
     }
     if (!items.length) {
@@ -230,16 +236,38 @@ export function CheckoutForm() {
   return (
     <form onSubmit={submit} className="grid gap-8 lg:grid-cols-[1fr_320px]">
       <div className="space-y-6">
-        {!isAuth && (
-          <section>
-            <h3 className="mb-3 text-lg font-bold text-brand-white">{t("your_data")}</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <Input label={t("first_name")} value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} error={errors.full_name} />
-              <Input label={t("last_name")} value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} />
-              <Input label={tAuth("email")} type="email" className="col-span-2" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} error={errors.email} />
-            </div>
-          </section>
-        )}
+        {/* Siempre visible: con sesión iniciada el email viene de la cuenta y no se
+            edita, pero nombre y apellido sí, porque la cuenta puede no tenerlos. */}
+        <section>
+          <h3 className="mb-3 text-lg font-bold text-brand-white">{t("your_data")}</h3>
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label={t("first_name")}
+              name="first_name"
+              value={form.first_name}
+              onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+              error={errors.first_name}
+            />
+            <Input
+              label={t("last_name")}
+              name="last_name"
+              value={form.last_name}
+              onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+              error={errors.last_name}
+            />
+            <Input
+              label={tAuth("email")}
+              name="email"
+              type="email"
+              className={cn("col-span-2", isAuth && "cursor-not-allowed opacity-70")}
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              readOnly={isAuth}
+              hint={isAuth ? t("email_from_account") : undefined}
+              error={errors.email}
+            />
+          </div>
+        </section>
 
         <section>
           <h3 className="mb-3 text-lg font-bold text-brand-white">{t("shipping_address")}</h3>
@@ -258,11 +286,11 @@ export function CheckoutForm() {
                 ))}
               </select>
             </div>
-            <Input label={t("phone")} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} error={errors.phone} />
-            <Input label={t("state")} value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} />
-            <Input label={t("city")} value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} error={errors.city} />
-            <Input label={t("address")} value={form.address_line} onChange={(e) => setForm({ ...form, address_line: e.target.value })} error={errors.address_line} />
-            <Input label={t("reference")} className="col-span-2" value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} />
+            <Input label={t("phone")} name="phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} error={errors.phone} />
+            <Input label={t("state")} name="state" value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} />
+            <Input label={t("city")} name="city" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} error={errors.city} />
+            <Input label={t("address")} name="address_line" value={form.address_line} onChange={(e) => setForm({ ...form, address_line: e.target.value })} error={errors.address_line} />
+            <Input label={t("reference")} name="reference" className="col-span-2" value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} />
           </div>
         </section>
 
