@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
+import { Spinner } from "@/components/ui/Spinner";
 import { cn, maskEmail, formatDate } from "@/lib/utils";
 import apiClient from "@/lib/api/client";
 import type { User } from "@/lib/types";
@@ -42,6 +43,7 @@ export function ProfileClient() {
   const refreshUser = useAuthStore((s) => s.refreshUser);
   const logout = useLogout();
 
+  const [intentoDeRecuperacion, setIntentoDeRecuperacion] = useState(false);
   const [coupon, setCoupon] = useState<MyCoupon | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [editOpen, setEditOpen] = useState(false);
@@ -71,7 +73,40 @@ export function ProfileClient() {
     [user?.created_at]
   );
 
-  if (!user) return null;
+  // Sin datos del usuario: se intenta recuperarlos una vez. Antes acá se devolvía
+  // null y la página quedaba en blanco, sin siquiera un botón para cerrar sesión.
+  useEffect(() => {
+    if (user || intentoDeRecuperacion) return;
+    refreshUser().finally(() => setIntentoDeRecuperacion(true));
+  }, [user, intentoDeRecuperacion, refreshUser]);
+
+  if (!user) {
+    if (!intentoDeRecuperacion) {
+      return (
+        <div className="flex min-h-[40vh] items-center justify-center">
+          <Spinner size={28} />
+        </div>
+      );
+    }
+
+    return (
+      <div className="mx-auto max-w-md rounded-2xl border border-white/10 bg-brand-card p-6 text-center">
+        <h2 className="text-lg font-bold text-brand-white">No pudimos cargar tu perfil</h2>
+        <p className="mt-2 text-sm text-brand-muted">
+          Tu sesión pudo haber expirado. Cerrá sesión y volvé a entrar para continuar.
+        </p>
+        <Button
+          variant="primary"
+          className="mt-5 w-full"
+          icon={<LogOut size={16} />}
+          loading={logout.isPending}
+          onClick={() => logout.mutate()}
+        >
+          Cerrar sesión
+        </Button>
+      </div>
+    );
+  }
 
   const couponActive = coupon && !coupon.is_expired && coupon.expires_at && !coupon.used;
 

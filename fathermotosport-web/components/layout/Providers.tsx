@@ -15,13 +15,21 @@ export function Providers({ children }: { children: ReactNode }) {
       })
   );
 
-  const isAuth = useAuthStore((s) => s.isAuth);
-  const refreshUser = useAuthStore((s) => s.refreshUser);
-
-  // Si hay sesión persistida, recupera el usuario al montar.
+  // Refresca el usuario DESPUÉS de que Zustand rehidrate desde localStorage.
+  // Antes se leía isAuth en el primer render, cuando todavía era false porque la
+  // rehidratación ocurre después: /auth/me nunca se llamaba y el perfil quedaba vacío.
   useEffect(() => {
-    if (isAuth) refreshUser();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const refrescarSiHaySesion = () => {
+      const { isAuth, refreshUser } = useAuthStore.getState();
+      if (isAuth) refreshUser();
+    };
+
+    // Si la rehidratación ya ocurrió, onFinishHydration no volverá a dispararse.
+    if (useAuthStore.persist.hasHydrated()) {
+      refrescarSiHaySesion();
+    }
+
+    return useAuthStore.persist.onFinishHydration(refrescarSiHaySesion);
   }, []);
 
   return (

@@ -20,12 +20,25 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Response: ante un 401, limpia el token almacenado.
+/**
+ * Qué hacer cuando la API responde 401. Lo registra el store de auth para cerrar
+ * la sesión también en el estado de la app: si solo se borrara el token, la UI
+ * seguiría creyendo que hay sesión y el cliente quedaría en una pantalla vacía.
+ * Se hace con un callback y no importando el store para no crear un ciclo de imports.
+ */
+let onUnauthorized: (() => void) | null = null;
+
+export function setUnauthorizedHandler(handler: () => void): void {
+  onUnauthorized = handler;
+}
+
+// Response: ante un 401, limpia el token almacenado y avisa al store.
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error?.response?.status === 401 && typeof window !== "undefined") {
       localStorage.removeItem(TOKEN_KEY);
+      onUnauthorized?.();
     }
     return Promise.reject(error);
   }
