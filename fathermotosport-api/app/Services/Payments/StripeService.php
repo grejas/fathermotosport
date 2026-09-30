@@ -20,17 +20,24 @@ class StripeService
     }
 
     /**
+     * Monto del pedido en la unidad mínima de la moneda (centavos), como lo espera
+     * Stripe. Es público porque al reutilizar un intent hay que comparar el monto
+     * que Stripe tiene guardado contra el del pedido, con la misma regla de redondeo.
+     */
+    public function montoEnCentavos(Order $order): int
+    {
+        return (int) round((float) $order->total * 100);
+    }
+
+    /**
      * Crea un PaymentIntent y devuelve el client_secret para el frontend.
      *
      * @return array{id: string, client_secret: string, raw: array}
      */
     public function createPaymentIntent(Order $order): array
     {
-        // Stripe maneja montos en la unidad mínima (centavos).
-        $amount = (int) round((float) $order->total * 100);
-
         $response = $this->client()->post('/v1/payment_intents', [
-            'amount' => $amount,
+            'amount' => $this->montoEnCentavos($order),
             'currency' => config('services.stripe.currency', 'usd'),
             'description' => "Pedido {$order->order_number} - FatherMotoSport",
             'metadata' => [

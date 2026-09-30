@@ -365,11 +365,53 @@ class PaymentController extends Controller
 
     // ───────────────────────── Stripe ─────────────────────────
 
+    /**
+     * Estados en los que Stripe todavía acepta pagar un PaymentIntent existente. Si el
+     * intent está en otro (cancelado, procesando, ya cobrado) hay que crear uno nuevo.
+     */
+    private const STRIPE_INTENT_REUSABLE = [
+        'requires_payment_method',
+        'requires_confirmation',
+        'requires_action',
+    ];
+
     public function stripeIntent(Request $request): JsonResponse
     {
         $order = Order::findOrFail($request->validate(['order_id' => 'required|uuid'])['order_id']);
 
-        $intent = $this->stripe->createPaymentIntent($order);
+        // Mismas guardas que paypalCreate: sin esto, conocer un UUID alcanzaba para
+        // generar cobros sobre el pedido de otra persona.
+        if (! $order->isAccessibleBy($request->user('sanctum'), Order::tokenFromRequest($request))) {
+            abort(403, 'No puedes pagar este pedido.');
+        }
+
+        if ($order->payment_status === 'paid') {
+            return response()->json(['message' => 'Este pedido ya fue pagado.'], 409);
+        }
+
+        if (in_array($order->status, ['cancelled', 'refunded'], true)) {
+            return response()->json(['message' => 'Este pedido ya no se puede pagar.'], 409);
+        }
+
+        // Reutiliza el intent creado hace menos de 30 minutos si Stripe lo sigue
+        // aceptando: evita cobrar dos veces al cliente que recarga o vuelve atrás.
+        if ($reusado = $this->intentReutilizable($order)) {
+            return response()->json($reusado + ['reused' => true]);
+        }
+
+        try {
+            $intent = $this->stripe->createPaymentIntent($order);
+        } catch (RequestException $e) {
+            Log::error('Stripe rechazó la creación del PaymentIntent.', [
+                'order' => $order->id,
+                'status' => $e->response->status(),
+                'body' => $e->response->json(),
+            ]);
+
+            return response()->json([
+                'message' => 'No pudimos iniciar el pago con tarjeta. Intentá de nuevo o contactanos por WhatsApp.',
+            ], 502);
+        }
 
         $this->recordPayment($order, 'stripe', $intent['id'], strtoupper((string) config('services.stripe.currency', 'usd')));
 
@@ -379,21 +421,100 @@ class PaymentController extends Controller
         ]);
     }
 
+    /**
+     * Devuelve el client_secret de un intent pendiente que todavía se pueda pagar, o
+     * null si hay que crear uno nuevo.
+     *
+     * El client_secret se relee de Stripe en vez de guardarse en nuestra base: es una
+     * credencial que permite confirmar ese cobro, y no hace falta tenerla en reposo.
+     *
+     * @return array{client_secret: string, payment_intent_id: string}|null
+     */
+    private function intentReutilizable(Order $order): ?array
+    {
+        $pendiente = Payment::where('order_id', $order->id)
+            ->where('provider', 'stripe')
+            ->where('status', 'pending')
+            ->where('created_at', '>=', now()->subMinutes(30))
+            ->latest()
+            ->first();
+
+        if (! $pendiente) {
+            return null;
+        }
+
+        try {
+            $intent = $this->stripe->confirmPayment($pendiente->transaction_id);
+        } catch (RequestException $e) {
+            // El intent ya no existe o Stripe no responde: se crea uno nuevo.
+            Log::warning('No se pudo releer un PaymentIntent pendiente de Stripe.', [
+                'order' => $order->id,
+                'intent' => $pendiente->transaction_id,
+                'status' => $e->response->status(),
+            ]);
+
+            return null;
+        }
+
+        $pagable = in_array($intent['status'] ?? '', self::STRIPE_INTENT_REUSABLE, true);
+        // El monto del intent tiene que seguir coincidiendo con el del pedido: si el
+        // total cambió, reutilizarlo cobraría el importe viejo.
+        $montoCoincide = (int) ($intent['amount'] ?? 0) === $this->stripe->montoEnCentavos($order);
+
+        if (! $pagable || ! $montoCoincide || blank($intent['client_secret'] ?? null)) {
+            return null;
+        }
+
+        return [
+            'client_secret' => $intent['client_secret'],
+            'payment_intent_id' => $intent['id'],
+        ];
+    }
+
     public function stripeConfirm(Request $request): JsonResponse
     {
         $data = $request->validate(['payment_intent_id' => 'required|string']);
 
-        $intent = $this->stripe->confirmPayment($data['payment_intent_id']);
-        $payment = Payment::where('transaction_id', $data['payment_intent_id'])->first();
+        $payment = Payment::with('order.address')
+            ->where('provider', 'stripe')
+            ->where('transaction_id', $data['payment_intent_id'])
+            ->first();
 
-        if (($intent['status'] ?? null) === 'succeeded' && $payment) {
+        $order = $payment?->order;
+
+        if (! $payment || ! $order) {
+            return response()->json(['message' => 'No encontramos ese pago.'], 404);
+        }
+
+        // El id del intent no autoriza por sí solo: hace falta el token del pedido o
+        // una sesión con permiso, igual que para iniciar el cobro.
+        if (! $order->isAccessibleBy($request->user('sanctum'), Order::tokenFromRequest($request))) {
+            abort(403, 'No puedes consultar este pago.');
+        }
+
+        try {
+            $intent = $this->stripe->confirmPayment($data['payment_intent_id']);
+        } catch (RequestException $e) {
+            Log::error('Stripe rechazó la consulta del PaymentIntent.', [
+                'order' => $order->id,
+                'intent' => $data['payment_intent_id'],
+                'status' => $e->response->status(),
+                'body' => $e->response->json(),
+            ]);
+
+            return response()->json([
+                'message' => 'No pudimos confirmar el pago con tarjeta.',
+            ], 502);
+        }
+
+        // El estado lo dice Stripe, no el cliente: acá se relee la fuente de verdad.
+        if (($intent['status'] ?? null) === 'succeeded') {
             $this->markPaid($payment, $intent);
         }
 
-        return response()->json([
-            'status' => $intent['status'] ?? null,
-            'order' => $payment?->order?->fresh(),
-        ]);
+        // Respuesta acotada (el mismo helper que usa PayPal): antes devolvía el modelo
+        // Order completo, y con él el access_token del pedido, las notas y la dirección.
+        return $this->estadoDelPago($intent['status'] ?? null, $order->fresh(['address']));
     }
 
     // ─────────────────────── MercadoPago ───────────────────────

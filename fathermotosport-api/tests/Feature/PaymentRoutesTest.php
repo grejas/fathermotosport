@@ -6,10 +6,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * PayPal está activo; stripe y mercadopago siguen detrás del 503 hasta tener
- * credenciales. Si se vuelve a apagar PayPal (comentando sus rutas en
- * routes/api.php), hay que mover paypal/create y paypal/capture al test de
- * rutas bloqueadas.
+ * PayPal y Stripe están activos; mercadopago sigue detrás del 503 hasta tener
+ * credenciales. Si se vuelve a apagar una pasarela (comentando sus rutas en
+ * routes/api.php), hay que mover esas rutas al test de rutas bloqueadas.
  */
 class PaymentRoutesTest extends TestCase
 {
@@ -28,11 +27,22 @@ class PaymentRoutesTest extends TestCase
             ->assertStatus(404);
     }
 
+    public function test_stripe_routes_are_not_blocked(): void
+    {
+        // Igual que arriba: un 422 de validación prueba que la petición llega al
+        // controlador y no al bloqueo del catch-all.
+        $this->postJson('/api/v1/payments/stripe/intent', [])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('order_id');
+
+        $this->postJson('/api/v1/payments/stripe/confirm', [])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('payment_intent_id');
+    }
+
     public function test_other_payment_routes_are_still_blocked(): void
     {
         $bloqueadas = [
-            '/api/v1/payments/stripe/intent',
-            '/api/v1/payments/stripe/confirm',
             '/api/v1/payments/mercadopago/create',
             '/api/v1/payments/cualquier-otra',
         ];

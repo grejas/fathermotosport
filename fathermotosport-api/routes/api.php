@@ -101,9 +101,15 @@ Route::prefix('v1')->group(function () {
         // {paypalOrderId} es el id de la orden de PayPal (el ?token= de la URL de retorno),
         // no el id de nuestro pedido.
         Route::post('/payments/paypal/capture/{paypalOrderId}', [PaymentController::class, 'paypalCapture']);
+
+        // Stripe ACTIVO en modo Test. Mismo patrón que PayPal: van antes del catch-all
+        // y las credenciales (sk_test_* / pk_test_*) salen del .env del servidor.
+        // El webhook sigue sin conectar a propósito, hasta validar el pago directo.
+        Route::post('/payments/stripe/intent', [PaymentController::class, 'stripeIntent']);
+        Route::post('/payments/stripe/confirm', [PaymentController::class, 'stripeConfirm']);
     });
 
-    // Resto de pagos (stripe, mercadopago) — DESHABILITADOS hasta contar con credenciales.
+    // Resto de pagos (mercadopago) — DESHABILITADOS hasta contar con credenciales.
     // Devuelven un 503 limpio dirigiendo al cliente a WhatsApp.
     Route::any('payments/{any}', function () {
         return response()->json([
@@ -114,8 +120,6 @@ Route::prefix('v1')->group(function () {
     })->where('any', '.*');
 
     // Rutas de pago pendientes (reactivar cuando existan credenciales):
-    // Route::post('/payments/stripe/intent', [PaymentController::class, 'stripeIntent']);
-    // Route::post('/payments/stripe/confirm', [PaymentController::class, 'stripeConfirm']);
     // Route::post('/payments/mercadopago/create', [PaymentController::class, 'mercadopagoCreate']);
 
     // Cupones
