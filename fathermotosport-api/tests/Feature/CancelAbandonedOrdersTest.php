@@ -105,6 +105,19 @@ class CancelAbandonedOrdersTest extends TestCase
         $this->assertSame('cancelled', $order->fresh()->status);
     }
 
+    public function test_orders_flagged_for_attention_are_never_cancelled(): void
+    {
+        [, $order] = $this->pedidoSinPagar(180);
+        // Caso real: el webhook de Stripe informó un importe distinto al del pedido, así
+        // que hay dinero cobrado sin acordar y lo resuelve una persona. Cancelarlo solo
+        // dejaría el cobro huérfano.
+        $order->update(['attention_reason' => 'Stripe cobró 150.00 pero el pedido totaliza 200.00.']);
+
+        $this->artisan('orders:cancel-abandoned --apply')->assertSuccessful();
+
+        $this->assertSame('pending', $order->fresh()->status);
+    }
+
     public function test_paid_orders_are_never_cancelled(): void
     {
         [, $order] = $this->pedidoSinPagar(180);

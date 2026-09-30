@@ -104,7 +104,8 @@ Route::prefix('v1')->group(function () {
 
         // Stripe ACTIVO en modo Test. Mismo patrón que PayPal: van antes del catch-all
         // y las credenciales (sk_test_* / pk_test_*) salen del .env del servidor.
-        // El webhook sigue sin conectar a propósito, hasta validar el pago directo.
+        // El webhook (abajo, /webhooks/stripe) también está conectado: necesita
+        // STRIPE_WEBHOOK_SECRET o rechaza todo evento con 400.
         Route::post('/payments/stripe/intent', [PaymentController::class, 'stripeIntent']);
         Route::post('/payments/stripe/confirm', [PaymentController::class, 'stripeConfirm']);
     });

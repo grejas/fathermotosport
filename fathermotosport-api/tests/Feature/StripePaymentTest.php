@@ -10,6 +10,7 @@ use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -296,6 +297,128 @@ class StripePaymentTest extends TestCase
     {
         $this->postJson('/api/v1/payments/stripe/confirm', ['payment_intent_id' => 'pi_inexistente'])
             ->assertStatus(404);
+    }
+
+    // ───────── Webhook ─────────
+
+    /** Firma el payload como lo hace Stripe: HMAC-SHA256 de "timestamp.cuerpo". */
+    private function enviarWebhook(array $evento, string $secreto = 'whsec_test'): \Illuminate\Testing\TestResponse
+    {
+        config(['services.stripe.webhook_secret' => 'whsec_test']);
+
+        $payload = json_encode($evento);
+        $t = time();
+        $firma = 't='.$t.',v1='.hash_hmac('sha256', $t.'.'.$payload, $secreto);
+
+        return $this->call(
+            'POST',
+            '/api/v1/webhooks/stripe',
+            [], [], [],
+            ['CONTENT_TYPE' => 'application/json', 'HTTP_STRIPE_SIGNATURE' => $firma],
+            $payload
+        );
+    }
+
+    /** Pago de Stripe pendiente, sin pasar por el endpoint del intent. */
+    private function pagoPendiente(Order $order, string $intentId = 'pi_test_1', string $provider = 'stripe'): Payment
+    {
+        return Payment::create([
+            'order_id' => $order->id,
+            'provider' => $provider,
+            'transaction_id' => $intentId,
+            'currency' => 'USD',
+            'amount' => $order->total,
+            'status' => 'pending',
+        ]);
+    }
+
+    /** @param array<string, mixed> $objeto */
+    private function eventoIntentExitoso(array $objeto = []): array
+    {
+        return [
+            'type' => 'payment_intent.succeeded',
+            'data' => ['object' => array_merge([
+                'id' => 'pi_test_1',
+                'status' => 'succeeded',
+                'amount' => 20000,
+                'amount_received' => 20000,
+            ], $objeto)],
+        ];
+    }
+
+    public function test_the_webhook_marks_the_order_paid_and_discounts_the_stock(): void
+    {
+        $variant = $this->variante(5);
+        $order = $this->pedido($variant);
+        $this->pagoPendiente($order);
+
+        $this->enviarWebhook($this->eventoIntentExitoso())
+            ->assertOk()
+            ->assertJsonPath('received', true);
+
+        $this->assertSame('paid', $order->fresh()->payment_status);
+        $this->assertSame(3, $variant->fresh()->stock);
+        $this->assertNull($order->fresh()->attention_reason);
+    }
+
+    public function test_the_webhook_rejects_an_invalid_signature(): void
+    {
+        $order = $this->pedido($this->variante());
+        $this->pagoPendiente($order);
+
+        // Firmado con otro secreto que el configurado.
+        $this->enviarWebhook($this->eventoIntentExitoso(), 'whsec_otro')->assertStatus(400);
+
+        $this->assertSame('pending', $order->fresh()->payment_status);
+    }
+
+    public function test_the_webhook_ignores_events_other_than_payment_intent_succeeded(): void
+    {
+        $order = $this->pedido($this->variante());
+        $this->pagoPendiente($order);
+
+        $this->enviarWebhook([
+            'type' => 'payment_intent.payment_failed',
+            'data' => ['object' => ['id' => 'pi_test_1', 'amount_received' => 20000]],
+        ])->assertOk();
+
+        $this->assertSame('pending', $order->fresh()->payment_status);
+    }
+
+    public function test_the_webhook_only_looks_at_stripe_payments(): void
+    {
+        $order = $this->pedido($this->variante());
+        // Mismo transaction_id pero de otra pasarela: no es el pago de este evento.
+        $this->pagoPendiente($order, 'pi_test_1', 'paypal');
+
+        $this->enviarWebhook($this->eventoIntentExitoso())->assertOk();
+
+        $this->assertSame('pending', $order->fresh()->payment_status);
+    }
+
+    public function test_the_webhook_flags_a_mismatched_amount_instead_of_marking_it_paid(): void
+    {
+        $variant = $this->variante(5);
+        $order = $this->pedido($variant);
+        $this->pagoPendiente($order);
+
+        Log::spy();
+
+        // El pedido totaliza $200 (20000 centavos) y Stripe informa $150.
+        $this->enviarWebhook($this->eventoIntentExitoso(['amount_received' => 15000]))->assertOk();
+
+        $fresco = $order->fresh();
+        $this->assertSame('pending', $fresco->payment_status, 'un importe distinto no se acepta en silencio');
+        $this->assertStringContainsString('Stripe cobró 150.00', (string) $fresco->attention_reason);
+        $this->assertStringContainsString('200.00', (string) $fresco->attention_reason);
+        $this->assertStringContainsString('⚠️', (string) $fresco->notes);
+
+        // Sin marcar pagado, tampoco se toca el stock.
+        $this->assertSame(5, $variant->fresh()->stock);
+
+        Log::shouldHaveReceived('error')
+            ->withArgs(fn (string $mensaje) => str_contains($mensaje, 'requiere atención manual'))
+            ->once();
     }
 
     public function test_a_successful_confirm_marks_the_order_paid_and_discounts_the_stock(): void

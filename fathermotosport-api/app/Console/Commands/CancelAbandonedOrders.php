@@ -34,6 +34,9 @@ class CancelAbandonedOrders extends Command
         $pedidos = Order::with('items')
             ->where('payment_status', 'pending')
             ->where('status', 'pending')
+            // Un pedido marcado para revisión no se cancela solo: puede tener dinero
+            // cobrado que no cuadra (ver el webhook de Stripe) y lo resuelve una persona.
+            ->whereNull('attention_reason')
             ->where('created_at', '<', $limite)
             ->get();
 

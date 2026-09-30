@@ -582,14 +582,58 @@ class PaymentController extends Controller
         }
 
         $event = $request->input('type');
-        $intentId = $request->input('data.object.id');
 
-        if ($event === 'payment_intent.succeeded') {
-            $payment = Payment::where('transaction_id', $intentId)->first();
-            if ($payment) {
-                $this->markPaid($payment, $request->input('data.object', []));
-            }
+        // Único evento con efecto. El resto sale por el 'received' de abajo: contestar 2xx
+        // evita que Stripe reintente algo que de todos modos no vamos a procesar.
+        if ($event !== 'payment_intent.succeeded') {
+            return response()->json(['received' => true]);
         }
+
+        $intent = $request->input('data.object', []);
+        $intentId = $intent['id'] ?? null;
+
+        // Se filtra por provider igual que stripeConfirm: los ids de las pasarelas no
+        // colisionan hoy, pero que los dos caminos busquen distinto es pedir problemas.
+        $payment = Payment::with('order')
+            ->where('provider', 'stripe')
+            ->where('transaction_id', $intentId)
+            ->first();
+
+        $order = $payment?->order;
+
+        if (! $payment || ! $order) {
+            Log::warning('Webhook Stripe sobre un pago que no existe.', ['intent' => $intentId]);
+
+            return response()->json(['received' => true]);
+        }
+
+        // El monto lo fija el backend al crear el intent, así que el cliente no puede
+        // alterarlo. Pero si el total del pedido se editó después, cobramos el importe
+        // viejo: eso no se marca pagado en silencio.
+        $cobrado = (int) ($intent['amount_received'] ?? $intent['amount'] ?? 0);
+        $esperado = $this->stripe->montoEnCentavos($order);
+
+        if ($cobrado !== $esperado) {
+            Log::error('Webhook Stripe con monto distinto al del pedido: requiere atención manual.', [
+                'pedido' => $order->order_number,
+                'cobrado_centavos' => $cobrado,
+                'esperado_centavos' => $esperado,
+                'intent' => $intentId,
+            ]);
+
+            $this->marcarParaAtencion($order, sprintf(
+                'Stripe cobró %s pero el pedido totaliza %s. Revisar antes de enviar.',
+                number_format($cobrado / 100, 2),
+                number_format($esperado / 100, 2)
+            ));
+
+            // No se marca pagado: el importe no es el acordado y lo decide una persona.
+            // El pedido queda fuera del alcance del cron de abandonos por su marca de
+            // atención, así que no se va a cancelar solo mientras se revisa.
+            return response()->json(['received' => true]);
+        }
+
+        $this->markPaid($payment, $intent);
 
         return response()->json(['received' => true]);
     }
