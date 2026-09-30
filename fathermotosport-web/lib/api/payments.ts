@@ -6,8 +6,12 @@ export interface PaypalCreateResponse {
   approval_url: string | null;
 }
 
-/** Estado del pago. `order` es un resumen: nunca trae dirección ni teléfono. */
-export interface PaypalCaptureResponse {
+/**
+ * Estado del pago. `order` es un resumen: nunca trae dirección, teléfono ni el
+ * access_token del pedido. Lo comparten PayPal y Stripe, porque el backend responde
+ * con el mismo helper en los dos casos.
+ */
+export interface PaymentStatusResponse {
   status: string | null;
   order:
     | (Pick<Order, "id" | "order_number" | "payment_status" | "status" | "total"> & {
@@ -46,10 +50,49 @@ export async function createPaypalOrder(
 export async function capturePaypalOrder(
   paypalOrderId: string,
   accessToken?: string
-): Promise<PaypalCaptureResponse> {
-  const { data } = await apiClient.post<PaypalCaptureResponse>(
+): Promise<PaymentStatusResponse> {
+  const { data } = await apiClient.post<PaymentStatusResponse>(
     `/payments/paypal/capture/${paypalOrderId}`,
     {},
+    orderAuth(accessToken)
+  );
+  return data;
+}
+
+export interface StripeIntentResponse {
+  client_secret: string;
+  payment_intent_id: string;
+  /** true = se reutilizó el intent pendiente en vez de crear otro (evita cobro doble). */
+  reused?: boolean;
+}
+
+/**
+ * Crea (o reutiliza) el PaymentIntent de Stripe para un pedido ya creado y devuelve el
+ * client_secret que necesita el Payment Element.
+ */
+export async function createStripeIntent(
+  orderId: string,
+  accessToken?: string
+): Promise<StripeIntentResponse> {
+  const { data } = await apiClient.post<StripeIntentResponse>(
+    "/payments/stripe/intent",
+    { order_id: orderId },
+    orderAuth(accessToken)
+  );
+  return data;
+}
+
+/**
+ * Confirma el pago contra el backend, que relee el estado desde Stripe.
+ * El estado que informe el navegador no alcanza: la fuente de verdad es Stripe.
+ */
+export async function confirmStripePayment(
+  paymentIntentId: string,
+  accessToken?: string
+): Promise<PaymentStatusResponse> {
+  const { data } = await apiClient.post<PaymentStatusResponse>(
+    "/payments/stripe/confirm",
+    { payment_intent_id: paymentIntentId },
     orderAuth(accessToken)
   );
   return data;

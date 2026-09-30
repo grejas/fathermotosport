@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 
@@ -11,14 +12,29 @@ interface ModalProps {
   children: ReactNode;
 }
 
+/**
+ * Se renderiza en document.body con un portal, no donde se lo invoca.
+ *
+ * Quedando en el árbol de quien lo usa heredaba su contexto del DOM: dentro del
+ * formulario del checkout, el <form> del modal pasaba a ser un form anidado (HTML
+ * inválido) y su submit burbujeaba al formulario de afuera, que se volvía a ejecutar.
+ * Desde el body eso no puede pasar con ningún modal del sitio.
+ */
 export function Modal({ open, onClose, title, children }: ModalProps) {
+  // En el servidor no existe document.body: el portal solo se crea ya en el navegador.
+  const [montado, setMontado] = useState(false);
+
+  useEffect(() => setMontado(true), []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     if (open) document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  return (
+  if (!montado) return null;
+
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
@@ -41,7 +57,10 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
           >
             <div className="mb-4 flex items-center justify-between">
               {title && <h3 className="text-lg font-bold text-brand-white">{title}</h3>}
+              {/* type="button" explícito: un <button> sin type es submit, y si este
+                  modal volviera a quedar dentro de un formulario, la X lo enviaría. */}
               <button
+                type="button"
                 onClick={onClose}
                 className="ml-auto rounded-lg p-1 text-brand-muted transition hover:bg-white/10 hover:text-brand-white"
                 aria-label="Cerrar"
@@ -53,6 +72,7 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
