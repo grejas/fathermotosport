@@ -37,6 +37,17 @@ class OrderResource extends Resource
         $isAdmin = fn () => (bool) auth()->user()?->isAdmin();
 
         return $form->schema([
+            // Solo aparece cuando algo quedó pendiente de resolver a mano. El dinero ya
+            // se cobró en estos casos, así que conviene que sea lo primero que se lea.
+            Forms\Components\Section::make('⚠️ Este pedido requiere atención')
+                ->description('Se cobró el pago, pero algo no cuadró. Revisa y resuelve antes de enviar.')
+                ->visible(fn (?Order $record) => filled($record?->attention_reason))
+                ->schema([
+                    Forms\Components\Placeholder::make('attention_reason_p')
+                        ->label('Motivo')
+                        ->content(fn (?Order $record) => $record?->attention_reason),
+                ]),
+
             Forms\Components\Section::make('Información del pedido')
                 ->columns(2)
                 ->schema([
@@ -125,7 +136,9 @@ class OrderResource extends Resource
                     Forms\Components\Placeholder::make('discount_p')->label('Descuento')
                         ->content(fn (?Order $r) => '$' . number_format($r?->discount ?? 0, 2)),
                     Forms\Components\Placeholder::make('shipping_p')->label('Envío')
-                        ->content('$0.00 · Gratis'),
+                        ->content(fn (?Order $r) => $r?->shipping > 0
+                            ? '$'.number_format($r->shipping, 2).' · '.($r->shipping_method_name ?? 'Envío')
+                            : '$0.00 · Gratis'),
                     Forms\Components\Placeholder::make('total_p')->label('Total')
                         ->content(fn (?Order $r) => '$' . number_format($r?->total ?? 0, 2)),
                 ]),
@@ -140,6 +153,15 @@ class OrderResource extends Resource
                     ->label('N° pedido')
                     ->searchable()
                     ->sortable(),
+                // Marca los pedidos que necesitan una decisión humana: cobrados sin stock,
+                // o con el país que informó PayPal distinto del envío cobrado.
+                Tables\Columns\TextColumn::make('attention_reason')
+                    ->label('Atención')
+                    ->badge()
+                    ->color('danger')
+                    ->icon('heroicon-o-exclamation-triangle')
+                    ->limit(40)
+                    ->tooltip(fn (?string $state) => $state),
                 Tables\Columns\TextColumn::make('customer_name')
                     ->label('Cliente')
                     ->getStateUsing(fn (Order $r) => $r->user?->full_name ?? $r->guest_email ?? 'Invitado')
@@ -169,9 +191,36 @@ class OrderResource extends Resource
                 Tables\Columns\TextColumn::make('created_at')->label('Fecha')->dateTime('d/m/Y H:i')->sortable(),
             ])
             ->filters([
+                // Los abandonos de PayPal se acumulan como pedidos cancelados y tapan lo
+                // que sí hay que atender. No se borran: solo se ocultan de la vista general.
+                // El estado por defecto de un filtro ternario es "blank", y ese es el que
+                // los esconde (mismo patrón que el TrashedFilter de Filament).
+                Tables\Filters\TernaryFilter::make('cancelados')
+                    ->label('Pedidos cancelados')
+                    ->placeholder('Ocultos')
+                    ->trueLabel('Mostrar también los cancelados')
+                    ->falseLabel('Solo los cancelados')
+                    ->queries(
+                        true: fn (Builder $query) => $query,
+                        false: fn (Builder $query) => $query->where('status', 'cancelled'),
+                        blank: fn (Builder $query) => $query->where('status', '!=', 'cancelled'),
+                    ),
+                Tables\Filters\TernaryFilter::make('attention_reason')
+                    ->label('Requiere atención')
+                    ->placeholder('Todos')
+                    ->trueLabel('Solo los que requieren atención')
+                    ->falseLabel('Solo los que están en orden')
+                    ->queries(
+                        true: fn (Builder $query) => $query->whereNotNull('attention_reason'),
+                        false: fn (Builder $query) => $query->whereNull('attention_reason'),
+                        blank: fn (Builder $query) => $query,
+                    ),
+                // Sin 'cancelled' a propósito: combinado con el filtro de arriba en su
+                // estado por defecto daría una lista siempre vacía. Los cancelados se
+                // ven con "Solo los cancelados".
                 Tables\Filters\SelectFilter::make('status')->label('Estado')->options([
                     'pending' => 'Pendiente', 'processing' => 'En preparación',
-                    'shipped' => 'Enviado', 'delivered' => 'Entregado', 'cancelled' => 'Cancelado',
+                    'shipped' => 'Enviado', 'delivered' => 'Entregado',
                 ]),
                 Tables\Filters\SelectFilter::make('payment_status')->label('Pago')->options([
                     'pending' => 'Pendiente', 'paid' => 'Pagado', 'failed' => 'Fallido', 'refunded' => 'Reembolsado',
@@ -186,6 +235,17 @@ class OrderResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                // Sin esto la insignia de atención sería permanente: hace falta una forma
+                // de decir "ya lo resolví" (reponer stock, corregir el envío, etc.).
+                Tables\Actions\Action::make('atencion_resuelta')
+                    ->label('Atención resuelta')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('danger')
+                    ->visible(fn (Order $record) => filled($record->attention_reason))
+                    ->requiresConfirmation()
+                    ->modalDescription(fn (Order $record) => $record->attention_reason)
+                    ->action(fn (Order $record) => $record->update(['attention_reason' => null]))
+                    ->successNotificationTitle('Pedido marcado como resuelto'),
                 Tables\Actions\Action::make('tracking')
                     ->label('Tracking')
                     ->icon('heroicon-o-truck')
@@ -224,7 +284,10 @@ class OrderResource extends Resource
                         ->action(fn ($records) => static::exportCsv($records)),
                 ]),
             ])
-            ->defaultSort('created_at', 'desc');
+            // Los pedidos que requieren atención van arriba; el resto, por fecha.
+            ->defaultSort(fn (Builder $query) => $query
+                ->orderByRaw('attention_reason IS NULL')
+                ->orderBy('created_at', 'desc'));
     }
 
     /** Genera y descarga un CSV con los pedidos seleccionados. */

@@ -13,3 +13,11 @@ Artisan::command('inspire', function () {
 Schedule::command('flash-promos:generate-next-occurrences')
     ->everyTenMinutes()
     ->withoutOverlapping();
+
+// Cancela los pedidos que quedaron sin pagar. Importa sobre todo por PayPal Express:
+// un clic en el carrito ya crea el pedido, así que los abandonos se acumulan rápido.
+// Cada 10 min para que el panel no se llene de pedidos muertos; 30 min de margen es
+// tiempo de sobra para completar un pago que ya está empezado.
+Schedule::command('orders:cancel-abandoned --apply --minutes=30')
+    ->everyTenMinutes()
+    ->withoutOverlapping();

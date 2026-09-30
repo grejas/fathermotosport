@@ -4,14 +4,19 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Mail\OrderConfirmedMail;
+use App\Models\InventoryMovement;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\ProductVariant;
 use App\Services\Payments\MercadoPagoService;
 use App\Services\Payments\PaypalService;
 use App\Services\Payments\StripeService;
+use App\Support\Countries;
+use App\Support\ShippingCountries;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -89,16 +94,33 @@ class PaymentController extends Controller
      */
     public function paypalCapture(Request $request, string $paypalOrderId): JsonResponse
     {
-        $payment = Payment::with('order')->where('transaction_id', $paypalOrderId)->firstOrFail();
+        $payment = Payment::with('order')->where('transaction_id', $paypalOrderId)->first();
+
+        if (! $payment) {
+            // Sin esta línea, un 404 acá no dejaba ningún rastro en el log.
+            Log::warning('Captura de PayPal para una orden que no existe en payments.', [
+                'paypal_order' => $paypalOrderId,
+            ]);
+
+            abort(404, 'No encontramos el pago de PayPal.');
+        }
+
         $order = $payment->order;
 
         if (! $order || ! $order->isAccessibleBy($request->user('sanctum'), Order::tokenFromRequest($request))) {
+            Log::warning('Captura de PayPal rechazada por falta de autorización.', [
+                'paypal_order' => $paypalOrderId,
+                'pedido' => $order?->order_number,
+                'con_token' => filled(Order::tokenFromRequest($request)),
+                'con_sesion' => (bool) $request->user('sanctum'),
+            ]);
+
             abort(403, 'No puedes confirmar el pago de este pedido.');
         }
 
         // Idempotente: si ya se capturó (por el retorno o por el webhook), no se repite.
         if ($order->payment_status === 'paid') {
-            return $this->estadoDelPago('COMPLETED', $order->fresh());
+            return $this->estadoDelPago('COMPLETED', $order->fresh('address'));
         }
 
         try {
@@ -115,6 +137,8 @@ class PaymentController extends Controller
             return response()->json([
                 'status' => data_get($e->response->json(), 'details.0.issue', 'CAPTURE_FAILED'),
                 'message' => 'PayPal no pudo confirmar el pago. Tu pedido quedó pendiente.',
+                // Para que la pantalla de error muestre "FMS-0001" y no el UUID.
+                'order_number' => $order->order_number,
             ], 422);
         }
 
@@ -131,16 +155,104 @@ class PaymentController extends Controller
                 return response()->json([
                     'status' => $status,
                     'message' => 'El monto cobrado no coincide con el del pedido. Contactanos por WhatsApp.',
+                    'order_number' => $order->order_number,
                 ], 409);
             }
 
+            // Express: los datos del comprador llegan recién ahora. Se completan ANTES
+            // de markPaid(), porque si no el pedido no tendría email al que enviar
+            // la confirmación y el envío se saltaría en silencio.
+            if ($order->esperaDatosDePaypal()) {
+                $this->completarPedidoConDatosDePaypal($order, $result);
+                $payment->setRelation('order', $order->fresh('address'));
+            }
+
             $this->markPaid($payment, $result);
+        } else {
+            // PayPal respondió 200 pero sin COMPLETED (ej. PENDING o DECLINED):
+            // hasta ahora este caso tampoco quedaba en el log.
+            Log::warning('Captura de PayPal sin estado COMPLETED.', [
+                'pedido' => $order->order_number,
+                'paypal_order' => $paypalOrderId,
+                'estado' => $status,
+                'respuesta' => json_encode($result),
+            ]);
         }
 
-        return $this->estadoDelPago($status, $order->fresh());
+        return $this->estadoDelPago($status, $order->fresh('address'));
     }
 
-    /** Respuesta mínima del pago: sin dirección, email ni items. */
+    /**
+     * Completa un pedido Express con lo que informó PayPal: nombre, email, teléfono
+     * y dirección de envío. Si el país no coincide con el que el cliente eligió en el
+     * carrito, el envío cobrado puede no corresponder: queda anotado para revisión.
+     */
+    private function completarPedidoConDatosDePaypal(Order $order, array $result): void
+    {
+        $payer = data_get($result, 'payer', []);
+        $shipping = data_get($result, 'purchase_units.0.shipping', []);
+
+        $nombre = trim(data_get($shipping, 'name.full_name')
+            ?: trim(data_get($payer, 'name.given_name', '').' '.data_get($payer, 'name.surname', '')));
+        $email = data_get($payer, 'email_address');
+        $telefono = data_get($payer, 'phone.phone_number.national_number');
+
+        $paisIso = strtoupper((string) data_get($shipping, 'address.country_code'));
+        $paisNombre = ShippingCountries::name($paisIso) ?? Countries::name($paisIso) ?? $paisIso;
+
+        if ($order->address) {
+            $order->address->update(array_filter([
+                'full_name' => $nombre ?: null,
+                'phone' => $telefono ?: null,
+                'country' => $paisNombre ?: null,
+                'state' => data_get($shipping, 'address.admin_area_1'),
+                'city' => data_get($shipping, 'address.admin_area_2'),
+                'postal_code' => data_get($shipping, 'address.postal_code'),
+                'address_line' => trim(data_get($shipping, 'address.address_line_1', '')
+                    .' '.data_get($shipping, 'address.address_line_2', '')) ?: null,
+            ]));
+        }
+
+        $cambios = [];
+
+        // Sin cuenta en el sitio: el email de PayPal es el único contacto del pedido.
+        // Se deja constancia de que lo informó PayPal (y no alguien escribiéndolo en
+        // un formulario): es lo que habilita vincular otros pedidos con ese email.
+        if ($email && ! $order->user_id && ! $order->guest_email) {
+            $cambios['guest_email'] = $email;
+            $cambios['email_verificado_por'] = 'paypal';
+        }
+
+        // El país del envío cobrado vs. el que PayPal informó.
+        $paisCobrado = $order->country;
+        if ($paisNombre && $paisCobrado && $paisNombre !== $paisCobrado) {
+            Log::warning('PayPal Express: el país de la dirección no coincide con el cobrado.', [
+                'pedido' => $order->order_number,
+                'cobrado' => $paisCobrado,
+                'paypal' => $paisNombre,
+                'envio' => $order->shipping,
+            ]);
+
+            // Mismo mecanismo que "pagado sin stock": insignia y filtro en el panel.
+            $motivo = "Envío cobrado para {$paisCobrado}, pero PayPal informó {$paisNombre}. Revisar diferencia.";
+        }
+
+        if ($cambios) {
+            $order->update($cambios);
+        }
+
+        // Después del update, y por el helper, para que el motivo se sume a cualquier
+        // otro que ya tenga el pedido en vez de reemplazarlo.
+        if (isset($motivo)) {
+            $this->marcarParaAtencion($order, $motivo);
+        }
+    }
+
+    /**
+     * Respuesta mínima del pago: sin dirección ni teléfono.
+     * Incluye nombre y email solo para ofrecer crear la cuenta en la pantalla de
+     * éxito; quien recibe esto ya demostró tener el token del pedido.
+     */
     private function estadoDelPago(?string $status, ?Order $order): JsonResponse
     {
         return response()->json([
@@ -151,7 +263,94 @@ class PaymentController extends Controller
                 'payment_status' => $order->payment_status,
                 'status' => $order->status,
                 'total' => $order->total,
+                // Pedido de invitado pagado: se le puede ofrecer crear una cuenta.
+                'is_guest' => $order->user_id === null,
+                'customer_name' => $order->address?->full_name,
+                'customer_email' => $order->guest_email,
             ] : null,
+        ]);
+    }
+
+    /**
+     * Descuenta el stock de un pedido ya pagado y registra los movimientos de
+     * inventario. Se bloquean las filas para que dos pagos simultáneos no lean el
+     * mismo stock.
+     *
+     * Si falta stock (dos compradores por la última unidad), el cobro ya ocurrió:
+     * no se puede rechazar. Se descuenta lo que haya, nunca por debajo de 0, y el
+     * pedido queda marcado para que el admin lo resuelva a mano.
+     */
+    private function descontarStock(Order $order): void
+    {
+        $faltantes = [];
+
+        DB::transaction(function () use ($order, &$faltantes) {
+            $items = $order->items()->with('variant.product')->get();
+
+            $variantes = ProductVariant::whereIn('id', $items->pluck('product_variant_id')->filter())
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            foreach ($items as $item) {
+                $variant = $variantes->get($item->product_variant_id);
+
+                if (! $variant) {
+                    continue;
+                }
+
+                $pedido = (int) $item->quantity;
+                $disponible = (int) $variant->stock;
+                $aDescontar = min($pedido, max(0, $disponible));
+
+                if ($aDescontar < $pedido) {
+                    $faltantes[] = ($variant->sku ?: $variant->id)
+                        .' (pedidas '.$pedido.', disponibles '.$disponible.')';
+                }
+
+                if ($aDescontar > 0) {
+                    $variant->decrement('stock', $aDescontar);
+
+                    InventoryMovement::create([
+                        'product_id' => $variant->product_id,
+                        'user_id' => null,
+                        'type' => 'sale',
+                        'quantity' => -$aDescontar,
+                        'reason' => "Venta - pedido {$order->order_number}",
+                    ]);
+                }
+            }
+        });
+
+        if ($faltantes === []) {
+            return;
+        }
+
+        Log::error('Pedido pagado sin stock suficiente: requiere atención manual.', [
+            'pedido' => $order->order_number,
+            'order_id' => $order->id,
+            'faltantes' => $faltantes,
+        ]);
+
+        $this->marcarParaAtencion(
+            $order,
+            'Pagado sin stock suficiente: '.implode(' · ', $faltantes)
+        );
+    }
+
+    /**
+     * Marca un pedido para revisión manual del admin (columna attention_reason, que
+     * el panel muestra como insignia y permite filtrar) y deja el detalle en notas.
+     */
+    private function marcarParaAtencion(Order $order, string $motivo): void
+    {
+        // Un pedido puede juntar más de un motivo (revivido Y sin stock): se acumulan,
+        // porque perder el primero dejaría al admin resolviendo solo la mitad.
+        $previo = trim((string) $order->attention_reason);
+
+        $order->update([
+            'attention_reason' => $previo === '' ? $motivo : $previo.' · '.$motivo,
+            'notes' => trim((string) $order->notes."\n⚠️ ".$motivo),
         ]);
     }
 
@@ -328,13 +527,28 @@ class PaymentController extends Controller
             return;
         }
 
-        // Evitar reenviar el email si ya estaba pagado (webhooks duplicados).
+        // Evitar reenviar el email (y volver a descontar stock) si ya estaba pagado:
+        // el webhook y el retorno del cliente pueden llegar los dos.
         $yaPagado = $order->payment_status === 'paid';
+
+        // El link de aprobación de PayPal vive más que la ventana del cron de abandonos,
+        // así que un pedido ya cancelado puede pagarse después. El pago manda (el dinero
+        // entró), pero el admin tiene que saber que revivió algo que había dado por muerto.
+        $revivido = ! $yaPagado && $order->status === 'cancelled';
 
         $order->update([
             'payment_status' => 'paid',
             'status' => 'processing',
         ]);
+
+        if ($revivido) {
+            $this->marcarParaAtencion($order, 'Pedido cancelado por falta de pago y luego pagado. Confirmar que sigue vigente.');
+        }
+
+        // El stock se descuenta acá, con el pago confirmado, no al crear el pedido.
+        if (! $yaPagado) {
+            $this->descontarStock($order);
+        }
 
         // Email de confirmación a todos los compradores (guest o registrados).
         if (! $yaPagado) {

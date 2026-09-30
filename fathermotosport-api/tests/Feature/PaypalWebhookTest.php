@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Mail\OrderConfirmedMail;
+use App\Mail\OrderReceivedMail;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Product;
@@ -94,6 +96,32 @@ class PaypalWebhookTest extends TestCase
         $this->assertSame('paid', $order->payment_status);
         $this->assertSame('processing', $order->status);
         $this->assertSame('approved', Payment::where('transaction_id', self::PAYPAL_ORDER_ID)->value('status'));
+    }
+
+    public function test_creating_a_paypal_order_sends_no_email_at_all(): void
+    {
+        $this->pedidoPendiente();
+
+        // Con PayPal no sale ningún correo al crear: el cliente todavía no pagó.
+        // "Pago confirmado" solo desde markPaid(), y "pedido recibido" queda para
+        // los métodos que sí completan sus datos en el sitio (ver PaypalExpressTest).
+        Mail::assertNotSent(OrderConfirmedMail::class);
+        Mail::assertNotSent(OrderReceivedMail::class);
+    }
+
+    public function test_capture_completed_is_what_sends_the_payment_confirmation(): void
+    {
+        $this->pedidoPendiente();
+
+        $this->postJson('/api/v1/webhooks/paypal', [
+            'event_type' => 'PAYMENT.CAPTURE.COMPLETED',
+            'resource' => [
+                'id' => 'CAPTURE-999',
+                'supplementary_data' => ['related_ids' => ['order_id' => self::PAYPAL_ORDER_ID]],
+            ],
+        ])->assertOk();
+
+        Mail::assertSent(OrderConfirmedMail::class);
     }
 
     public function test_other_events_are_acknowledged_without_touching_the_order(): void

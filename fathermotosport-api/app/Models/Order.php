@@ -13,6 +13,13 @@ use Illuminate\Support\Str;
 
 class Order extends Model
 {
+    /**
+     * Marcador que llevan nombre y dirección de un pedido PayPal Express hasta que
+     * el cliente vuelve de PayPal: recién ahí se conocen sus datos reales.
+     * (addresses.full_name y .address_line no aceptan null.)
+     */
+    public const DATO_PENDIENTE = 'Pendiente — PayPal';
+
     use HasUuid;
 
     protected $fillable = [
@@ -21,6 +28,7 @@ class Order extends Model
         'user_id',
         'address_id',
         'guest_email',
+        'email_verificado_por',
         'status',
         'subtotal',
         'discount',
@@ -34,6 +42,7 @@ class Order extends Model
         'payment_method',
         'country',
         'notes',
+        'attention_reason',
     ];
 
     protected $casts = [
@@ -107,6 +116,16 @@ class Order extends Model
     public function address(): BelongsTo
     {
         return $this->belongsTo(Address::class);
+    }
+
+    /**
+     * ¿Es un pedido Express que todavía espera los datos del comprador?
+     * Si lo es, PayPal debe pedir la dirección (shipping_preference GET_FROM_FILE)
+     * y al volver hay que completar el pedido con lo que informó.
+     */
+    public function esperaDatosDePaypal(): bool
+    {
+        return $this->address?->address_line === self::DATO_PENDIENTE;
     }
 
     public function items(): HasMany

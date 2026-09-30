@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Address;
-use App\Models\InventoryMovement;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\ProductVariant;
@@ -116,7 +115,12 @@ class OrderService
                 'notes' => $data['notes'] ?? null,
             ]);
 
-            // 7. Crear items, descontar stock y registrar movimientos de inventario.
+            // 7. Crear los items del pedido.
+            //
+            // El stock NO se descuenta acá: se descuenta cuando el pago se confirma
+            // (PaymentController::markPaid). Antes se reservaba al crear el pedido, y
+            // cada cliente que abandonaba el pago dejaba unidades bloqueadas.
+            // La validación de stock del paso 2 sigue siendo una comprobación previa.
             foreach ($lines as $line) {
                 /** @var ProductVariant $variant */
                 $variant = $line['variant'];
@@ -130,16 +134,6 @@ class OrderService
                     'size' => $variant->size,
                     // El color es del producto (un producto = un color).
                     'color' => $variant->product->color,
-                ]);
-
-                $variant->decrement('stock', $line['quantity']);
-
-                InventoryMovement::create([
-                    'product_id' => $variant->product_id,
-                    'user_id' => $user?->id,
-                    'type' => 'sale',
-                    'quantity' => -$line['quantity'],
-                    'reason' => "Venta - pedido {$order->order_number}",
                 ]);
             }
 
