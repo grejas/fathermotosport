@@ -184,7 +184,19 @@
     "paypal_order_reference": "Pedido: {id}",
     "paypal_see_orders": "Ver meus pedidos",
     "pay_with": "Pagar com",
-    "email_from_account": "Este é o e-mail da sua conta."
+    "email_from_account": "Este é o e-mail da sua conta.",
+    "express_subtitle": "Sem formulários: pegamos o seu endereço do PayPal.",
+    "express_country_question": "Para qual país enviamos?",
+    "express_address_note": "Você vai escolher o seu endereço de entrega dentro do PayPal.",
+    "account_have_account": "Já tem conta?",
+    "account_login_link": "Entrar",
+    "account_register_link": "Prefere se cadastrar primeiro?",
+    "account_have_your_data": "Já temos os seus dados",
+    "account_invite": "Crie uma senha para ver este pedido e acompanhar as próximas compras.",
+    "account_create": "Criar conta",
+    "account_created": "Conta criada! Já pode ver os seus pedidos.",
+    "account_error": "Não foi possível criar a conta.",
+    "account_skip": "Agora não, ver meu pedido"
   },
   "auth": {
     "login": "Entrar",
@@ -243,7 +255,10 @@
     "reset_password_button": "Redefinir senha",
     "reset_password_success": "Sua senha foi redefinida! Agora você já pode entrar.",
     "reset_password_error": "Não foi possível redefinir a senha.",
-    "invalid_reset_link": "Este link de recuperação é inválido ou está incompleto. Solicite um novo."
+    "invalid_reset_link": "Este link de recuperação é inválido ou está incompleto. Solicite um novo.",
+    "password_hint": "Mínimo 8 caracteres, com maiúscula, minúscula, número e símbolo.",
+    "password_requirements_error": "A senha não cumpre os requisitos.",
+    "passwords_dont_match": "As senhas não coincidem."
   },
   "favorites": {
     "my_favorites": "Meus favoritos",

@@ -23,6 +23,28 @@ export interface VerifyAndRegisterPayload {
   password_confirmation: string;
 }
 
+/**
+ * Crea una cuenta a partir de un pedido de invitado ya pagado. El nombre y el email
+ * salen del pedido; acá solo va la contraseña. Autoriza el token del pedido.
+ */
+export async function registerFromOrder(payload: {
+  orderId: string;
+  accessToken: string;
+  password: string;
+  passwordConfirmation: string;
+}): Promise<AuthResponse & { welcome_coupon?: { code: string; value: string }; linked_orders?: number }> {
+  const { data } = await apiClient.post(
+    "/auth/register-from-order",
+    {
+      order_id: payload.orderId,
+      password: payload.password,
+      password_confirmation: payload.passwordConfirmation,
+    },
+    { headers: { "X-Order-Token": payload.accessToken } }
+  );
+  return data;
+}
+
 export async function login(payload: LoginPayload): Promise<AuthResponse> {
   const { data } = await apiClient.post<AuthResponse>("/auth/login", payload);
   return data;

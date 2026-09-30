@@ -1,12 +1,15 @@
 @extends('emails.layouts.base')
 
-@section('emoji', '✅')
+@section('emoji', '🧾')
 
 @section('content')
-  <div class="badge"><span class="badge-dot"></span> Pago confirmado</div>
+  <div class="badge"><span class="badge-dot"></span> Pendiente de pago</div>
   <div class="greeting">Hola{{ $user?->first_name ? ' ' . $user->first_name : '' }},</div>
-  <div class="title">Tu pedido {{ $order->order_number }} fue confirmado</div>
-  <div class="text">Recibimos tu pago y ya estamos preparando tu pedido. Te avisaremos cuando sea despachado.</div>
+  <div class="title">Recibimos tu pedido {{ $order->order_number }}</div>
+  <div class="text">
+    Todavía no registramos el pago. Apenas se confirme, te enviamos otro correo y preparamos tu pedido.
+    Si ya pagaste, puede demorar unos minutos en acreditarse.
+  </div>
 
   <div class="box">
     @foreach($order->items as $item)
@@ -44,8 +47,8 @@
   @endif
 
   <div class="steps">
-    <div class="step"><div class="step-dot step-done">✓</div><div class="step-label">Pagado</div></div>
-    <div class="step"><div class="step-dot step-current">2</div><div class="step-label">Preparando</div></div>
+    <div class="step"><div class="step-dot step-current">1</div><div class="step-label">Pago pendiente</div></div>
+    <div class="step"><div class="step-dot step-pending">2</div><div class="step-label">Preparando</div></div>
     <div class="step"><div class="step-dot step-pending">3</div><div class="step-label">Enviado</div></div>
     <div class="step"><div class="step-dot step-pending">4</div><div class="step-label">Entregado</div></div>
   </div>

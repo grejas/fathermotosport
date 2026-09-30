@@ -66,6 +66,9 @@ Route::prefix('v1')->group(function () {
         // Registro en dos pasos: envía un código de 6 dígitos y luego lo verifica.
         Route::post('/auth/send-verification-code', [AuthController::class, 'sendVerificationCode']);
         Route::post('/auth/verify-and-register', [AuthController::class, 'verifyAndRegister']);
+        // Cuenta creada desde un pedido de invitado ya pagado. Autoriza el token
+        // del pedido (X-Order-Token), no el order_id.
+        Route::post('/auth/register-from-order', [AuthController::class, 'registerFromOrder']);
         Route::post('/auth/login', [AuthController::class, 'login']);
         Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
         Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
@@ -85,6 +88,8 @@ Route::prefix('v1')->group(function () {
 
     // Pedidos (guest checkout)
     Route::post('/orders', [OrderController::class, 'store']);
+    // PayPal Express: pedido creado desde el carrito, sin formulario previo.
+    Route::post('/orders/paypal-express', [OrderController::class, 'storeExpress']);
     Route::get('/orders/{id}', [OrderController::class, 'show']);
 
     // PayPal ACTIVO. Va antes del catch-all de abajo porque Laravel resuelve las rutas

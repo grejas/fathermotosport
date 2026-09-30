@@ -8,10 +8,11 @@ import { Link, useRouter } from "@/lib/i18n/navigation";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { capturePaypalOrder } from "@/lib/api/payments";
+import { CreateAccountFromOrder } from "@/components/checkout/CreateAccountFromOrder";
 
 const WHATSAPP_URL = "https://wa.me/59168736384";
 
-type Estado = "capturando" | "ok" | "error";
+type Estado = "capturando" | "ok" | "invitado" | "error";
 
 /**
  * Página de retorno de PayPal. PayPal agrega ?token= (el id de su orden) y ?PayerID=,
@@ -28,6 +29,14 @@ export function PaypalSuccessClient() {
 
   const [estado, setEstado] = useState<Estado>("capturando");
   const [mensaje, setMensaje] = useState<string | null>(null);
+  // Número de pedido (FMS-0001). Si no llega, se muestra el id como respaldo.
+  const [orderNumber, setOrderNumber] = useState<string | null>(null);
+  // Pago hecho sin cuenta: datos para ofrecer crearla.
+  const [invitado, setInvitado] = useState<{
+    orderId: string;
+    nombre: string | null;
+    email: string | null;
+  } | null>(null);
   // StrictMode monta dos veces en desarrollo: sin esto se capturaría dos veces.
   const yaCapturado = useRef(false);
 
@@ -43,8 +52,22 @@ export function PaypalSuccessClient() {
     capturePaypalOrder(paypalOrderId, accessToken)
       .then((res) => {
         if (res.status === "COMPLETED") {
-          setEstado("ok");
           const number = res.order?.order_number ?? "";
+          setOrderNumber(number || null);
+
+          // Pagó sin cuenta: se le ofrece crearla acá mismo, con los datos que ya
+          // tenemos. Si ya tiene cuenta, sigue derecho a la pantalla de éxito.
+          if (res.order?.is_guest && accessToken) {
+            setInvitado({
+              orderId: orderId ?? res.order.id,
+              nombre: res.order.customer_name ?? null,
+              email: res.order.customer_email ?? null,
+            });
+            setEstado("invitado");
+            return;
+          }
+
+          setEstado("ok");
           router.replace(
             `/checkout/success?order=${orderId ?? res.order?.id ?? ""}&number=${number}` +
               (accessToken ? `&t=${accessToken}` : "")
@@ -52,14 +75,15 @@ export function PaypalSuccessClient() {
           return;
         }
         setEstado("error");
+        setOrderNumber(res.order?.order_number ?? null);
         setMensaje(t("paypal_not_completed", { status: res.status ?? "—" }));
       })
       .catch((err: unknown) => {
+        const data = (err as { response?: { data?: { message?: string; order_number?: string } } })
+          .response?.data;
         setEstado("error");
-        setMensaje(
-          (err as { response?: { data?: { message?: string } } }).response?.data?.message ??
-            t("paypal_capture_error")
-        );
+        setOrderNumber(data?.order_number ?? null);
+        setMensaje(data?.message ?? t("paypal_capture_error"));
       });
   }, [paypalOrderId, orderId, router, t]);
 
@@ -72,6 +96,34 @@ export function PaypalSuccessClient() {
     );
   }
 
+  // Pago confirmado sin cuenta: se agradece y se ofrece crearla con los datos que
+  // PayPal ya nos dio, sin volver a pedirle nada al cliente salvo la contraseña.
+  if (estado === "invitado" && invitado && accessToken) {
+    return (
+      <div className="mx-auto flex min-h-[70vh] max-w-md flex-col items-center justify-center px-4 pt-20 text-center">
+        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-cat-boots/15">
+          <Check size={32} className="text-cat-boots" strokeWidth={3} />
+        </span>
+        <h1 className="mt-5 text-2xl font-bold text-brand-white">{t("order_created")}</h1>
+        {orderNumber && <p className="mt-1 text-brand-red">{orderNumber}</p>}
+
+        <CreateAccountFromOrder
+          orderId={invitado.orderId}
+          accessToken={accessToken}
+          customerName={invitado.nombre}
+          customerEmail={invitado.email}
+        />
+
+        <Link
+          href={`/checkout/success?order=${invitado.orderId}&number=${orderNumber ?? ""}&t=${accessToken}`}
+          className="mt-4 text-xs font-medium text-brand-muted transition hover:text-brand-white"
+        >
+          {t("account_skip")}
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-lg flex-col items-center justify-center gap-4 px-4 pt-20 text-center">
       <span className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-gold/10">
@@ -79,7 +131,11 @@ export function PaypalSuccessClient() {
       </span>
       <h1 className="text-2xl font-bold text-brand-white">{t("paypal_capture_failed_title")}</h1>
       <p className="text-sm text-brand-muted">{mensaje}</p>
-      {orderId && <p className="text-xs text-brand-muted">{t("paypal_order_reference", { id: orderId })}</p>}
+      {(orderNumber || orderId) && (
+        <p className="text-xs text-brand-muted">
+          {t("paypal_order_reference", { id: orderNumber ?? orderId ?? "" })}
+        </p>
+      )}
       <div className="mt-2 flex flex-col gap-3 sm:flex-row">
         <a
           href={WHATSAPP_URL}

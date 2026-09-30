@@ -9,6 +9,7 @@ interface PaypalButtonProps {
   /** Texto completo para lectores de pantalla, ej. "Pagar con PayPal". */
   ariaLabel: string;
   loading?: boolean;
+  disabled?: boolean;
   className?: string;
 }
 
@@ -17,11 +18,11 @@ interface PaypalButtonProps {
  * como el del checkout de PayPal. El logotipo se arma con el nombre en dos tonos en
  * vez de incrustar la marca oficial.
  */
-export function PaypalButton({ label, ariaLabel, loading, className }: PaypalButtonProps) {
+export function PaypalButton({ label, ariaLabel, loading, disabled, className }: PaypalButtonProps) {
   return (
     <button
       type="submit"
-      disabled={loading}
+      disabled={loading || disabled}
       aria-label={ariaLabel}
       className={cn(
         "inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#FFC439] px-5 py-3 text-sm font-semibold text-[#003087]",

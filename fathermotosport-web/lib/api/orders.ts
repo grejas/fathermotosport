@@ -22,6 +22,23 @@ export interface CreateOrderPayload {
   notes?: string;
 }
 
+/** PayPal Express: pedido creado desde el carrito, sin formulario previo. */
+export interface CreateExpressOrderPayload {
+  items: { variant_id: string; quantity: number }[];
+  shipping_country_code: string;
+  shipping_option_id: number;
+}
+
+export async function createExpressOrder(
+  payload: CreateExpressOrderPayload
+): Promise<{ message: string; order: Order }> {
+  const { data } = await apiClient.post<{ message: string; order: Order }>(
+    "/orders/paypal-express",
+    payload
+  );
+  return data;
+}
+
 export interface CreateOrderResponse {
   message: string;
   order: Order;

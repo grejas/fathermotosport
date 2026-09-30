@@ -184,7 +184,19 @@
     "paypal_order_reference": "Order: {id}",
     "paypal_see_orders": "See my orders",
     "pay_with": "Pay with",
-    "email_from_account": "This is your account email."
+    "email_from_account": "This is your account email.",
+    "express_subtitle": "No forms: we take your address from PayPal.",
+    "express_country_question": "Where are we shipping to?",
+    "express_address_note": "You will choose your shipping address inside PayPal.",
+    "account_have_account": "Already have an account?",
+    "account_login_link": "Log in",
+    "account_register_link": "Prefer to sign up first?",
+    "account_have_your_data": "We already have your details",
+    "account_invite": "Create a password to see this order and track your future purchases.",
+    "account_create": "Create account",
+    "account_created": "Account created! You can now see your orders.",
+    "account_error": "We could not create the account.",
+    "account_skip": "Not now, see my order"
   },
   "auth": {
     "login": "Sign in",
@@ -243,7 +255,10 @@
     "reset_password_button": "Reset password",
     "reset_password_success": "Your password has been reset! You can now sign in.",
     "reset_password_error": "Couldn't reset the password.",
-    "invalid_reset_link": "This reset link is invalid or missing data. Request a new one."
+    "invalid_reset_link": "This reset link is invalid or missing data. Request a new one.",
+    "password_hint": "At least 8 characters, with uppercase, lowercase, number and symbol.",
+    "password_requirements_error": "The password does not meet the requirements.",
+    "passwords_dont_match": "The passwords do not match."
   },
   "favorites": {
     "my_favorites": "My favorites",

@@ -8,8 +8,10 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Http\Requests\Auth\SendVerificationCodeRequest;
 use App\Http\Requests\Auth\VerifyAndRegisterRequest;
+use App\Http\Requests\Auth\RegisterFromOrderRequest;
 use App\Http\Resources\UserResource;
 use App\Models\EmailVerificationCode;
+use App\Models\Order;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\CouponService;
@@ -17,6 +19,7 @@ use App\Services\EmailService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -112,6 +115,101 @@ class AuthController extends Controller
             ],
             'token' => $token,
         ], 201);
+    }
+
+    /**
+     * Crea una cuenta a partir de un pedido de invitado ya pagado (típicamente de
+     * PayPal Express, donde el cliente nunca llenó un formulario).
+     *
+     * Autorización: el token del pedido (X-Order-Token), el mismo que autorizó el
+     * pago. Conocer el order_id NO alcanza: si no, cualquiera podría reclamar el
+     * pedido de otra persona.
+     */
+    public function registerFromOrder(RegisterFromOrderRequest $request): JsonResponse
+    {
+        $order = Order::with('address')->findOrFail($request->order_id);
+
+        if (! $order->isAccessibleBy(null, Order::tokenFromRequest($request))) {
+            abort(403, 'No puedes crear una cuenta para este pedido.');
+        }
+
+        if ($order->payment_status !== 'paid') {
+            return response()->json(['message' => 'Este pedido todavía no está pagado.'], 409);
+        }
+
+        if ($order->user_id) {
+            return response()->json(['message' => 'Este pedido ya pertenece a una cuenta.'], 409);
+        }
+
+        $email = $order->guest_email;
+
+        if (! $email) {
+            return response()->json(['message' => 'Este pedido no tiene un email asociado.'], 409);
+        }
+
+        // Ya existe una cuenta con ese email: se invita a iniciar sesión en vez de
+        // duplicarla. El pedido NO se vincula acá; para eso hay que autenticarse.
+        if (User::where('email', $email)->exists()) {
+            return response()->json([
+                'message' => 'Ya existe una cuenta con este email. Iniciá sesión para ver tus pedidos.',
+                'email' => $email,
+                'should_login' => true,
+            ], 409);
+        }
+
+        [$nombre, $apellido] = $this->partirNombre($order->address?->full_name);
+
+        $user = DB::transaction(function () use ($order, $email, $nombre, $apellido, $request) {
+            $user = User::create([
+                'role_id' => Role::where('slug', 'cliente')->firstOrFail()->id,
+                'first_name' => $nombre,
+                'last_name' => $apellido,
+                'email' => $email,
+                'phone' => $order->address?->phone,
+                'country' => $order->country,
+                'password' => Hash::make($request->password),
+                'status' => 'active',
+                // El email lo informó PayPal al pagar, así que quien compró controla
+                // esa casilla: no hace falta el código de verificación.
+                'email_verified_at' => now(),
+                'last_password_change' => now(),
+            ]);
+
+            $order->update(['user_id' => $user->id]);
+
+            // Pedidos de invitado anteriores con el mismo email quedan vinculados,
+            // pero SOLO si ese email lo informó PayPal en este pedido. Si lo hubiera
+            // escrito alguien a mano en el checkout, podría estar reclamando el
+            // historial de otra persona.
+            if ($order->email_verificado_por === 'paypal') {
+                Order::whereNull('user_id')
+                    ->where('guest_email', $email)
+                    ->where('id', '!=', $order->id)
+                    ->update(['user_id' => $user->id]);
+            }
+
+            return $user;
+        });
+
+        // Cupón de bienvenida, igual que en el registro normal: es para una compra
+        // futura, no se aplica al pedido que se acaba de pagar.
+        $coupon = $this->coupons->generateWelcomeCoupon($user->id);
+        $this->emails->sendWelcome($user, $coupon);
+
+        return response()->json([
+            'user' => new UserResource($user->load('role')),
+            'welcome_coupon' => ['code' => $coupon->code, 'value' => $coupon->value],
+            'linked_orders' => Order::where('user_id', $user->id)->count(),
+            'token' => $user->createToken('auth')->plainTextToken,
+        ], 201);
+    }
+
+    /** "Ana María Pérez" → ["Ana", "María Pérez"]. */
+    private function partirNombre(?string $completo): array
+    {
+        $partes = preg_split('/\s+/', trim((string) $completo), 2) ?: [];
+
+        return [$partes[0] ?? 'Cliente', $partes[1] ?? ''];
     }
 
     /**

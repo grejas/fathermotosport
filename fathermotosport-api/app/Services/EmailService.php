@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Mail\EmailVerificationCodeMail;
 use App\Mail\OrderConfirmedMail;
+use App\Mail\OrderReceivedMail;
 use App\Mail\ShippingUpdateMail;
 use App\Mail\WelcomeEmployeeMail;
 use App\Mail\WelcomeMail;
@@ -20,7 +21,23 @@ use Illuminate\Support\Facades\Mail;
 class EmailService
 {
     /**
-     * Confirmación de pedido — a todos los compradores (guest o registrados).
+     * Pedido recibido, pago pendiente — al crear el pedido.
+     * NO confirma el pago: eso lo hace sendOrderConfirmation() desde markPaid().
+     */
+    public function sendOrderReceived(Order $order): void
+    {
+        $email = $order->guest_email ?: optional($order->user)->email;
+
+        if (! $email) {
+            return;
+        }
+
+        $this->dispatch($email, new OrderReceivedMail($order));
+    }
+
+    /**
+     * Confirmación de PAGO — solo cuando el cobro se completó.
+     * A todos los compradores (guest o registrados).
      */
     public function sendOrderConfirmation(Order $order): void
     {

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { useRouter } from "@/lib/i18n/navigation";
+import { Link, useRouter } from "@/lib/i18n/navigation";
 import { ShieldCheck, Tag, Truck } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -11,7 +11,7 @@ import { PaypalButton } from "./PaypalButton";
 import { OrderSummary } from "./OrderSummary";
 import { useCartStore, cartWeightKg } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
-import { createOrder } from "@/lib/api/orders";
+import { createOrder, createExpressOrder } from "@/lib/api/orders";
 import { createPaypalOrder } from "@/lib/api/payments";
 import { validateCoupon } from "@/lib/api/coupons";
 import { calculateShipping } from "@/lib/api/shipping";
@@ -84,6 +84,8 @@ export function CheckoutForm() {
   const countryName = shippingCountryName(form.country) ?? form.country;
 
   const methodEnabled = ENABLED_PAYMENT_METHODS.includes(method);
+  // PayPal no usa el formulario de datos: la dirección la elige el cliente en PayPal.
+  const isPaypal = method === "paypal";
   const weightKg = useMemo(() => cartWeightKg(items), [items]);
   const options = shipping?.options ?? [];
   const selectedOption = options.find((o) => o.id === optionId) ?? null;
@@ -154,8 +156,55 @@ export function CheckoutForm() {
     }
   };
 
+  /**
+   * PayPal Express: el pedido se crea solo con los items y el envío elegido.
+   * El nombre, el email y la dirección los aporta PayPal y el backend los guarda
+   * al capturar el pago, así que acá no se pide ningún dato más.
+   */
+  const pagarConPaypal = async () => {
+    if (!selectedOption) {
+      toast.error(t("shipping_unavailable", { country: countryLabel }));
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { order } = await createExpressOrder({
+        items: items.map((i) => ({ variant_id: i.variantId, quantity: i.quantity })),
+        shipping_country_code: form.country,
+        shipping_option_id: selectedOption.id,
+      });
+
+      const paypal = await createPaypalOrder(order.id, order.access_token ?? undefined);
+      if (!paypal.approval_url) throw new Error(t("paypal_no_approval_url"));
+
+      // El pedido ya existe y el stock quedó reservado: el carrito se vacía acá,
+      // antes de salir del sitio hacia PayPal.
+      clearCart();
+      toast.success(t("redirecting_paypal"));
+      window.location.href = paypal.approval_url;
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } }).response?.data?.message ??
+        t("order_error");
+      toast.error(message);
+      setLoading(false);
+    }
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!items.length) {
+      toast.error(t("empty_cart_error"));
+      return;
+    }
+
+    if (isPaypal) {
+      await pagarConPaypal();
+      return;
+    }
+
     const validation = validateCheckout({
       first_name: form.first_name,
       last_name: form.last_name,
@@ -202,21 +251,9 @@ export function CheckoutForm() {
         coupon_code: coupon.trim() || undefined,
       });
 
-      // El pedido ya existe y el stock quedó descontado: el carrito se vacía acá,
-      // antes de salir del sitio hacia PayPal.
+      // El pedido ya existe y el stock quedó descontado.
+      // (PayPal no pasa por acá: usa pagarConPaypal con el endpoint Express.)
       clearCart();
-
-      if (method === "paypal") {
-        // El token del pedido autoriza el pago cuando se compra sin cuenta.
-        const paypal = await createPaypalOrder(res.order.id, res.order.access_token ?? undefined);
-        if (!paypal.approval_url) {
-          throw new Error(t("paypal_no_approval_url"));
-        }
-        toast.success(t("redirecting_paypal"));
-        // Salida a PayPal: no es una ruta interna, por eso no se usa el router.
-        window.location.href = paypal.approval_url;
-        return;
-      }
 
       toast.success(t("order_created"));
       router.push(
@@ -236,8 +273,56 @@ export function CheckoutForm() {
   return (
     <form onSubmit={submit} className="grid gap-8 lg:grid-cols-[1fr_320px]">
       <div className="space-y-6">
-        {/* Siempre visible: con sesión iniciada el email viene de la cuenta y no se
-            edita, pero nombre y apellido sí, porque la cuenta puede no tenerlos. */}
+        {/* Sin sesión: se ofrece entrar o registrarse antes de pagar, así el pedido
+            queda asociado a la cuenta. Con sesión iniciada no aparece nada. */}
+        {!isAuth && (
+          <p className="rounded-xl border border-white/10 bg-brand-card px-4 py-3 text-sm text-brand-muted">
+            {t("account_have_account")}{" "}
+            <Link
+              href={`/login?redirect=/checkout`}
+              className="font-semibold text-brand-red transition hover:brightness-125"
+            >
+              {t("account_login_link")}
+            </Link>
+            {" · "}
+            <Link
+              href={`/register?redirect=/checkout`}
+              className="font-semibold text-brand-white transition hover:text-brand-red"
+            >
+              {t("account_register_link")}
+            </Link>
+          </p>
+        )}
+
+        {/* El método de pago va primero: de él depende qué datos hacen falta. */}
+        <section>
+          <h3 className="mb-3 text-lg font-bold text-brand-white">{t("payment_method")}</h3>
+          <PaymentMethods
+            value={method}
+            onChange={setMethod}
+            enabled={ENABLED_PAYMENT_METHODS}
+            comingSoonLabel={t("payments_coming_soon")}
+          />
+          {!methodEnabled && (
+            <div className="mt-3 rounded-xl border border-brand-gold/30 bg-brand-gold/5 p-4">
+              <p className="text-sm font-semibold text-brand-gold">{t("coming_soon_whatsapp")}</p>
+              <a
+                href={WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
+              >
+                {t("write_whatsapp")}
+              </a>
+            </div>
+          )}
+          {isPaypal && (
+            <p className="mt-3 text-xs text-brand-muted">{t("express_subtitle")}</p>
+          )}
+        </section>
+
+        {/* Con PayPal no se piden datos del cliente: los aporta PayPal al pagar. */}
+        {!isPaypal && (
         <section>
           <h3 className="mb-3 text-lg font-bold text-brand-white">{t("your_data")}</h3>
           <div className="grid grid-cols-2 gap-3">
@@ -269,23 +354,12 @@ export function CheckoutForm() {
           </div>
         </section>
 
+        )}
+
+        {!isPaypal && (
         <section>
           <h3 className="mb-3 text-lg font-bold text-brand-white">{t("shipping_address")}</h3>
           <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-brand-white">{t("country")}</label>
-              <select
-                value={form.country}
-                onChange={(e) => setForm({ ...form, country: e.target.value })}
-                className="input-brand"
-              >
-                {countries.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {countryFlag(c.code)} {c.label}
-                  </option>
-                ))}
-              </select>
-            </div>
             <Input label={t("phone")} name="phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} error={errors.phone} />
             <Input label={t("state")} name="state" value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} />
             <Input label={t("city")} name="city" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} error={errors.city} />
@@ -293,9 +367,31 @@ export function CheckoutForm() {
             <Input label={t("reference")} name="reference" className="col-span-2" value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} />
           </div>
         </section>
+        )}
 
         <section>
           <h3 className="mb-3 text-lg font-bold text-brand-white">{tCart("shipping")}</h3>
+
+          {/* El país define la tarifa. Es el único dato que se pide con PayPal. */}
+          <div className="mb-3">
+            <label className="mb-1.5 block text-sm font-medium text-brand-white" htmlFor="checkout-country">
+              {isPaypal ? t("express_country_question") : t("country")}
+            </label>
+            <select
+              id="checkout-country"
+              name="country"
+              value={form.country}
+              onChange={(e) => setForm({ ...form, country: e.target.value })}
+              className="input-brand"
+            >
+              {countries.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {countryFlag(c.code)} {c.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {shippingLoading ? (
             <p className="text-sm text-brand-muted">{t("shipping_calculating")}</p>
           ) : shipping?.available ? (
@@ -367,29 +463,9 @@ export function CheckoutForm() {
           )}
         </section>
 
-        <section>
-          <h3 className="mb-3 text-lg font-bold text-brand-white">{t("payment_method")}</h3>
-          <PaymentMethods
-            value={method}
-            onChange={setMethod}
-            enabled={ENABLED_PAYMENT_METHODS}
-            comingSoonLabel={t("payments_coming_soon")}
-          />
-          {!methodEnabled && (
-            <div className="mt-3 rounded-xl border border-brand-gold/30 bg-brand-gold/5 p-4">
-              <p className="text-sm font-semibold text-brand-gold">{t("coming_soon_whatsapp")}</p>
-              <a
-                href={WHATSAPP_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
-              >
-                {t("write_whatsapp")}
-              </a>
-            </div>
-          )}
-        </section>
-
+        {/* El cupón no aplica al flujo de PayPal: no hay paso intermedio donde
+            recalcular el total antes de mandar el monto a PayPal. */}
+        {!isPaypal && (
         <section>
           <h3 className="mb-3 text-lg font-bold text-brand-white">{t("coupon")}</h3>
           {showWelcomeCoupon && (
@@ -404,6 +480,7 @@ export function CheckoutForm() {
             </Button>
           </div>
         </section>
+        )}
       </div>
 
       <div className="lg:sticky lg:top-20 lg:self-start">
@@ -415,13 +492,19 @@ export function CheckoutForm() {
         >
           {methodEnabled ? (
             <>
-              {method === "paypal" ? (
-                <PaypalButton
-                  className="mt-4"
-                  label={t("pay_with")}
-                  ariaLabel={t("pay_with_paypal")}
-                  loading={loading}
-                />
+              {isPaypal ? (
+                <>
+                  <PaypalButton
+                    className="mt-4"
+                    label={t("pay_with")}
+                    ariaLabel={t("pay_with_paypal")}
+                    loading={loading}
+                    disabled={!selectedOption}
+                  />
+                  <p className="mt-2 text-center text-[11px] text-brand-muted">
+                    {t("express_address_note")}
+                  </p>
+                </>
               ) : (
                 <Button type="submit" variant="primary" className="mt-4 w-full" loading={loading}>
                   {t("confirm_order")}

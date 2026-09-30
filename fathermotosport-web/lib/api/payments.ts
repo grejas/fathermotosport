@@ -6,9 +6,17 @@ export interface PaypalCreateResponse {
   approval_url: string | null;
 }
 
+/** Estado del pago. `order` es un resumen: nunca trae dirección ni teléfono. */
 export interface PaypalCaptureResponse {
   status: string | null;
-  order: Order | null;
+  order:
+    | (Pick<Order, "id" | "order_number" | "payment_status" | "status" | "total"> & {
+        /** true = se pagó sin cuenta, así que se puede ofrecer crearla. */
+        is_guest?: boolean;
+        customer_name?: string | null;
+        customer_email?: string | null;
+      })
+    | null;
 }
 
 /** Cabecera de autorización del pedido para el comprador invitado (sin cuenta). */
