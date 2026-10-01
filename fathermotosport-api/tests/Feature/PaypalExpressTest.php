@@ -167,22 +167,46 @@ class PaypalExpressTest extends TestCase
         $this->assertStringContainsString('PayPal informó Brasil', (string) $modelo->attention_reason);
     }
 
-    public function test_the_normal_checkout_still_announces_the_order_as_received(): void
+    /**
+     * Ninguna pasarela avisa "recibimos tu pedido" al crearlo, porque el cobro todavía
+     * no ocurrió. Con Stripe esto llegó a pasar de verdad: la tarjeta la rechazó el
+     * banco y el cliente igual recibió el correo, porque la condición solo excluía a
+     * PayPal por nombre.
+     */
+    public function test_no_gateway_announces_the_order_before_the_payment(): void
     {
-        $variant = $this->variante();
+        foreach (['stripe', 'mercadopago', 'paypal'] as $metodo) {
+            Mail::fake();
+            $variant = $this->variante();
 
-        $this->postJson('/api/v1/orders', [
-            'guest_email' => 'invitado@example.com',
-            'items' => [['variant_id' => $variant->id, 'quantity' => 1]],
-            'address' => [
-                'full_name' => 'Cliente Prueba', 'phone' => '76543210', 'country' => 'Bolivia',
-                'city' => 'Santa Cruz', 'address_line' => 'Av. Prueba 123',
-            ],
-            'payment_method' => 'mercadopago',
-        ])->assertCreated();
+            $this->postJson('/api/v1/orders', [
+                'guest_email' => 'invitado@example.com',
+                'items' => [['variant_id' => $variant->id, 'quantity' => 1]],
+                'address' => [
+                    'full_name' => 'Cliente Prueba', 'phone' => '76543210', 'country' => 'Bolivia',
+                    'city' => 'Santa Cruz', 'address_line' => 'Av. Prueba 123',
+                ],
+                'payment_method' => $metodo,
+            ])->assertCreated();
 
-        // Otros métodos sí avisan al crear: el cliente ya dejó todos sus datos.
-        Mail::assertSent(OrderReceivedMail::class);
+            Mail::assertNotSent(OrderReceivedMail::class, "método: {$metodo}");
+        }
+    }
+
+    /** Ninguno de los métodos de hoy se coordina a mano: todos son pasarelas. */
+    public function test_no_current_method_requires_manual_coordination(): void
+    {
+        foreach (['paypal', 'stripe', 'mercadopago'] as $metodo) {
+            $order = new Order;
+            $order->payment_method = $metodo;
+
+            $this->assertFalse($order->requiereCoordinacionManual(), "método: {$metodo}");
+        }
+
+        // La lista está vacía a propósito. El día que se agregue un método coordinado a
+        // mano (transferencia, contra entrega), sumarlo a esta constante es lo único que
+        // hace falta para que vuelva a salir el correo de "recibimos tu pedido".
+        $this->assertSame([], Order::METODOS_CON_COORDINACION_MANUAL);
     }
 
     public function test_express_requires_a_valid_shipping_option(): void

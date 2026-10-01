@@ -20,6 +20,21 @@ class Order extends Model
      */
     public const DATO_PENDIENTE = 'Pendiente — PayPal';
 
+    /**
+     * Métodos de pago que NO cobran en el acto y necesitan que una persona coordine el
+     * cobro (transferencia, contra entrega, WhatsApp). Son los únicos que reciben el
+     * correo de "recibimos tu pedido" al crearse.
+     *
+     * Hoy está vacía a propósito: paypal, stripe y mercadopago son pasarelas que cobran
+     * en el momento, así que su primer correo es el de pago confirmado, desde markPaid().
+     *
+     * Es una lista de los que SÍ avisan y no de los que no, justamente para que una
+     * pasarela nueva quede fuera del correo prematuro sin que nadie tenga que acordarse
+     * de agregarla acá. Antes la condición era `payment_method !== 'paypal'` y por eso
+     * Stripe avisaba "recibimos tu pedido" incluso con la tarjeta rechazada.
+     */
+    public const METODOS_CON_COORDINACION_MANUAL = [];
+
     use HasUuid;
 
     protected $fillable = [
@@ -126,6 +141,15 @@ class Order extends Model
     public function esperaDatosDePaypal(): bool
     {
         return $this->address?->address_line === self::DATO_PENDIENTE;
+    }
+
+    /**
+     * ¿El cobro de este pedido lo coordina una persona, en vez de una pasarela?
+     * Decide si al crearse se le avisa al cliente que recibimos su pedido.
+     */
+    public function requiereCoordinacionManual(): bool
+    {
+        return in_array($this->payment_method, self::METODOS_CON_COORDINACION_MANUAL, true);
     }
 
     public function items(): HasMany

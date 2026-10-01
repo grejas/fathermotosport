@@ -29,13 +29,11 @@ class OrderController extends Controller
     {
         $order = $this->orders->createOrder($request->validated(), $request->user('sanctum'));
 
-        // Aviso de pedido recibido (pago pendiente). La confirmación de PAGO sale
-        // desde PaymentController::markPaid(), cuando el cobro se completa.
-        //
-        // Con PayPal no se envía nada acá: el cliente todavía no pagó (y en el flujo
-        // Express ni siquiera conocemos su email). Su único correo es el de pago
-        // confirmado, desde markPaid().
-        if ($order->payment_method !== 'paypal') {
+        // Aviso de "recibimos tu pedido" solo si el cobro lo coordina una persona. Con
+        // una pasarela el cliente todavía no pagó —puede incluso rechazarse la tarjeta—,
+        // así que su primer correo es el de pago confirmado, desde markPaid().
+        // La lista vive en Order::METODOS_CON_COORDINACION_MANUAL.
+        if ($order->requiereCoordinacionManual()) {
             $this->emails->sendOrderReceived($order);
         }
 
