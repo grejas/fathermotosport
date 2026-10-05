@@ -13,21 +13,12 @@ return new class extends Migration
         Schema::create('shipping_returns_settings', function (Blueprint $table) {
             $table->id();
             $table->unsignedSmallInteger('damage_report_hours')->default(48);
-            $table->unsignedSmallInteger('withdrawal_days')->default(7);
 
             // Un JSON por campo: {"es": ..., "pt": ..., "en": ...}
-            foreach ([
-                'badge_shipping', 'badge_returns',
-                'summary_shipping', 'summary_damaged', 'summary_withdrawal',
-                'page_title', 'page_intro',
-                'damaged_title', 'damaged_items',
-                'withdrawal_title', 'withdrawal_items',
-                'process_title', 'process_items',
-                'cancellations_title', 'cancellations_items',
-                'help_text',
-            ] as $column) {
-                $table->json($column)->nullable();
-            }
+            $table->json('badge_returns')->nullable();
+            $table->json('summary')->nullable();
+            $table->json('page_title')->nullable();
+            $table->json('page_body')->nullable(); // HTML del RichEditor
 
             $table->timestamps();
         });

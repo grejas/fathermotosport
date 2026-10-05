@@ -48,18 +48,11 @@ class ShippingReturnsPage extends Page implements HasForms
     {
         $setting = ShippingReturnsSetting::current() ?? new ShippingReturnsSetting;
 
-        $state = [
-            'damage_report_hours' => $setting->damage_report_hours ?? 48,
-            'withdrawal_days' => $setting->withdrawal_days ?? 7,
-        ];
+        $state = ['damage_report_hours' => $setting->damage_report_hours ?? 48];
 
         foreach (ShippingReturnsSetting::LOCALES as $locale) {
-            foreach (ShippingReturnsSetting::TEXT_FIELDS as $field) {
+            foreach ([...ShippingReturnsSetting::TEXT_FIELDS, 'page_body'] as $field) {
                 $state[$locale][$field] = data_get($setting->{$field}, $locale);
-            }
-            // Las listas se editan como un punto por línea.
-            foreach (ShippingReturnsSetting::LIST_FIELDS as $field) {
-                $state[$locale][$field] = implode("\n", (array) data_get($setting->{$field}, $locale, []));
             }
         }
 
@@ -70,16 +63,12 @@ class ShippingReturnsPage extends Page implements HasForms
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Plazos')
-                    ->description('En los textos, escribe {hours} o {days} donde deba aparecer el número: al cambiarlo acá se actualiza en los tres idiomas.')
-                    ->columns(2)
+                Forms\Components\Section::make('Plazo')
+                    ->description('En cualquier texto, escribe {hours} donde deba aparecer el número de horas: al cambiarlo acá se actualiza en los tres idiomas.')
                     ->schema([
                         Forms\Components\TextInput::make('damage_report_hours')
-                            ->label('Horas para reportar un artículo dañado ({hours})')
+                            ->label('Horas para reportar un producto defectuoso, dañado o incorrecto ({hours})')
                             ->numeric()->integer()->minValue(1)->maxValue(720)->required(),
-                        Forms\Components\TextInput::make('withdrawal_days')
-                            ->label('Días para devolver sin motivo ({days})')
-                            ->numeric()->integer()->minValue(1)->maxValue(365)->required(),
                     ]),
 
                 Forms\Components\Tabs::make('Idiomas')
@@ -107,42 +96,33 @@ class ShippingReturnsPage extends Page implements HasForms
     /** Campos de un idioma. Vacío = la web usa su texto por defecto. */
     private function localeSchema(string $locale): array
     {
-        $text = fn (string $field, string $label) => Forms\Components\TextInput::make("{$locale}.{$field}")
-            ->label($label)->maxLength(255);
-        $area = fn (string $field, string $label, int $rows = 3) => Forms\Components\Textarea::make("{$locale}.{$field}")
-            ->label($label)->rows($rows);
-        $list = fn (string $field, string $label) => Forms\Components\Textarea::make("{$locale}.{$field}")
-            ->label($label)->rows(5)->helperText('Un punto por línea.');
-
         return [
             Forms\Components\Placeholder::make("{$locale}_hint")
                 ->hiddenLabel()
                 ->content(new HtmlString('<span class="text-sm text-gray-500">Si dejas un campo vacío, el sitio muestra su texto por defecto.</span>')),
 
             Forms\Components\Fieldset::make('Ficha de producto (acordeón)')
-                ->columns(2)
+                ->columns(1)
                 ->schema([
-                    $text('badge_shipping', 'Etiqueta de envío'),
-                    $text('badge_returns', 'Etiqueta de devolución'),
-                    $area('summary_shipping', 'Resumen: envío', 2)->columnSpanFull(),
-                    $area('summary_damaged', 'Resumen: artículo dañado')->columnSpanFull(),
-                    $area('summary_withdrawal', 'Resumen: devolución sin motivo')->columnSpanFull(),
+                    Forms\Components\TextInput::make("{$locale}.badge_returns")
+                        ->label('Etiqueta de devolución')
+                        ->maxLength(255),
+                    Forms\Components\Textarea::make("{$locale}.summary")
+                        ->label('Resumen')
+                        ->rows(4)
+                        ->helperText('Deja una línea en blanco para separar párrafos.'),
                 ]),
 
             Forms\Components\Fieldset::make('Página /returns-policy')
                 ->columns(1)
                 ->schema([
-                    $text('page_title', 'Título de la página'),
-                    $area('page_intro', 'Introducción'),
-                    $text('damaged_title', 'Sección 1: título (artículo dañado)'),
-                    $list('damaged_items', 'Sección 1: puntos'),
-                    $text('withdrawal_title', 'Sección 2: título (arrepentimiento)'),
-                    $list('withdrawal_items', 'Sección 2: puntos'),
-                    $text('process_title', 'Sección 3: título (proceso)'),
-                    $list('process_items', 'Sección 3: pasos (numerados)'),
-                    $text('cancellations_title', 'Sección 4: título (cancelaciones)'),
-                    $list('cancellations_items', 'Sección 4: puntos'),
-                    $area('help_text', 'Texto sobre los botones de contacto', 2),
+                    Forms\Components\TextInput::make("{$locale}.page_title")
+                        ->label('Título de la página')
+                        ->maxLength(255),
+                    Forms\Components\RichEditor::make("{$locale}.page_body")
+                        ->label('Cuerpo de la política')
+                        ->toolbarButtons(['h2', 'h3', 'bold', 'italic', 'underline', 'bulletList', 'orderedList', 'link', 'undo', 'redo'])
+                        ->helperText('Debajo del texto, la página siempre muestra los botones de WhatsApp y correo.'),
                 ]),
         ];
     }
@@ -151,23 +131,16 @@ class ShippingReturnsPage extends Page implements HasForms
     {
         $data = $this->form->getState();
 
-        $attributes = [
-            'damage_report_hours' => (int) $data['damage_report_hours'],
-            'withdrawal_days' => (int) $data['withdrawal_days'],
-        ];
+        $attributes = ['damage_report_hours' => (int) $data['damage_report_hours']];
 
-        foreach (ShippingReturnsSetting::TEXT_FIELDS as $field) {
-            foreach (ShippingReturnsSetting::LOCALES as $locale) {
+        foreach (ShippingReturnsSetting::LOCALES as $locale) {
+            foreach (ShippingReturnsSetting::TEXT_FIELDS as $field) {
                 $value = trim((string) data_get($data, "{$locale}.{$field}", ''));
                 $attributes[$field][$locale] = $value === '' ? null : $value;
             }
-        }
 
-        foreach (ShippingReturnsSetting::LIST_FIELDS as $field) {
-            foreach (ShippingReturnsSetting::LOCALES as $locale) {
-                $lines = preg_split('/\R/', (string) data_get($data, "{$locale}.{$field}", ''));
-                $attributes[$field][$locale] = array_values(array_filter(array_map('trim', $lines), fn ($l) => $l !== ''));
-            }
+            // Se guarda ya sanitizado: sin scripts ni atributos peligrosos.
+            $attributes['page_body'][$locale] = ShippingReturnsSetting::cleanHtml(data_get($data, "{$locale}.page_body"));
         }
 
         // El evento saved del modelo invalida la caché del endpoint.

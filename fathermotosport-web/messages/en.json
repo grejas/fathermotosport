@@ -363,8 +363,8 @@
     "free_shipping": "Free shipping",
     "free_returns": "Free returns if it arrives damaged or wrong",
     "summary_shipping": "Free shipping across the Americas and Europe.",
-    "summary_damaged": "If your item arrives faulty, damaged or not matching what you ordered, you have 48 hours from delivery to report it. We send you the correct item at no cost or refund your money, your choice.",
-    "summary_withdrawal": "Returns are only accepted in these cases: we do not accept returns for a change of mind or for any other reason.",
+    "summary_damaged": "If your item arrives faulty, damaged or not matching what you ordered, you have {hours} hours from delivery to report it. We send you the correct item at no cost or refund your money, your choice.",
+    "summary_not_accepted": "Returns are only accepted in these cases: we do not accept returns for a change of mind or for any other reason.",
     "full_policy_link": "See full returns policy"
   },
   "returns_policy": {
@@ -373,15 +373,15 @@
     "damaged_title": "When we accept returns",
     "damaged_items": [
       "Returns are accepted only if the product arrives faulty, damaged, wrong or not matching what you ordered.",
-      "The issue must be reported within 48 hours of delivery.",
+      "The issue must be reported within {hours} hours of delivery.",
       "The report must include photographs of the product received and of the issue.",
       "The customer chooses between the correct item at no cost or a full refund.",
       "Both the replacement shipment and the return of the item are free for the customer."
     ],
-    "withdrawal_title": "Returns we do not accept",
-    "withdrawal_items": [
+    "not_accepted_title": "Returns we do not accept",
+    "not_accepted_items": [
       "Returns for a change of mind, or for any reason other than those listed above, are not accepted.",
-      "Claims made more than 48 hours after delivery do not qualify for a replacement or a refund."
+      "Claims made more than {hours} hours after delivery do not qualify for a replacement or a refund."
     ],
     "process_title": "How the process works",
     "process_items": [

@@ -4,9 +4,9 @@ import { cache } from "react";
 import { getTranslations } from "next-intl/server";
 import { getShippingReturns } from "@/lib/api/shippingReturns";
 import { CONTACT_EMAIL } from "@/lib/data/contact";
+import { htmlToText, sanitizePolicyHtml } from "@/lib/sanitizePolicyHtml";
 
 const DEFAULT_HOURS = 48;
-const DEFAULT_DAYS = 7;
 const DEFAULT_WHATSAPP = process.env.NEXT_PUBLIC_WHATSAPP ?? "+59168736384";
 
 /** Textos del acordeón de la ficha de producto (se pasan a un client component). */
@@ -14,31 +14,31 @@ export interface ShippingReturnsSummary {
   badgeShipping: string;
   badgeReturns: string;
   summaryShipping: string;
-  summaryDamaged: string;
-  summaryWithdrawal: string;
+  /** Párrafos de la política de devoluciones. */
+  paragraphs: string[];
 }
 
 export interface ShippingReturnsContent {
   summary: ShippingReturnsSummary;
   page: {
     title: string;
-    intro: string;
-    damaged: { title: string; items: string[] };
-    withdrawal: { title: string; items: string[] };
-    process: { title: string; items: string[] };
-    cancellations: { title: string; items: string[] };
+    /** HTML ya sanitizado, listo para dangerouslySetInnerHTML. */
+    bodyHtml: string;
+    description: string;
     help: string;
   };
   contact: { email: string; whatsappDigits: string };
 }
 
+const escapeHtml = (text: string) =>
+  text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
 /**
- * Textos de envío y devoluciones ya resueltos para un idioma: el valor del panel
+ * Política de envío y devoluciones ya resuelta para un idioma: el valor del panel
  * si existe, o el de messages/*.json si el campo está vacío o la API no responde.
- * En ambos casos {hours} y {days} se reemplazan por los plazos del panel.
+ * En ambos casos {hours} se reemplaza por el plazo del panel.
  *
- * Los textos de respaldo se leen con t.raw: llevan {hours}/{days} literales y se
- * reemplazan acá, igual que los que vienen de la API.
+ * Los textos de messages se leen con t.raw porque llevan {hours} literal.
  */
 export const getShippingReturnsContent = cache(async (locale: string): Promise<ShippingReturnsContent> => {
   const [api, tSummary, tPolicy] = await Promise.all([
@@ -48,41 +48,49 @@ export const getShippingReturnsContent = cache(async (locale: string): Promise<S
   ]);
 
   const hours = String(api?.damage_report_hours ?? DEFAULT_HOURS);
-  const days = String(api?.withdrawal_days ?? DEFAULT_DAYS);
-  const fill = (text: string) => text.replace(/\{hours\}/g, hours).replace(/\{days\}/g, days);
+  const fill = (text: string) => text.replace(/\{hours\}/g, hours);
+  const summaryRaw = (key: string) => fill(tSummary.raw(key) as string);
+  const policyRaw = (key: string) => fill(tPolicy.raw(key) as string);
+  const policyList = (key: string) => (tPolicy.raw(key) as string[]).map(fill);
 
   const texts = api?.texts;
-  const summaryText = (field: keyof NonNullable<typeof texts>, key: string) =>
-    fill((texts?.[field] as string | null) || (tSummary.raw(key) as string));
-  const policyText = (field: keyof NonNullable<typeof texts>, key: string) =>
-    fill((texts?.[field] as string | null) || (tPolicy.raw(key) as string));
-  const policyList = (field: keyof NonNullable<typeof texts>, key: string) => {
-    const items = texts?.[field] as string[] | null | undefined;
-    return (items?.length ? items : (tPolicy.raw(key) as string[])).map(fill);
+
+  // Cuerpo por defecto: el mismo formato que el seeder carga en el RichEditor.
+  const fallbackBody = () => {
+    const section = (titleKey: string, itemsKey: string, list: "ul" | "ol" = "ul") =>
+      `<h2>${escapeHtml(policyRaw(titleKey))}</h2><${list}>${policyList(itemsKey)
+        .map((item) => `<li>${escapeHtml(item)}</li>`)
+        .join("")}</${list}>`;
+
+    return (
+      `<p>${escapeHtml(policyRaw("intro"))}</p>` +
+      section("damaged_title", "damaged_items") +
+      section("not_accepted_title", "not_accepted_items") +
+      section("process_title", "process_items", "ol") +
+      section("cancellations_title", "cancellations_items")
+    );
   };
+
+  const bodyHtml = sanitizePolicyHtml(texts?.page_body ? fill(texts.page_body) : fallbackBody());
+  const plain = htmlToText(bodyHtml);
 
   return {
     summary: {
-      badgeShipping: summaryText("badge_shipping", "free_shipping"),
-      badgeReturns: summaryText("badge_returns", "free_returns"),
-      summaryShipping: summaryText("summary_shipping", "summary_shipping"),
-      summaryDamaged: summaryText("summary_damaged", "summary_damaged"),
-      summaryWithdrawal: summaryText("summary_withdrawal", "summary_withdrawal"),
+      badgeShipping: summaryRaw("free_shipping"),
+      badgeReturns: texts?.badge_returns ? fill(texts.badge_returns) : summaryRaw("free_returns"),
+      summaryShipping: summaryRaw("summary_shipping"),
+      paragraphs: texts?.summary
+        ? fill(texts.summary)
+            .split(/\n\s*\n/)
+            .map((p) => p.trim())
+            .filter(Boolean)
+        : [summaryRaw("summary_damaged"), summaryRaw("summary_not_accepted")],
     },
     page: {
-      title: policyText("page_title", "title"),
-      intro: policyText("page_intro", "intro"),
-      damaged: { title: policyText("damaged_title", "damaged_title"), items: policyList("damaged_items", "damaged_items") },
-      withdrawal: {
-        title: policyText("withdrawal_title", "withdrawal_title"),
-        items: policyList("withdrawal_items", "withdrawal_items"),
-      },
-      process: { title: policyText("process_title", "process_title"), items: policyList("process_items", "process_items") },
-      cancellations: {
-        title: policyText("cancellations_title", "cancellations_title"),
-        items: policyList("cancellations_items", "cancellations_items"),
-      },
-      help: policyText("help_text", "help"),
+      title: texts?.page_title ? fill(texts.page_title) : policyRaw("title"),
+      bodyHtml,
+      description: plain.length > 160 ? `${plain.slice(0, 157).trimEnd()}…` : plain,
+      help: policyRaw("help"),
     },
     contact: {
       email: api?.contact.email || CONTACT_EMAIL,

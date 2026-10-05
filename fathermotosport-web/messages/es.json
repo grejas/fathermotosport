@@ -363,8 +363,8 @@
     "free_shipping": "Envío gratuito",
     "free_returns": "Devolución gratuita si llega dañado o incorrecto",
     "summary_shipping": "Envío gratuito a toda América y Europa.",
-    "summary_damaged": "Si tu artículo llega defectuoso, dañado o no corresponde a lo que pediste, tienes 48 horas desde la entrega para reportarlo. Te enviamos el artículo correcto sin costo o te devolvemos tu dinero, a tu elección.",
-    "summary_withdrawal": "Solo aceptamos devoluciones en esos casos: no se aceptan devoluciones por cambio de opinión ni por otros motivos.",
+    "summary_damaged": "Si tu artículo llega defectuoso, dañado o no corresponde a lo que pediste, tienes {hours} horas desde la entrega para reportarlo. Te enviamos el artículo correcto sin costo o te devolvemos tu dinero, a tu elección.",
+    "summary_not_accepted": "Solo aceptamos devoluciones en esos casos: no se aceptan devoluciones por cambio de opinión ni por otros motivos.",
     "full_policy_link": "Ver política completa de devoluciones"
   },
   "returns_policy": {
@@ -373,15 +373,15 @@
     "damaged_title": "Cuándo aceptamos devoluciones",
     "damaged_items": [
       "Solo aceptamos devoluciones si el producto llega defectuoso, dañado, incorrecto o no corresponde a lo que pediste.",
-      "El plazo para reportarlo es de 48 horas desde la entrega.",
+      "El plazo para reportarlo es de {hours} horas desde la entrega.",
       "El reporte debe incluir fotografías del producto recibido y del problema.",
       "El cliente elige entre el envío del artículo correcto sin costo o el reembolso íntegro de su dinero.",
       "El envío de reemplazo y la devolución del artículo no tienen costo para el cliente."
     ],
-    "withdrawal_title": "Devoluciones que no aceptamos",
-    "withdrawal_items": [
+    "not_accepted_title": "Devoluciones que no aceptamos",
+    "not_accepted_items": [
       "No se aceptan devoluciones por cambio de opinión ni por motivos distintos a los indicados arriba.",
-      "Los reclamos realizados después de las 48 horas desde la entrega no califican para reemplazo ni reembolso."
+      "Los reclamos realizados después de las {hours} horas desde la entrega no califican para reemplazo ni reembolso."
     ],
     "process_title": "Cómo funciona el proceso",
     "process_items": [

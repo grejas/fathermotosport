@@ -4,13 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 /**
- * Textos de envío y devoluciones editables desde el panel (fila única, id=1).
+ * Política de envío y devoluciones editable desde el panel (fila única, id=1).
  *
- * Cada texto es un JSON por idioma: {"es": "...", "pt": "...", "en": "..."}; las
- * listas (*_items) guardan un array de strings por idioma. Los textos pueden usar
- * {hours} y {days}, que la web reemplaza con damage_report_hours / withdrawal_days.
+ * Cada texto es un JSON por idioma: {"es": "...", "pt": "...", "en": "..."}.
+ * page_body es HTML del RichEditor. Los textos pueden usar {hours}, que la web
+ * reemplaza con damage_report_hours.
  */
 class ShippingReturnsSetting extends Model
 {
@@ -18,29 +19,8 @@ class ShippingReturnsSetting extends Model
 
     public const CACHE_KEY = 'shipping_returns_settings';
 
-    /** Textos de una línea o párrafo. */
-    public const TEXT_FIELDS = [
-        'badge_shipping',
-        'badge_returns',
-        'summary_shipping',
-        'summary_damaged',
-        'summary_withdrawal',
-        'page_title',
-        'page_intro',
-        'damaged_title',
-        'withdrawal_title',
-        'process_title',
-        'cancellations_title',
-        'help_text',
-    ];
-
-    /** Listas de puntos de la página /returns-policy. */
-    public const LIST_FIELDS = [
-        'damaged_items',
-        'withdrawal_items',
-        'process_items',
-        'cancellations_items',
-    ];
+    /** Textos planos: etiqueta y resumen del acordeón, título de la página. */
+    public const TEXT_FIELDS = ['badge_returns', 'summary', 'page_title'];
 
     protected $table = 'shipping_returns_settings';
 
@@ -48,23 +28,10 @@ class ShippingReturnsSetting extends Model
 
     protected $casts = [
         'damage_report_hours' => 'integer',
-        'withdrawal_days' => 'integer',
-        'badge_shipping' => 'array',
         'badge_returns' => 'array',
-        'summary_shipping' => 'array',
-        'summary_damaged' => 'array',
-        'summary_withdrawal' => 'array',
+        'summary' => 'array',
         'page_title' => 'array',
-        'page_intro' => 'array',
-        'damaged_title' => 'array',
-        'damaged_items' => 'array',
-        'withdrawal_title' => 'array',
-        'withdrawal_items' => 'array',
-        'process_title' => 'array',
-        'process_items' => 'array',
-        'cancellations_title' => 'array',
-        'cancellations_items' => 'array',
-        'help_text' => 'array',
+        'page_body' => 'array',
     ];
 
     protected static function booted(): void
@@ -83,8 +50,23 @@ class ShippingReturnsSetting extends Model
     }
 
     /**
-     * Textos y plazos para un idioma. Un texto vacío (o una lista sin puntos)
-     * sale como null, para que la web use su texto por defecto.
+     * Limpia el HTML del editor (sin scripts, iframes, atributos on* ni enlaces
+     * javascript:) y lo deja en null si no tiene texto visible.
+     */
+    public static function cleanHtml(?string $html): ?string
+    {
+        $clean = trim(Str::sanitizeHtml((string) $html));
+
+        // &nbsp; decodificado es U+00A0, que trim() no quita.
+        $visible = preg_replace('/[\s\x{00A0}]+/u', '', html_entity_decode(strip_tags($clean), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+
+        return $visible === '' ? null : $clean;
+    }
+
+    /**
+     * Textos y plazo para un idioma. Un campo vacío sale como null, para que la
+     * web use su texto por defecto. El cuerpo se vuelve a sanitizar al servirlo,
+     * por si la fila se escribió sin pasar por el panel.
      */
     public function toPublicArray(string $locale): array
     {
@@ -95,17 +77,10 @@ class ShippingReturnsSetting extends Model
             $texts[$field] = $value === '' ? null : $value;
         }
 
-        foreach (self::LIST_FIELDS as $field) {
-            $items = array_values(array_filter(
-                array_map(fn ($item) => trim((string) $item), (array) data_get($this->{$field}, $locale, [])),
-                fn (string $item) => $item !== ''
-            ));
-            $texts[$field] = $items === [] ? null : $items;
-        }
+        $texts['page_body'] = self::cleanHtml(data_get($this->page_body, $locale));
 
         return [
             'damage_report_hours' => $this->damage_report_hours,
-            'withdrawal_days' => $this->withdrawal_days,
             'texts' => $texts,
         ];
     }

@@ -363,8 +363,8 @@
     "free_shipping": "Frete grátis",
     "free_returns": "Devolução grátis se chegar danificado ou errado",
     "summary_shipping": "Frete grátis para toda a América e Europa.",
-    "summary_damaged": "Se o seu artigo chegar com defeito, danificado ou não corresponder ao que você pediu, você tem 48 horas desde a entrega para reportar. Enviamos o artigo correto sem custo ou devolvemos o seu dinheiro, você escolhe.",
-    "summary_withdrawal": "Só aceitamos devoluções nesses casos: não são aceitas devoluções por arrependimento nem por outros motivos.",
+    "summary_damaged": "Se o seu artigo chegar com defeito, danificado ou não corresponder ao que você pediu, você tem {hours} horas desde a entrega para reportar. Enviamos o artigo correto sem custo ou devolvemos o seu dinheiro, você escolhe.",
+    "summary_not_accepted": "Só aceitamos devoluções nesses casos: não são aceitas devoluções por arrependimento nem por outros motivos.",
     "full_policy_link": "Ver política completa de devoluções"
   },
   "returns_policy": {
@@ -373,15 +373,15 @@
     "damaged_title": "Quando aceitamos devoluções",
     "damaged_items": [
       "Só aceitamos devoluções se o produto chegar com defeito, danificado, errado ou não corresponder ao que você pediu.",
-      "O prazo para reportar é de 48 horas desde a entrega.",
+      "O prazo para reportar é de {hours} horas desde a entrega.",
       "O relato deve incluir fotografias do produto recebido e do problema.",
       "O cliente escolhe entre o envio do artigo correto sem custo ou o reembolso integral do seu dinheiro.",
       "O envio de substituição e a devolução do artigo não têm custo para o cliente."
     ],
-    "withdrawal_title": "Devoluções que não aceitamos",
-    "withdrawal_items": [
+    "not_accepted_title": "Devoluções que não aceitamos",
+    "not_accepted_items": [
       "Não são aceitas devoluções por arrependimento nem por motivos diferentes dos indicados acima.",
-      "Reclamações feitas depois de 48 horas desde a entrega não se qualificam para substituição nem reembolso."
+      "Reclamações feitas depois de {hours} horas desde a entrega não se qualificam para substituição nem reembolso."
     ],
     "process_title": "Como funciona o processo",
     "process_items": [

@@ -15,147 +15,131 @@ class ShippingReturnsSettingsSeeder extends Seeder
 
     /**
      * Textos vigentes del sitio (messages/*.json de la web) como valores iniciales,
-     * para que el panel muestre lo que hoy se publica. Los plazos van como
-     * {hours} y {days}: se reemplazan con damage_report_hours / withdrawal_days.
+     * para que el panel muestre lo que hoy se publica. El cuerpo de la política va
+     * en HTML del RichEditor; el plazo va como {hours} y se reemplaza con
+     * damage_report_hours.
      */
     public static function defaults(): array
     {
         return [
             'damage_report_hours' => 48,
-            'withdrawal_days' => 7,
 
-            'badge_shipping' => [
-                'es' => 'Envío gratuito',
-                'pt' => 'Frete grátis',
-                'en' => 'Free shipping',
-            ],
             'badge_returns' => [
-                'es' => 'Devolución gratuita',
-                'pt' => 'Devolução grátis',
-                'en' => 'Free returns',
+                'es' => 'Devolución gratuita si llega dañado o incorrecto',
+                'pt' => 'Devolução grátis se chegar danificado ou errado',
+                'en' => 'Free returns if it arrives damaged or wrong',
             ],
-            'summary_shipping' => [
-                'es' => 'Envío gratuito a toda América y Europa.',
-                'pt' => 'Frete grátis para toda a América e Europa.',
-                'en' => 'Free shipping across the Americas and Europe.',
+            'summary' => [
+                'es' => "Si tu artículo llega defectuoso, dañado o no corresponde a lo que pediste, tienes {hours} horas desde la entrega para reportarlo. Te enviamos el artículo correcto sin costo o te devolvemos tu dinero, a tu elección.\n\nSolo aceptamos devoluciones en esos casos: no se aceptan devoluciones por cambio de opinión ni por otros motivos.",
+                'pt' => "Se o seu artigo chegar com defeito, danificado ou não corresponder ao que você pediu, você tem {hours} horas desde a entrega para reportar. Enviamos o artigo correto sem custo ou devolvemos o seu dinheiro, você escolhe.\n\nSó aceitamos devoluções nesses casos: não são aceitas devoluções por arrependimento nem por outros motivos.",
+                'en' => "If your item arrives faulty, damaged or not matching what you ordered, you have {hours} hours from delivery to report it. We send you the correct item at no cost or refund your money, your choice.\n\nReturns are only accepted in these cases: we do not accept returns for a change of mind or for any other reason.",
             ],
-            'summary_damaged' => [
-                'es' => 'Si tu artículo llega dañado, tienes {hours} horas desde la entrega para reportarlo. Te enviamos uno nuevo sin costo o te devolvemos tu dinero, a tu elección.',
-                'pt' => 'Se o seu artigo chegar danificado, você tem {hours} horas desde a entrega para reportar. Enviamos um novo sem custo ou devolvemos o seu dinheiro, você escolhe.',
-                'en' => 'If your item arrives damaged, you have {hours} hours from delivery to report it. We send you a new one at no cost or refund your money, your choice.',
-            ],
-            'summary_withdrawal' => [
-                'es' => 'También puedes devolver cualquier artículo dentro de los {days} días posteriores a la entrega, sin necesidad de que esté dañado, siempre que esté sin usar, sin daños y completo, con su empaque original y todos sus accesorios.',
-                'pt' => 'Você também pode devolver qualquer artigo dentro de {days} dias após a entrega, mesmo que não esteja danificado, desde que esteja sem uso, sem danos e completo, com a embalagem original e todos os seus acessórios.',
-                'en' => 'You can also return any item within {days} days of delivery, even if it is not damaged, as long as it is unused, undamaged and complete, with its original packaging and all its accessories.',
-            ],
-
             'page_title' => [
                 'es' => 'Política de Envío y Devoluciones',
                 'pt' => 'Política de Frete e Devoluções',
                 'en' => 'Shipping and Returns Policy',
             ],
-            'page_intro' => [
-                'es' => 'Envío gratuito a toda América y Europa. A continuación se detallan las condiciones de devolución, reemplazo y cancelación de pedidos.',
-                'pt' => 'Frete grátis para toda a América e Europa. A seguir, as condições de devolução, substituição e cancelamento de pedidos.',
-                'en' => 'Free shipping across the Americas and Europe. The conditions for returns, replacements and order cancellations are set out below.',
-            ],
-            'damaged_title' => [
-                'es' => 'Devoluciones por artículo dañado',
-                'pt' => 'Devoluções por artigo danificado',
-                'en' => 'Returns for damaged items',
-            ],
-            'damaged_items' => [
-                'es' => [
-                    'El plazo para reportar un artículo dañado o defectuoso es de {hours} horas desde la entrega.',
-                    'El reporte debe incluir fotografías del daño.',
-                    'El cliente elige entre el envío de un artículo nuevo sin costo o el reembolso íntegro de su dinero.',
-                    'El envío de reemplazo y la devolución del artículo dañado no tienen costo para el cliente.',
-                ],
-                'pt' => [
-                    'O prazo para reportar um artigo danificado ou com defeito é de {hours} horas desde a entrega.',
-                    'O relato deve incluir fotografias do dano.',
-                    'O cliente escolhe entre o envio de um artigo novo sem custo ou o reembolso integral do seu dinheiro.',
-                    'O envio de substituição e a devolução do artigo danificado não têm custo para o cliente.',
-                ],
-                'en' => [
-                    'Damaged or defective items must be reported within {hours} hours of delivery.',
-                    'The report must include photographs of the damage.',
-                    'The customer chooses between a replacement item at no cost or a full refund.',
-                    'Both the replacement shipment and the return of the damaged item are free for the customer.',
-                ],
-            ],
-            'withdrawal_title' => [
-                'es' => 'Derecho de arrepentimiento',
-                'pt' => 'Direito de arrependimento',
-                'en' => 'Right to change your mind',
-            ],
-            'withdrawal_items' => [
-                'es' => [
-                    'El plazo para solicitar una devolución sin justificar el motivo es de {days} días desde la entrega del pedido.',
-                    'El artículo debe estar sin usar y sin daños atribuibles al cliente.',
-                    'La devolución debe ser completa: empaque original y todos los accesorios y componentes incluidos.',
-                    'Los artículos que no cumplan estas condiciones no califican para el reembolso.',
-                ],
-                'pt' => [
-                    'O prazo para solicitar uma devolução sem justificar o motivo é de {days} dias desde a entrega do pedido.',
-                    'O artigo deve estar sem uso e sem danos atribuíveis ao cliente.',
-                    'A devolução deve ser completa: embalagem original e todos os acessórios e componentes incluídos.',
-                    'Artigos que não cumpram essas condições não se qualificam para o reembolso.',
-                ],
-                'en' => [
-                    'Returns with no reason given may be requested within {days} days of delivery.',
-                    'The item must be unused and free of any damage caused by the customer.',
-                    'The return must be complete: original packaging and every accessory and component included.',
-                    'Items that do not meet these conditions do not qualify for a refund.',
-                ],
-            ],
-            'process_title' => [
-                'es' => 'Cómo funciona el proceso',
-                'pt' => 'Como funciona o processo',
-                'en' => 'How the process works',
-            ],
-            'process_items' => [
-                'es' => [
-                    'Solicita la devolución por los canales indicados al final de esta página, con tu número de pedido y el motivo.',
-                    'Coordinamos la recolección o el envío de devolución.',
-                    'Una vez recibido y verificado el artículo, se procesa el reembolso o el reemplazo.',
-                ],
-                'pt' => [
-                    'Solicite a devolução pelos canais indicados no final desta página, com o número do pedido e o motivo.',
-                    'Combinamos a coleta ou o envio de devolução.',
-                    'Assim que o artigo for recebido e verificado, o reembolso ou a substituição é processado.',
-                ],
-                'en' => [
-                    'Request the return through the channels listed at the end of this page, with your order number and the reason.',
-                    'We arrange the pickup or the return shipment.',
-                    'Once the item is received and checked, the refund or replacement is processed.',
-                ],
-            ],
-            'cancellations_title' => [
-                'es' => 'Cancelaciones',
-                'pt' => 'Cancelamentos',
-                'en' => 'Cancellations',
-            ],
-            'cancellations_items' => [
-                'es' => [
-                    'El pedido puede cancelarse en cualquier momento antes de que comience a procesarse para su envío.',
-                    'Si el pedido ya fue despachado, se aplica el proceso de devolución descrito arriba.',
-                ],
-                'pt' => [
-                    'O pedido pode ser cancelado a qualquer momento antes de começar a ser preparado para envio.',
-                    'Se o pedido já foi despachado, aplica-se o processo de devolução descrito acima.',
-                ],
-                'en' => [
-                    'An order may be cancelled at any time before it starts being processed for shipping.',
-                    'If the order has already been dispatched, the return process described above applies.',
-                ],
-            ],
-            'help_text' => [
-                'es' => 'Para iniciar una devolución o consultar por tu pedido, escríbenos por cualquiera de estos canales:',
-                'pt' => 'Para iniciar uma devolução ou consultar sobre o seu pedido, fale conosco por um destes canais:',
-                'en' => 'To start a return or ask about your order, contact us through either of these channels:',
+            'page_body' => [
+                'es' => static::html(
+                    'Envío gratuito a toda América y Europa. Aceptamos devoluciones únicamente cuando el producto llega defectuoso, dañado, incorrecto o no corresponde a lo pedido. A continuación se detallan las condiciones de reemplazo, reembolso y cancelación de pedidos.',
+                    [
+                        ['Cuándo aceptamos devoluciones', [
+                            'Solo aceptamos devoluciones si el producto llega defectuoso, dañado, incorrecto o no corresponde a lo que pediste.',
+                            'El plazo para reportarlo es de {hours} horas desde la entrega.',
+                            'El reporte debe incluir fotografías del producto recibido y del problema.',
+                            'El cliente elige entre el envío del artículo correcto sin costo o el reembolso íntegro de su dinero.',
+                            'El envío de reemplazo y la devolución del artículo no tienen costo para el cliente.',
+                        ]],
+                        ['Devoluciones que no aceptamos', [
+                            'No se aceptan devoluciones por cambio de opinión ni por motivos distintos a los indicados arriba.',
+                            'Los reclamos realizados después de las {hours} horas desde la entrega no califican para reemplazo ni reembolso.',
+                        ]],
+                        ['Cómo funciona el proceso', [
+                            'Reporta el problema por los canales indicados al final de esta página, con tu número de pedido, el motivo y las fotografías.',
+                            'Coordinamos la recolección o el envío de devolución.',
+                            'Una vez recibido y verificado el artículo, se procesa el reembolso o el reemplazo.',
+                        ], true],
+                        ['Cancelaciones', [
+                            'El pedido puede cancelarse en cualquier momento antes de que comience a procesarse para su envío.',
+                            'Una vez despachado, el pedido ya no puede cancelarse: solo se aceptan devoluciones en los casos descritos arriba.',
+                        ]],
+                    ]
+                ),
+                'pt' => static::html(
+                    'Frete grátis para toda a América e Europa. Aceitamos devoluções somente quando o produto chega com defeito, danificado, errado ou não corresponde ao pedido. A seguir, as condições de substituição, reembolso e cancelamento de pedidos.',
+                    [
+                        ['Quando aceitamos devoluções', [
+                            'Só aceitamos devoluções se o produto chegar com defeito, danificado, errado ou não corresponder ao que você pediu.',
+                            'O prazo para reportar é de {hours} horas desde a entrega.',
+                            'O relato deve incluir fotografias do produto recebido e do problema.',
+                            'O cliente escolhe entre o envio do artigo correto sem custo ou o reembolso integral do seu dinheiro.',
+                            'O envio de substituição e a devolução do artigo não têm custo para o cliente.',
+                        ]],
+                        ['Devoluções que não aceitamos', [
+                            'Não são aceitas devoluções por arrependimento nem por motivos diferentes dos indicados acima.',
+                            'Reclamações feitas depois de {hours} horas desde a entrega não se qualificam para substituição nem reembolso.',
+                        ]],
+                        ['Como funciona o processo', [
+                            'Reporte o problema pelos canais indicados no final desta página, com o número do pedido, o motivo e as fotografias.',
+                            'Combinamos a coleta ou o envio de devolução.',
+                            'Assim que o artigo for recebido e verificado, o reembolso ou a substituição é processado.',
+                        ], true],
+                        ['Cancelamentos', [
+                            'O pedido pode ser cancelado a qualquer momento antes de começar a ser preparado para envio.',
+                            'Depois de despachado, o pedido não pode mais ser cancelado: só são aceitas devoluções nos casos descritos acima.',
+                        ]],
+                    ]
+                ),
+                'en' => static::html(
+                    'Free shipping across the Americas and Europe. Returns are accepted only when the product arrives faulty, damaged, wrong or not matching the order. The conditions for replacements, refunds and order cancellations are set out below.',
+                    [
+                        ['When we accept returns', [
+                            'Returns are accepted only if the product arrives faulty, damaged, wrong or not matching what you ordered.',
+                            'The issue must be reported within {hours} hours of delivery.',
+                            'The report must include photographs of the product received and of the issue.',
+                            'The customer chooses between the correct item at no cost or a full refund.',
+                            'Both the replacement shipment and the return of the item are free for the customer.',
+                        ]],
+                        ['Returns we do not accept', [
+                            'Returns for a change of mind, or for any reason other than those listed above, are not accepted.',
+                            'Claims made more than {hours} hours after delivery do not qualify for a replacement or a refund.',
+                        ]],
+                        ['How the process works', [
+                            'Report the issue through the channels listed at the end of this page, with your order number, the reason and the photographs.',
+                            'We arrange the pickup or the return shipment.',
+                            'Once the item is received and checked, the refund or replacement is processed.',
+                        ], true],
+                        ['Cancellations', [
+                            'An order may be cancelled at any time before it starts being processed for shipping.',
+                            'Once dispatched, the order can no longer be cancelled: returns are only accepted in the cases described above.',
+                        ]],
+                    ]
+                ),
             ],
         ];
+    }
+
+    /**
+     * Arma el cuerpo en el HTML que produce el RichEditor de Filament: un párrafo
+     * de intro y, por sección, un <h2> con su lista (<ol> si los pasos van numerados).
+     *
+     * @param  array<int, array{0: string, 1: array<int, string>, 2?: bool}>  $sections
+     */
+    private static function html(string $intro, array $sections): string
+    {
+        $html = '<p>'.e($intro).'</p>';
+
+        foreach ($sections as $section) {
+            [$title, $items] = $section;
+            $list = ($section[2] ?? false) ? 'ol' : 'ul';
+
+            $html .= '<h2>'.e($title).'</h2><'.$list.'>';
+            foreach ($items as $item) {
+                $html .= '<li>'.e($item).'</li>';
+            }
+            $html .= '</'.$list.'>';
+        }
+
+        return $html;
     }
 }

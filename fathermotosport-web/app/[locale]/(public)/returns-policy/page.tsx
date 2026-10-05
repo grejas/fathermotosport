@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { AlertCircle, MessageCircle, PackageCheck, RotateCcw, XCircle } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { ContactEmail } from "@/components/shared/ContactEmail";
 import { getShippingReturnsContent } from "@/lib/shippingReturns";
 
@@ -11,51 +11,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { page } = await getShippingReturnsContent(locale);
 
-  return { title: page.title, description: page.intro };
-}
-
-/** Sección con ícono, título y lista de puntos. */
-function Section({
-  icon: Icon,
-  title,
-  items,
-  ordered = false,
-}: {
-  icon: typeof RotateCcw;
-  title: string;
-  items: string[];
-  ordered?: boolean;
-}) {
-  const List = ordered ? "ol" : "ul";
-
-  return (
-    <section className="rounded-2xl border border-white/10 bg-brand-card p-5 sm:p-6">
-      <h2 className="flex items-center gap-2.5 text-lg font-bold text-brand-white">
-        <Icon size={20} className="shrink-0 text-brand-red" />
-        {title}
-      </h2>
-      <List
-        className={
-          ordered
-            ? "mt-4 list-decimal space-y-2 pl-5 text-sm text-brand-muted marker:font-bold marker:text-brand-red"
-            : "mt-4 space-y-2 text-sm text-brand-muted"
-        }
-      >
-        {items.map((item, i) => (
-          <li key={i} className={ordered ? "pl-1" : "flex gap-2"}>
-            {ordered ? (
-              item
-            ) : (
-              <>
-                <span aria-hidden className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-red" />
-                <span>{item}</span>
-              </>
-            )}
-          </li>
-        ))}
-      </List>
-    </section>
-  );
+  return { title: page.title, description: page.description };
 }
 
 export default async function ReturnsPolicyPage({
@@ -74,14 +30,12 @@ export default async function ReturnsPolicyPage({
   return (
     <div className="mx-auto max-w-3xl px-4 pb-16 pt-20 sm:px-6 sm:pt-24">
       <h1 className="text-3xl font-extrabold text-brand-white sm:text-4xl">{page.title}</h1>
-      <p className="mt-3 text-sm text-brand-muted">{page.intro}</p>
 
-      <div className="mt-8 space-y-5">
-        <Section icon={AlertCircle} title={page.damaged.title} items={page.damaged.items} />
-        <Section icon={RotateCcw} title={page.withdrawal.title} items={page.withdrawal.items} />
-        <Section icon={PackageCheck} title={page.process.title} items={page.process.items} ordered />
-        <Section icon={XCircle} title={page.cancellations.title} items={page.cancellations.items} />
-      </div>
+      {/* Cuerpo editable desde el panel; bodyHtml ya viene sanitizado en el servidor. */}
+      <div
+        className="prose prose-sm prose-invert mt-6 max-w-none text-brand-muted prose-headings:font-bold prose-headings:text-brand-white prose-h2:mb-3 prose-h2:mt-8 prose-h2:text-lg prose-p:text-brand-muted prose-a:text-brand-red prose-a:no-underline hover:prose-a:underline prose-strong:text-brand-white prose-li:text-brand-muted marker:font-bold marker:text-brand-red"
+        dangerouslySetInnerHTML={{ __html: page.bodyHtml }}
+      />
 
       <div className="mt-8 rounded-2xl border border-white/10 bg-brand-card p-5 text-center sm:p-6">
         <p className="text-sm text-brand-muted">{page.help}</p>

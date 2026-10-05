@@ -48,8 +48,9 @@ export function ShippingReturns({ content }: { content: ShippingReturnsSummary }
           >
             <div className="space-y-3 border-t border-white/10 px-4 py-3 text-sm text-brand-muted">
               <p>{content.summaryShipping}</p>
-              <p>{content.summaryDamaged}</p>
-              <p>{content.summaryWithdrawal}</p>
+              {content.paragraphs.map((paragraph, i) => (
+                <p key={i}>{paragraph}</p>
+              ))}
               <Link
                 href="/returns-policy"
                 className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-red transition hover:brightness-125"
