@@ -363,8 +363,8 @@
     "free_shipping": "Free shipping",
     "free_returns": "Free returns",
     "summary_shipping": "Free shipping across the Americas and Europe.",
-    "summary_damaged": "If your item arrives damaged, you have 48 hours from delivery to report it. We send you a new one at no cost or refund your money, your choice.",
-    "summary_withdrawal": "You can also return any item within 7 days of delivery, even if it is not damaged, as long as it is unused, undamaged and complete, with its original packaging and all its accessories.",
+    "summary_damaged": "If your item arrives damaged, you have {hours} hours from delivery to report it. We send you a new one at no cost or refund your money, your choice.",
+    "summary_withdrawal": "You can also return any item within {days} days of delivery, even if it is not damaged, as long as it is unused, undamaged and complete, with its original packaging and all its accessories.",
     "full_policy_link": "See full returns policy"
   },
   "returns_policy": {
@@ -372,14 +372,14 @@
     "intro": "Free shipping across the Americas and Europe. The conditions for returns, replacements and order cancellations are set out below.",
     "damaged_title": "Returns for damaged items",
     "damaged_items": [
-      "Damaged or defective items must be reported within 48 hours of delivery.",
+      "Damaged or defective items must be reported within {hours} hours of delivery.",
       "The report must include photographs of the damage.",
       "The customer chooses between a replacement item at no cost or a full refund.",
       "Both the replacement shipment and the return of the damaged item are free for the customer."
     ],
     "withdrawal_title": "Right to change your mind",
     "withdrawal_items": [
-      "Returns with no reason given may be requested within 7 days of delivery.",
+      "Returns with no reason given may be requested within {days} days of delivery.",
       "The item must be unused and free of any damage caused by the customer.",
       "The return must be complete: original packaging and every accessory and component included.",
       "Items that do not meet these conditions do not qualify for a refund."

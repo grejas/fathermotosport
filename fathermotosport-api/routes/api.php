@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\ShippingController;
+use App\Http\Controllers\Api\ShippingReturnsController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VisorColorController;
 use Illuminate\Support\Facades\Route;
@@ -52,6 +53,9 @@ Route::prefix('v1')->group(function () {
 
     // Promoción flash recurrente (estado de la ventana actual)
     Route::get('/flash-promo', [FlashPromoController::class, 'show']);
+
+    // Textos de envío y devoluciones editables desde el panel (?locale=es|pt|en)
+    Route::get('/store/shipping-returns', [ShippingReturnsController::class, 'show']);
 
     // Blog (artículos publicados)
     Route::get('/posts', [PostController::class, 'index']);

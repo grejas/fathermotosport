@@ -363,8 +363,8 @@
     "free_shipping": "Frete grátis",
     "free_returns": "Devolução grátis",
     "summary_shipping": "Frete grátis para toda a América e Europa.",
-    "summary_damaged": "Se o seu artigo chegar danificado, você tem 48 horas desde a entrega para reportar. Enviamos um novo sem custo ou devolvemos o seu dinheiro, você escolhe.",
-    "summary_withdrawal": "Você também pode devolver qualquer artigo dentro de 7 dias após a entrega, mesmo que não esteja danificado, desde que esteja sem uso, sem danos e completo, com a embalagem original e todos os seus acessórios.",
+    "summary_damaged": "Se o seu artigo chegar danificado, você tem {hours} horas desde a entrega para reportar. Enviamos um novo sem custo ou devolvemos o seu dinheiro, você escolhe.",
+    "summary_withdrawal": "Você também pode devolver qualquer artigo dentro de {days} dias após a entrega, mesmo que não esteja danificado, desde que esteja sem uso, sem danos e completo, com a embalagem original e todos os seus acessórios.",
     "full_policy_link": "Ver política completa de devoluções"
   },
   "returns_policy": {
@@ -372,14 +372,14 @@
     "intro": "Frete grátis para toda a América e Europa. A seguir, as condições de devolução, substituição e cancelamento de pedidos.",
     "damaged_title": "Devoluções por artigo danificado",
     "damaged_items": [
-      "O prazo para reportar um artigo danificado ou com defeito é de 48 horas desde a entrega.",
+      "O prazo para reportar um artigo danificado ou com defeito é de {hours} horas desde a entrega.",
       "O relato deve incluir fotografias do dano.",
       "O cliente escolhe entre o envio de um artigo novo sem custo ou o reembolso integral do seu dinheiro.",
       "O envio de substituição e a devolução do artigo danificado não têm custo para o cliente."
     ],
     "withdrawal_title": "Direito de arrependimento",
     "withdrawal_items": [
-      "O prazo para solicitar uma devolução sem justificar o motivo é de 7 dias desde a entrega do pedido.",
+      "O prazo para solicitar uma devolução sem justificar o motivo é de {days} dias desde a entrega do pedido.",
       "O artigo deve estar sem uso e sem danos atribuíveis ao cliente.",
       "A devolução deve ser completa: embalagem original e todos os acessórios e componentes incluídos.",
       "Artigos que não cumpram essas condições não se qualificam para o reembolso."

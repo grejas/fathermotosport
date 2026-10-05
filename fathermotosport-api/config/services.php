@@ -69,4 +69,9 @@ return [
 
     'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
 
+    // Revalidación on-demand de la caché de Next.js (POST {app.frontend_url}/api/revalidate).
+    'revalidate' => [
+        'secret' => env('REVALIDATE_SECRET'),
+    ],
+
 ];
