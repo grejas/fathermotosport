@@ -16,8 +16,15 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { Button } from "@/components/ui/Button";
 import { VisorColorsModal } from "@/components/3d/VisorColorsModal";
 import { translateText } from "@/lib/utils/translate";
+import type { ShippingReturnsSummary } from "@/lib/shippingReturns";
 
-export function ProductClient({ slug }: { slug: string }) {
+export function ProductClient({
+  slug,
+  shippingReturns,
+}: {
+  slug: string;
+  shippingReturns: ShippingReturnsSummary;
+}) {
   const t = useTranslations("product");
   const locale = useLocale();
   const router = useRouter();
@@ -125,7 +132,7 @@ export function ProductClient({ slug }: { slug: string }) {
             </Button>
           )}
         </div>
-        <ProductInfo product={displayProduct} />
+        <ProductInfo product={displayProduct} shippingReturns={shippingReturns} />
       </div>
 
       <ProductTabs product={displayProduct} />

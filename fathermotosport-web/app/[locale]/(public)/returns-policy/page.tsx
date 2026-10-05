@@ -2,17 +2,16 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { AlertCircle, MessageCircle, PackageCheck, RotateCcw, XCircle } from "lucide-react";
 import { ContactEmail } from "@/components/shared/ContactEmail";
-
-const whatsappNumber = (process.env.NEXT_PUBLIC_WHATSAPP ?? "+59168736384").replace(/\D/g, "");
+import { getShippingReturnsContent } from "@/lib/shippingReturns";
 
 export async function generateMetadata({
   params: { locale },
 }: {
   params: { locale: string };
 }): Promise<Metadata> {
-  const t = await getTranslations({ locale, namespace: "returns_policy" });
+  const { page } = await getShippingReturnsContent(locale);
 
-  return { title: t("title"), description: t("intro") };
+  return { title: page.title, description: page.intro };
 }
 
 /** Sección con ícono, título y lista de puntos. */
@@ -65,28 +64,27 @@ export default async function ReturnsPolicyPage({
   params: { locale: string };
 }) {
   const t = await getTranslations({ locale, namespace: "returns_policy" });
+  const { page, contact } = await getShippingReturnsContent(locale);
   const tWhatsapp = await getTranslations({ locale, namespace: "whatsapp" });
 
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+  const whatsappUrl = `https://wa.me/${contact.whatsappDigits}?text=${encodeURIComponent(
     tWhatsapp("general_message")
   )}`;
 
-  const items = (key: string) => t.raw(key) as string[];
-
   return (
     <div className="mx-auto max-w-3xl px-4 pb-16 pt-20 sm:px-6 sm:pt-24">
-      <h1 className="text-3xl font-extrabold text-brand-white sm:text-4xl">{t("title")}</h1>
-      <p className="mt-3 text-sm text-brand-muted">{t("intro")}</p>
+      <h1 className="text-3xl font-extrabold text-brand-white sm:text-4xl">{page.title}</h1>
+      <p className="mt-3 text-sm text-brand-muted">{page.intro}</p>
 
       <div className="mt-8 space-y-5">
-        <Section icon={AlertCircle} title={t("damaged_title")} items={items("damaged_items")} />
-        <Section icon={RotateCcw} title={t("withdrawal_title")} items={items("withdrawal_items")} />
-        <Section icon={PackageCheck} title={t("process_title")} items={items("process_items")} ordered />
-        <Section icon={XCircle} title={t("cancellations_title")} items={items("cancellations_items")} />
+        <Section icon={AlertCircle} title={page.damaged.title} items={page.damaged.items} />
+        <Section icon={RotateCcw} title={page.withdrawal.title} items={page.withdrawal.items} />
+        <Section icon={PackageCheck} title={page.process.title} items={page.process.items} ordered />
+        <Section icon={XCircle} title={page.cancellations.title} items={page.cancellations.items} />
       </div>
 
       <div className="mt-8 rounded-2xl border border-white/10 bg-brand-card p-5 text-center sm:p-6">
-        <p className="text-sm text-brand-muted">{t("help")}</p>
+        <p className="text-sm text-brand-muted">{page.help}</p>
         <div className="mt-4 flex flex-col items-stretch gap-3 sm:flex-row sm:justify-center">
           <a
             href={whatsappUrl}
@@ -97,7 +95,7 @@ export default async function ReturnsPolicyPage({
             <MessageCircle size={16} />
             {t("contact_whatsapp")}
           </a>
-          <ContactEmail />
+          <ContactEmail email={contact.email} />
         </div>
       </div>
     </div>
