@@ -361,39 +361,38 @@
   },
   "shipping_returns": {
     "free_shipping": "Envío gratuito",
-    "free_returns": "Devolución gratuita",
+    "free_returns": "Devolución gratuita si llega dañado o incorrecto",
     "summary_shipping": "Envío gratuito a toda América y Europa.",
-    "summary_damaged": "Si tu artículo llega dañado, tienes 48 horas desde la entrega para reportarlo. Te enviamos uno nuevo sin costo o te devolvemos tu dinero, a tu elección.",
-    "summary_withdrawal": "También puedes devolver cualquier artículo dentro de los 7 días posteriores a la entrega, sin necesidad de que esté dañado, siempre que esté sin usar, sin daños y completo, con su empaque original y todos sus accesorios.",
+    "summary_damaged": "Si tu artículo llega defectuoso, dañado o no corresponde a lo que pediste, tienes 48 horas desde la entrega para reportarlo. Te enviamos el artículo correcto sin costo o te devolvemos tu dinero, a tu elección.",
+    "summary_withdrawal": "Solo aceptamos devoluciones en esos casos: no se aceptan devoluciones por cambio de opinión ni por otros motivos.",
     "full_policy_link": "Ver política completa de devoluciones"
   },
   "returns_policy": {
     "title": "Política de Envío y Devoluciones",
-    "intro": "Envío gratuito a toda América y Europa. A continuación se detallan las condiciones de devolución, reemplazo y cancelación de pedidos.",
-    "damaged_title": "Devoluciones por artículo dañado",
+    "intro": "Envío gratuito a toda América y Europa. Aceptamos devoluciones únicamente cuando el producto llega defectuoso, dañado, incorrecto o no corresponde a lo pedido. A continuación se detallan las condiciones de reemplazo, reembolso y cancelación de pedidos.",
+    "damaged_title": "Cuándo aceptamos devoluciones",
     "damaged_items": [
-      "El plazo para reportar un artículo dañado o defectuoso es de 48 horas desde la entrega.",
-      "El reporte debe incluir fotografías del daño.",
-      "El cliente elige entre el envío de un artículo nuevo sin costo o el reembolso íntegro de su dinero.",
-      "El envío de reemplazo y la devolución del artículo dañado no tienen costo para el cliente."
+      "Solo aceptamos devoluciones si el producto llega defectuoso, dañado, incorrecto o no corresponde a lo que pediste.",
+      "El plazo para reportarlo es de 48 horas desde la entrega.",
+      "El reporte debe incluir fotografías del producto recibido y del problema.",
+      "El cliente elige entre el envío del artículo correcto sin costo o el reembolso íntegro de su dinero.",
+      "El envío de reemplazo y la devolución del artículo no tienen costo para el cliente."
     ],
-    "withdrawal_title": "Derecho de arrepentimiento",
+    "withdrawal_title": "Devoluciones que no aceptamos",
     "withdrawal_items": [
-      "El plazo para solicitar una devolución sin justificar el motivo es de 7 días desde la entrega del pedido.",
-      "El artículo debe estar sin usar y sin daños atribuibles al cliente.",
-      "La devolución debe ser completa: empaque original y todos los accesorios y componentes incluidos.",
-      "Los artículos que no cumplan estas condiciones no califican para el reembolso."
+      "No se aceptan devoluciones por cambio de opinión ni por motivos distintos a los indicados arriba.",
+      "Los reclamos realizados después de las 48 horas desde la entrega no califican para reemplazo ni reembolso."
     ],
     "process_title": "Cómo funciona el proceso",
     "process_items": [
-      "Solicita la devolución por los canales indicados al final de esta página, con tu número de pedido y el motivo.",
+      "Reporta el problema por los canales indicados al final de esta página, con tu número de pedido, el motivo y las fotografías.",
       "Coordinamos la recolección o el envío de devolución.",
       "Una vez recibido y verificado el artículo, se procesa el reembolso o el reemplazo."
     ],
     "cancellations_title": "Cancelaciones",
     "cancellations_items": [
       "El pedido puede cancelarse en cualquier momento antes de que comience a procesarse para su envío.",
-      "Si el pedido ya fue despachado, se aplica el proceso de devolución descrito arriba."
+      "Una vez despachado, el pedido ya no puede cancelarse: solo se aceptan devoluciones en los casos descritos arriba."
     ],
     "help": "Para iniciar una devolución o consultar por tu pedido, escríbenos por cualquiera de estos canales:",
     "contact_whatsapp": "WhatsApp",

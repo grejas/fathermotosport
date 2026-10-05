@@ -361,39 +361,38 @@
   },
   "shipping_returns": {
     "free_shipping": "Free shipping",
-    "free_returns": "Free returns",
+    "free_returns": "Free returns if it arrives damaged or wrong",
     "summary_shipping": "Free shipping across the Americas and Europe.",
-    "summary_damaged": "If your item arrives damaged, you have 48 hours from delivery to report it. We send you a new one at no cost or refund your money, your choice.",
-    "summary_withdrawal": "You can also return any item within 7 days of delivery, even if it is not damaged, as long as it is unused, undamaged and complete, with its original packaging and all its accessories.",
+    "summary_damaged": "If your item arrives faulty, damaged or not matching what you ordered, you have 48 hours from delivery to report it. We send you the correct item at no cost or refund your money, your choice.",
+    "summary_withdrawal": "Returns are only accepted in these cases: we do not accept returns for a change of mind or for any other reason.",
     "full_policy_link": "See full returns policy"
   },
   "returns_policy": {
     "title": "Shipping and Returns Policy",
-    "intro": "Free shipping across the Americas and Europe. The conditions for returns, replacements and order cancellations are set out below.",
-    "damaged_title": "Returns for damaged items",
+    "intro": "Free shipping across the Americas and Europe. Returns are accepted only when the product arrives faulty, damaged, wrong or not matching the order. The conditions for replacements, refunds and order cancellations are set out below.",
+    "damaged_title": "When we accept returns",
     "damaged_items": [
-      "Damaged or defective items must be reported within 48 hours of delivery.",
-      "The report must include photographs of the damage.",
-      "The customer chooses between a replacement item at no cost or a full refund.",
-      "Both the replacement shipment and the return of the damaged item are free for the customer."
+      "Returns are accepted only if the product arrives faulty, damaged, wrong or not matching what you ordered.",
+      "The issue must be reported within 48 hours of delivery.",
+      "The report must include photographs of the product received and of the issue.",
+      "The customer chooses between the correct item at no cost or a full refund.",
+      "Both the replacement shipment and the return of the item are free for the customer."
     ],
-    "withdrawal_title": "Right to change your mind",
+    "withdrawal_title": "Returns we do not accept",
     "withdrawal_items": [
-      "Returns with no reason given may be requested within 7 days of delivery.",
-      "The item must be unused and free of any damage caused by the customer.",
-      "The return must be complete: original packaging and every accessory and component included.",
-      "Items that do not meet these conditions do not qualify for a refund."
+      "Returns for a change of mind, or for any reason other than those listed above, are not accepted.",
+      "Claims made more than 48 hours after delivery do not qualify for a replacement or a refund."
     ],
     "process_title": "How the process works",
     "process_items": [
-      "Request the return through the channels listed at the end of this page, with your order number and the reason.",
+      "Report the issue through the channels listed at the end of this page, with your order number, the reason and the photographs.",
       "We arrange the pickup or the return shipment.",
       "Once the item is received and checked, the refund or replacement is processed."
     ],
     "cancellations_title": "Cancellations",
     "cancellations_items": [
       "An order may be cancelled at any time before it starts being processed for shipping.",
-      "If the order has already been dispatched, the return process described above applies."
+      "Once dispatched, the order can no longer be cancelled: returns are only accepted in the cases described above."
     ],
     "help": "To start a return or ask about your order, contact us through either of these channels:",
     "contact_whatsapp": "WhatsApp",
