@@ -32,6 +32,7 @@
     "react-dom": "^18",
     "react-google-recaptcha": "^3.1.0",
     "react-hot-toast": "^2.6.0",
+    "sanitize-html": "^2.18.0",
     "tailwind-merge": "^3.6.0",
     "three": "^0.185.0",
     "zustand": "^5.0.14"
@@ -42,6 +43,7 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/react-google-recaptcha": "^2.1.9",
+    "@types/sanitize-html": "^2.16.2",
     "eslint": "^8",
     "eslint-config-next": "14.2.35",
     "postcss": "^8",

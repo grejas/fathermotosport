@@ -394,39 +394,38 @@
   },
   "shipping_returns": {
     "free_shipping": "Frete grátis",
-    "free_returns": "Devolução grátis",
+    "free_returns": "Devolução grátis se chegar danificado ou errado",
     "summary_shipping": "Frete grátis para toda a América e Europa.",
-    "summary_damaged": "Se o seu artigo chegar danificado, você tem 48 horas desde a entrega para reportar. Enviamos um novo sem custo ou devolvemos o seu dinheiro, você escolhe.",
-    "summary_withdrawal": "Você também pode devolver qualquer artigo dentro de 7 dias após a entrega, mesmo que não esteja danificado, desde que esteja sem uso, sem danos e completo, com a embalagem original e todos os seus acessórios.",
+    "summary_damaged": "Se o seu artigo chegar com defeito, danificado ou não corresponder ao que você pediu, você tem {hours} horas desde a entrega para reportar. Enviamos o artigo correto sem custo ou devolvemos o seu dinheiro, você escolhe.",
+    "summary_not_accepted": "Só aceitamos devoluções nesses casos: não são aceitas devoluções por arrependimento nem por outros motivos.",
     "full_policy_link": "Ver política completa de devoluções"
   },
   "returns_policy": {
     "title": "Política de Frete e Devoluções",
-    "intro": "Frete grátis para toda a América e Europa. A seguir, as condições de devolução, substituição e cancelamento de pedidos.",
-    "damaged_title": "Devoluções por artigo danificado",
+    "intro": "Frete grátis para toda a América e Europa. Aceitamos devoluções somente quando o produto chega com defeito, danificado, errado ou não corresponde ao pedido. A seguir, as condições de substituição, reembolso e cancelamento de pedidos.",
+    "damaged_title": "Quando aceitamos devoluções",
     "damaged_items": [
-      "O prazo para reportar um artigo danificado ou com defeito é de 48 horas desde a entrega.",
-      "O relato deve incluir fotografias do dano.",
-      "O cliente escolhe entre o envio de um artigo novo sem custo ou o reembolso integral do seu dinheiro.",
-      "O envio de substituição e a devolução do artigo danificado não têm custo para o cliente."
+      "Só aceitamos devoluções se o produto chegar com defeito, danificado, errado ou não corresponder ao que você pediu.",
+      "O prazo para reportar é de {hours} horas desde a entrega.",
+      "O relato deve incluir fotografias do produto recebido e do problema.",
+      "O cliente escolhe entre o envio do artigo correto sem custo ou o reembolso integral do seu dinheiro.",
+      "O envio de substituição e a devolução do artigo não têm custo para o cliente."
     ],
-    "withdrawal_title": "Direito de arrependimento",
-    "withdrawal_items": [
-      "O prazo para solicitar uma devolução sem justificar o motivo é de 7 dias desde a entrega do pedido.",
-      "O artigo deve estar sem uso e sem danos atribuíveis ao cliente.",
-      "A devolução deve ser completa: embalagem original e todos os acessórios e componentes incluídos.",
-      "Artigos que não cumpram essas condições não se qualificam para o reembolso."
+    "not_accepted_title": "Devoluções que não aceitamos",
+    "not_accepted_items": [
+      "Não são aceitas devoluções por arrependimento nem por motivos diferentes dos indicados acima.",
+      "Reclamações feitas depois de {hours} horas desde a entrega não se qualificam para substituição nem reembolso."
     ],
     "process_title": "Como funciona o processo",
     "process_items": [
-      "Solicite a devolução pelos canais indicados no final desta página, com o número do pedido e o motivo.",
+      "Reporte o problema pelos canais indicados no final desta página, com o número do pedido, o motivo e as fotografias.",
       "Combinamos a coleta ou o envio de devolução.",
       "Assim que o artigo for recebido e verificado, o reembolso ou a substituição é processado."
     ],
     "cancellations_title": "Cancelamentos",
     "cancellations_items": [
       "O pedido pode ser cancelado a qualquer momento antes de começar a ser preparado para envio.",
-      "Se o pedido já foi despachado, aplica-se o processo de devolução descrito acima."
+      "Depois de despachado, o pedido não pode mais ser cancelado: só são aceitas devoluções nos casos descritos acima."
     ],
     "help": "Para iniciar uma devolução ou consultar sobre o seu pedido, fale conosco por um destes canais:",
     "contact_whatsapp": "WhatsApp",

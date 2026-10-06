@@ -10,11 +10,11 @@
 # Imprime FALTA / DIFIERE por archivo y, al final, la lista lista para subir:
 #   tar czf - -C fathermotosport-api -T faltantes.txt | ssh ... "tar xzf - -C /ruta/al/api"
 #
-# Cubre TODO el backend en 88676a7: los 321 archivos trackeados que forman parte de un
+# Cubre TODO el backend en a16a867: los 328 archivos trackeados que forman parte de un
 # despliegue, no solo los de la última tanda. La idea es que el script sea la fuente de
 # verdad del estado del servidor, sin depender de recordar qué se subió y qué no.
 #
-# Quedan FUERA a propósito (20 de los 341 trackeados):
+# Quedan FUERA a propósito (20 de los 348 trackeados):
 #   - storage/**/.gitignore, bootstrap/cache/.gitignore, database/.gitignore: marcadores
 #     de carpeta. En el servidor esos directorios tienen contenido de runtime y
 #     compararlos solo genera ruido.
@@ -53,6 +53,7 @@ ce154cbda0fc9b2eb53bfd977994f258 DOC .env.example
 4d3fc4ce89d95f4fa939e0c68e13d6a1 APP app/Console/Commands/CancelAbandonedOrders.php
 b0bfbb41997af71a54d6f34a74d0173b APP app/Console/Commands/FixCommaSizes.php
 74ff6786e51e8aa395d9a7dc29195b6a APP app/Console/Commands/GenerateFlashPromoOccurrences.php
+251b76077bd523abc5fdb2b1c9b394f2 APP app/Filament/Pages/ShippingReturnsPage.php
 7ecc786f59faa28e7f0d5f6e0db1c0bd APP app/Filament/Pages/StoreSettingsPage.php
 66eb384c2d5b320f568cd888a326b1fe APP app/Filament/Resources/BannerResource.php
 dd4a0861e172e27e59c4dbb516fb34e0 APP app/Filament/Resources/BannerResource/Pages/CreateBanner.php
@@ -137,6 +138,7 @@ ac0988f343681cbcc928a3023b23c67d APP app/Http/Controllers/Api/PostController.php
 fb066d1a40e35cad56b78d8d31b70fb6 APP app/Http/Controllers/Api/ProductController.php
 c08929c866756d078a1ada5c8e091ade APP app/Http/Controllers/Api/ReviewController.php
 c9b22c42f79d98fc11dbef94c3bb7725 APP app/Http/Controllers/Api/ShippingController.php
+7e61589b5fefe7607583a55d6e7c52f8 APP app/Http/Controllers/Api/ShippingReturnsController.php
 12b42913e1449e09ffbb0678bc2e84aa APP app/Http/Controllers/Api/UserController.php
 c2a20fdca609dee26d4c79cfae6381ec APP app/Http/Controllers/Api/VisorColorController.php
 25a307335c0719bc9a91b3f7babd186d APP app/Http/Controllers/Controller.php
@@ -209,6 +211,7 @@ bb7963962401672559e95ec3ea4aac4a APP app/Models/Review.php
 3c9c36fbc84346d3f94fde3ad2673cf3 APP app/Models/Shipment.php
 bc9e6b015d09ad5ed418bbb30b8fc4e8 APP app/Models/ShippingMethod.php
 f133d908ce35016e6aeb8576314c9dfc APP app/Models/ShippingOption.php
+3b0774c41c80ce8dab06a4022f946f5f APP app/Models/ShippingReturnsSetting.php
 4eabb0f314662ca6b31d4f3bca4bf574 APP app/Models/StoreConfig.php
 2cb99678217723de72eeb465b895ec9d APP app/Models/User.php
 60fe6bb2f85113dd4a57cd75ea9bb363 APP app/Models/VisorColor.php
@@ -218,6 +221,7 @@ d417c9fc28640cc0d4e0617ba6902f32 APP app/Providers/Filament/AdminPanelProvider.p
 99d42267f4b7d8572f258b8fd77d6fd5 APP app/Services/CartService.php
 d6023236d13a06321fa71ef5b8fcb872 APP app/Services/CouponService.php
 367eaaa4ce3729792942da332c45939a APP app/Services/EmailService.php
+b314cf224e9ba70f6c4091b09b91511b APP app/Services/FrontendRevalidator.php
 df80323dac380edff8b5427295c6e926 APP app/Services/OrderService.php
 0dd60cb6468e57f98c058b066ab98436 APP app/Services/Payments/MercadoPagoService.php
 b1056b32bc6743ab53cb1f5a53ff592d APP app/Services/Payments/PaypalService.php
@@ -242,7 +246,7 @@ d8255a5c07d3da72c7c9363f0c44bddd APP config/logging.php
 18601a927b48d38337ba2077426a7d60 APP config/mail.php
 f98ce92e7bf51db1fabaf8a30e12fc5a APP config/queue.php
 e3887ebee464a1b2c014cb16696a2b50 APP config/sanctum.php
-72af7f495c41d696fec7459aee1bf19a APP config/services.php
+e4b66b6741e94aecb48b5c9a5910df74 APP config/services.php
 6d9336e9ca1183588abbce7ff7a6f29a APP config/session.php
 9cbb9c89bbe7f2809b3788f94a9d91ee TEST database/factories/ProductFactory.php
 c66ce61fdb6acd5aeb7012096c111ee5 TEST database/factories/ProductImageFactory.php
@@ -304,13 +308,15 @@ b7f75cd860aa81b06c41afdc469344cb APP database/migrations/2026_09_22_100002_simpl
 cb6eadff613d98ba0c5f408d93069fe4 APP database/migrations/2026_09_24_100001_change_payment_method_to_string_on_orders.php
 17f2bb8cbd9e96a6bedc59e2820cbebd APP database/migrations/2026_09_30_100001_add_email_verificado_por_to_orders_table.php
 a27d897f007e9d983ee9a90e2929dcd1 APP database/migrations/2026_10_01_100001_add_attention_reason_to_orders_table.php
+71e9d1e92fc38e56b0740e8040fc2759 APP database/migrations/2026_10_05_100001_create_shipping_returns_settings_table.php
 2e48ae742cb93d2f1b92da51a12b639e APP database/seeders/AdminUserSeeder.php
 754586202649f4c72fa085e9f36c60c4 APP database/seeders/BrandSeeder.php
 e31e5c442de49b636f0a118a7f370786 APP database/seeders/CategorySeeder.php
-b9501f644e95a10ad23e3c1fbf91e7ef APP database/seeders/DatabaseSeeder.php
+de2d2e55e4b883e7010f4cf186c804fa APP database/seeders/DatabaseSeeder.php
 4e83ba1ef7e86289340278e5019bf890 APP database/seeders/FlashPromoSeeder.php
 baffe5d7871be7033b21b6a3bcc3e7f3 APP database/seeders/RoleSeeder.php
 be473521a6acaecac743dbe3cf7dd4a1 APP database/seeders/ShippingMethodSeeder.php
+c2d16007ed8ff017903f04f54c309459 APP database/seeders/ShippingReturnsSettingsSeeder.php
 f846f589c5a0652604c1c24b764f1fe9 APP database/seeders/StoreConfigSeeder.php
 2bcd3ce99aeb9da0e231c84b725d4305 TEST phpunit.xml
 b47546deac54c7da15ac289fc4aefd67 APP public/css/filament/filament/app.css
@@ -347,7 +353,7 @@ b26c722849e708761904ccd5423aa337 APP resources/views/emails/welcome-employee.bla
 ea31b313963964bd4a5bf95fd06ed22b APP resources/views/emails/welcome.blade.php
 436dda3b22d3eea4569a9b56e6a3cb3d APP resources/views/filament/pages/store-settings-page.blade.php
 f9f90b3bab40fd1d366e9b54466deac7 APP resources/views/welcome.blade.php
-b3d83860290f105d3cd6be0d4ebb0398 APP routes/api.php
+1d64c68a2edd0e5a930618227eb98992 APP routes/api.php
 7a84e84d40e85f2b1c6eeb37cc39ee18 APP routes/console.php
 84625c52e743b1a4178bb27b7afb3615 APP routes/web.php
 a9abbb01c2ea0da5aeada2d937b10e1a TEST tests/Feature/AdminPanelTest.php
@@ -364,6 +370,7 @@ fb2797609be6a1f00c3bf7f497ae8623 TEST tests/Feature/PaypalWebhookTest.php
 8d4b971fe4f40e0f88ceedd732081fd1 TEST tests/Feature/ProductImageUploadTest.php
 8a44f9b025f9a42c8f0741732932fa58 TEST tests/Feature/RegisterFromOrderTest.php
 895bbf1502fb8e842a61a8d204c3d83d TEST tests/Feature/ShippingOptionTest.php
+7f23963c65a4969d4bc619439acfacdf TEST tests/Feature/ShippingReturnsTest.php
 1420e2ca24f8e42bb425d072b2e2ee2c TEST tests/Feature/StockAtPaymentTest.php
 6d86787afbc21750b7ed31bc2f6d2e35 TEST tests/Feature/StoreSettingsSaveTest.php
 4bbfb42d8ccf31b85af71bcbf6cfcc1c TEST tests/Feature/StripePaymentTest.php

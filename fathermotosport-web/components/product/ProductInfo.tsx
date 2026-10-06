@@ -9,13 +9,20 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { SizeGuideModal, hasSizeGuide } from "@/components/product/SizeGuideModal";
 import { ShippingReturns } from "@/components/product/ShippingReturns";
+import type { ShippingReturnsSummary } from "@/lib/shippingReturns";
 import { sortSizes } from "@/lib/utils/sizes";
 import { useCartStore } from "@/store/cartStore";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { useAuthStore } from "@/store/authStore";
 import toast from "react-hot-toast";
 
-export function ProductInfo({ product }: { product: Product }) {
+export function ProductInfo({
+  product,
+  shippingReturns,
+}: {
+  product: Product;
+  shippingReturns: ShippingReturnsSummary;
+}) {
   const t = useTranslations("product");
   const tWhatsapp = useTranslations("whatsapp");
   const accent = getCategoryColor(product.category?.slug);
@@ -192,7 +199,7 @@ export function ProductInfo({ product }: { product: Product }) {
         )}
       </div>
 
-      <ShippingReturns />
+      <ShippingReturns content={shippingReturns} />
 
       <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
         <Button variant="glass" className="w-full" icon={<MessageCircle size={18} />}>

@@ -6,8 +6,10 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, ChevronDown, RotateCcw, Truck } from "lucide-react";
 import { Link } from "@/lib/i18n/navigation";
 import { cn } from "@/lib/utils";
+import type { ShippingReturnsSummary } from "@/lib/shippingReturns";
 
-export function ShippingReturns() {
+/** Textos ya resueltos en el servidor (panel o messages/*.json como respaldo). */
+export function ShippingReturns({ content }: { content: ShippingReturnsSummary }) {
   const t = useTranslations("shipping_returns");
   const [open, setOpen] = useState(false);
 
@@ -22,11 +24,11 @@ export function ShippingReturns() {
         <div className="space-y-2">
           <p className="flex items-center gap-2 text-sm font-semibold text-brand-white">
             <Truck size={16} className="shrink-0 text-cat-boots" />
-            {t("free_shipping")}
+            {content.badgeShipping}
           </p>
           <p className="flex items-center gap-2 text-sm font-semibold text-brand-white">
             <RotateCcw size={16} className="shrink-0 text-cat-boots" />
-            {t("free_returns")}
+            {content.badgeReturns}
           </p>
         </div>
         <ChevronDown
@@ -45,9 +47,10 @@ export function ShippingReturns() {
             className="overflow-hidden"
           >
             <div className="space-y-3 border-t border-white/10 px-4 py-3 text-sm text-brand-muted">
-              <p>{t("summary_shipping")}</p>
-              <p>{t("summary_damaged")}</p>
-              <p>{t("summary_withdrawal")}</p>
+              <p>{content.summaryShipping}</p>
+              {content.paragraphs.map((paragraph, i) => (
+                <p key={i}>{paragraph}</p>
+              ))}
               <Link
                 href="/returns-policy"
                 className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-red transition hover:brightness-125"
