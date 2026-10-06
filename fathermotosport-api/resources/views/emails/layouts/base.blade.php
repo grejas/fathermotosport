@@ -1,5 +1,11 @@
+@php
+  // Pie del correo por idioma (ver App\Support\PieDeCorreo). Los correos que no pasan
+  // $emailLocale salen en español, exactamente como antes.
+  $idiomaCorreo = \App\Support\PieDeCorreo::idioma($emailLocale ?? null);
+  $pie = \App\Support\PieDeCorreo::textos($idiomaCorreo);
+@endphp
 <!DOCTYPE html>
-<html>
+<html lang="{{ $idiomaCorreo }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -72,12 +78,12 @@
     <div class="footer">
       <div class="footer-text">
         FatherMotoSport · Cochabamba, Bolivia<br>
-        Envío gratuito a Bolivia y Brasil
+        {{ $pie['envio'] }}
       </div>
       <div class="footer-links">
-        <a href="{{ config('app.frontend_url') }}" class="footer-link">Ver tienda</a>
+        <a href="{{ config('app.frontend_url') }}" class="footer-link">{{ $pie['tienda'] }}</a>
         <a href="https://wa.me/59168736384" class="footer-link">WhatsApp</a>
-        <a href="{{ config('app.frontend_url') }}/unsubscribe" class="footer-link">Cancelar suscripción</a>
+        <a href="{{ config('app.frontend_url') }}/unsubscribe" class="footer-link">{{ $pie['baja'] }}</a>
       </div>
     </div>
   </div>

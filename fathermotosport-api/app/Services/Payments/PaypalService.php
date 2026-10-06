@@ -140,6 +140,23 @@ class PaypalService
     }
 
     /**
+     * Consulta una orden de PayPal sin modificarla: su status dice si el cliente ya la
+     * aprobó (APPROVED) o si ya se cobró (COMPLETED).
+     *
+     * @return array<string, mixed>
+     */
+    public function getOrder(string $paypalOrderId): array
+    {
+        try {
+            return $this->client()->get("/v2/checkout/orders/{$paypalOrderId}")->throw()->json();
+        } catch (RequestException $e) {
+            $this->registrar('falló la consulta de la orden', $e, ['paypal_order' => $paypalOrderId]);
+
+            throw $e;
+        }
+    }
+
+    /**
      * Verifica la firma de un webhook de PayPal.
      */
     public function verifyWebhook(array $headers, array $payload): bool

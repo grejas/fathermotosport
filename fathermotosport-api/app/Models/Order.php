@@ -35,6 +35,9 @@ class Order extends Model
      */
     public const METODOS_CON_COORDINACION_MANUAL = [];
 
+    /** Idiomas de la tienda. El primero es el de respaldo: el de los pedidos sin idioma. */
+    public const LOCALES = ['es', 'pt', 'en'];
+
     use HasUuid;
 
     protected $fillable = [
@@ -44,6 +47,7 @@ class Order extends Model
         'upsell_of_order_id',
         'address_id',
         'guest_email',
+        'notification_email',
         'email_verificado_por',
         'status',
         'subtotal',
@@ -57,6 +61,7 @@ class Order extends Model
         'shipping_status',
         'payment_method',
         'country',
+        'locale',
         'notes',
         'attention_reason',
     ];
@@ -70,6 +75,10 @@ class Order extends Model
         // Ventana de la venta cruzada. No van en $fillable: solo las escribe UpsellService.
         'upsell_offered_at' => 'datetime',
         'upsell_dismissed_at' => 'datetime',
+        // Recuperación de pago. Tampoco van en $fillable: las escriben el webhook / la
+        // captura (fallo) y el comando payments:recover-pending (aviso enviado).
+        'payment_failed_at' => 'datetime',
+        'recovery_email_sent_at' => 'datetime',
     ];
 
     protected static function booted(): void
@@ -101,6 +110,44 @@ class Order extends Model
         }
 
         return $user->isAdmin() || $user->isEmpleado() || ($this->user_id !== null && $this->user_id === $user->id);
+    }
+
+    /**
+     * Email al que se le escriben los avisos del pedido: el que el cliente escribió en
+     * la tienda (notification_email) y, si no hay, el de siempre: el del invitado o el
+     * de su cuenta.
+     *
+     * Solo para AVISAR. Vincular pedidos o crear una cuenta usa guest_email junto con
+     * email_verificado_por, nunca este: el escrito no prueba de quién es la casilla.
+     */
+    public function emailDelCliente(): ?string
+    {
+        return $this->notification_email ?: ($this->guest_email ?: $this->user?->email);
+    }
+
+    /** Idioma del pedido, o el de respaldo si no se guardó (pedidos anteriores). */
+    public function idioma(): string
+    {
+        return in_array($this->locale, self::LOCALES, true) ? $this->locale : self::LOCALES[0];
+    }
+
+    /** El idioma que manda el checkout, si es uno de la tienda; si no, null. */
+    public static function idiomaValido(mixed $locale): ?string
+    {
+        return in_array($locale, self::LOCALES, true) ? $locale : null;
+    }
+
+    /**
+     * Página donde el cliente retoma el pago de este pedido. Lleva el token de acceso,
+     * así sirve también para quien compró sin cuenta. El idioma por defecto va sin
+     * prefijo en la ruta, como en el resto del sitio (localePrefix "as-needed").
+     */
+    public function urlParaPagar(): string
+    {
+        $base = rtrim((string) config('app.frontend_url'), '/');
+        $prefijo = $this->idioma() === self::LOCALES[0] ? '' : '/'.$this->idioma();
+
+        return "{$base}{$prefijo}/checkout/pay/{$this->id}?t={$this->access_token}";
     }
 
     /** Token de acceso que llega por query (?token=) o por la cabecera X-Order-Token. */

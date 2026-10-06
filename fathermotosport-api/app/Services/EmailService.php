@@ -26,7 +26,7 @@ class EmailService
      */
     public function sendOrderReceived(Order $order): void
     {
-        $email = $order->guest_email ?: optional($order->user)->email;
+        $email = $order->emailDelCliente();
 
         if (! $email) {
             return;
@@ -41,7 +41,7 @@ class EmailService
      */
     public function sendOrderConfirmation(Order $order): void
     {
-        $email = $order->guest_email ?: optional($order->user)->email;
+        $email = $order->emailDelCliente();
 
         if (! $email) {
             return;
@@ -71,7 +71,7 @@ class EmailService
      */
     public function sendShippingUpdate(Order $order, ?string $trackingNumber = null, ?string $carrier = null): void
     {
-        $email = $order->guest_email ?: optional($order->user)->email;
+        $email = $order->emailDelCliente();
 
         if (! $email) {
             return;

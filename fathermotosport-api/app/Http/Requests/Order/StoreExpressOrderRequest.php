@@ -27,6 +27,10 @@ class StoreExpressOrderRequest extends FormRequest
             // para cobrar el envío correcto antes de mandarlo a PayPal.
             'shipping_country_code' => ['required', 'string', 'size:2'],
             'shipping_option_id' => ['required', 'integer', 'exists:shipping_options,id'],
+            // Adónde avisarle del pedido. Obligatorio aunque PayPal informe otro al
+            // pagar: sin él, un Express abandonado no tendría a quién escribirle.
+            'email' => ['required', 'email', 'max:255'],
+            'locale' => ['nullable', 'string', 'max:5'],
         ];
     }
 }

@@ -102,6 +102,9 @@ class OrderService
                 'user_id' => $user?->id,
                 'address_id' => $address->id,
                 'guest_email' => $user ? null : ($data['guest_email'] ?? null),
+                // Solo lo trae PayPal Express; en el checkout normal el escrito ya es
+                // guest_email (o el de la cuenta).
+                'notification_email' => $data['notification_email'] ?? null,
                 'status' => 'pending',
                 'subtotal' => $subtotal,
                 'discount' => $discount,
@@ -114,6 +117,7 @@ class OrderService
                 'shipping_status' => 'pending',
                 'payment_method' => $data['payment_method'],
                 'country' => $address->country,
+                'locale' => Order::idiomaValido($data['locale'] ?? null),
                 'notes' => $data['notes'] ?? null,
             ]);
 

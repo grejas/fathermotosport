@@ -28,7 +28,7 @@ class RecentOrdersWidget extends BaseWidget
                 Tables\Columns\TextColumn::make('order_number')->label('N° pedido'),
                 Tables\Columns\TextColumn::make('customer')
                     ->label('Cliente')
-                    ->getStateUsing(fn (Order $r) => $r->user?->full_name ?? $r->guest_email ?? 'Invitado'),
+                    ->getStateUsing(fn (Order $r) => $r->user?->full_name ?? $r->notification_email ?? $r->guest_email ?? 'Invitado'),
                 Tables\Columns\TextColumn::make('total')->label('Total')->money('USD'),
                 Tables\Columns\TextColumn::make('payment_status')
                     ->label('Pago')

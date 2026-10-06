@@ -52,7 +52,7 @@ class PaypalExpressTest extends TestCase
         ], $attributes));
     }
 
-    private function crearPedidoExpress(): array
+    private function crearPedidoExpress(string $email = 'escrito@example.com'): array
     {
         $variant = $this->variante();
         $opcion = $this->opcionDeEnvio();
@@ -61,6 +61,7 @@ class PaypalExpressTest extends TestCase
             'items' => [['variant_id' => $variant->id, 'quantity' => 2]],
             'shipping_country_code' => 'BO',
             'shipping_option_id' => $opcion->id,
+            'email' => $email,
         ])->assertCreated()->json('order');
 
         Payment::create([
@@ -102,7 +103,7 @@ class PaypalExpressTest extends TestCase
         ];
     }
 
-    public function test_express_order_is_created_without_customer_data_and_without_email(): void
+    public function test_express_order_is_created_with_only_the_notification_email(): void
     {
         $order = $this->crearPedidoExpress();
 
@@ -114,8 +115,12 @@ class PaypalExpressTest extends TestCase
         $this->assertSame('Express DHL', $modelo->shipping_method_name);
         $this->assertSame(Order::DATO_PENDIENTE, $modelo->address->address_line);
         $this->assertTrue($modelo->esperaDatosDePaypal());
+        // El escrito queda para avisarle; el verificado lo informa PayPal al volver.
+        $this->assertSame('escrito@example.com', $modelo->notification_email);
+        $this->assertNull($modelo->guest_email);
+        $this->assertNull($modelo->email_verificado_por);
 
-        // Nada de correos: no hay pago ni destinatario todavía.
+        // Nada de correos: todavía no hay pago.
         Mail::assertNothingSent();
     }
 
@@ -140,9 +145,13 @@ class PaypalExpressTest extends TestCase
         $this->assertSame('Santa Cruz', $modelo->address->city);
         $this->assertSame('76543210', $modelo->address->phone);
         $this->assertSame('Bolivia', $modelo->address->country);
+        $this->assertSame('paypal', $modelo->email_verificado_por);
+        // El escrito no se pisa al volver de PayPal.
+        $this->assertSame('escrito@example.com', $modelo->notification_email);
 
-        // El correo de pago confirmado sale una vez, y con destinatario.
-        Mail::assertSent(OrderConfirmedMail::class);
+        // El correo de pago confirmado sale una vez, al email escrito.
+        Mail::assertSent(OrderConfirmedMail::class, 1);
+        Mail::assertSent(OrderConfirmedMail::class, fn ($mail) => $mail->hasTo('escrito@example.com'));
         Mail::assertNotSent(OrderReceivedMail::class);
     }
 
@@ -216,6 +225,7 @@ class PaypalExpressTest extends TestCase
         $this->postJson('/api/v1/orders/paypal-express', [
             'items' => [['variant_id' => $variant->id, 'quantity' => 1]],
             'shipping_country_code' => 'BO',
+            'email' => 'escrito@example.com',
         ])->assertStatus(422)->assertJsonValidationErrors('shipping_option_id');
 
         // Una opción de otro país no sirve para este destino.
@@ -224,6 +234,7 @@ class PaypalExpressTest extends TestCase
             'items' => [['variant_id' => $variant->id, 'quantity' => 1]],
             'shipping_country_code' => 'BO',
             'shipping_option_id' => $otroPais->id,
+            'email' => 'escrito@example.com',
         ])->assertStatus(422)->assertJsonValidationErrors('shipping_option_id');
     }
 }

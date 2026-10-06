@@ -40,6 +40,9 @@ class StoreOrderRequest extends FormRequest
             'payment_method' => ['required', 'in:paypal,stripe,mercadopago'],
             'coupon_code' => ['nullable', 'string', 'max:50'],
             'notes' => ['nullable', 'string', 'max:1000'],
+            // Idioma de la tienda al comprar. No se rechaza uno desconocido (un idioma no
+            // vale perder una venta): OrderService lo descarta y queda el de respaldo.
+            'locale' => ['nullable', 'string', 'max:5'],
         ];
     }
 }

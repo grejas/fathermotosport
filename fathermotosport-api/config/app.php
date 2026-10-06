@@ -56,6 +56,11 @@ return [
 
     'frontend_url' => env('FRONTEND_URL', 'http://localhost:3000'),
 
+    // De dónde cargan los correos sus imágenes fijas (insignias de pago): por defecto
+    // el frontend, que las sirve desde public/email/. Sirve para apuntarlas a un CDN
+    // o, en una vista previa local, a la carpeta public/ sin levantar el sitio.
+    'email_assets_url' => env('EMAIL_ASSETS_URL'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

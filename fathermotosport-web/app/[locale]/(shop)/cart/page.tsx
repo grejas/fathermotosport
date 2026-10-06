@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/lib/i18n/navigation";
 import Image from "next/image";
@@ -9,6 +9,7 @@ import { useCartStore } from "@/store/cartStore";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
+import { CartNotice } from "@/components/cart/CartNotice";
 import { formatPrice, getImageUrl } from "@/lib/utils";
 import { useMounted } from "@/lib/hooks/useMounted";
 import { validateCoupon } from "@/lib/api/coupons";
@@ -52,6 +53,10 @@ export default function CartPage() {
   if (!items.length) {
     return (
       <div className="flex min-h-[70vh] flex-col items-center justify-center gap-4 px-4 pt-20 text-center">
+        {/* Suspense: CartNotice lee ?aviso= con useSearchParams. */}
+        <Suspense fallback={null}>
+          <CartNotice />
+        </Suspense>
         <ShoppingBag size={56} className="text-brand-muted opacity-40" />
         <h1 className="text-2xl font-bold text-brand-white">{t("empty_title")}</h1>
         <Link href="/catalog">
@@ -65,6 +70,9 @@ export default function CartPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-24 sm:px-6">
+      <Suspense fallback={null}>
+        <CartNotice />
+      </Suspense>
       <h1 className="mb-8 text-3xl font-extrabold text-brand-white">{t("my_cart")}</h1>
 
       <div className="grid gap-8 lg:grid-cols-[1fr_340px]">

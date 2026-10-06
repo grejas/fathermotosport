@@ -21,3 +21,11 @@ Schedule::command('flash-promos:generate-next-occurrences')
 Schedule::command('orders:cancel-abandoned --apply --minutes=30')
     ->everyTenMinutes()
     ->withoutOverlapping();
+
+// Único aviso a quien no completó el pago ("no pudimos recibir tu pago"). Cada minuto
+// porque las ventanas son cortas: 5 min de espera y 30 hasta que el pedido se cancela.
+// withoutOverlapping evita dos ejecuciones a la vez si una consulta a la pasarela tarda;
+// de todos modos el comando marca el envío con el pedido bloqueado.
+Schedule::command('payments:recover-pending')
+    ->everyMinute()
+    ->withoutOverlapping();

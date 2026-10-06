@@ -230,6 +230,9 @@ class UpsellService
                     // ningún dato de nuevo, ni duplicar la fila de addresses.
                     'address_id' => $original->address_id,
                     'guest_email' => $original->guest_email,
+                    // Los avisos de la venta cruzada van al mismo email que los del
+                    // pedido original.
+                    'notification_email' => $original->notification_email,
                     'email_verificado_por' => $original->email_verificado_por,
                     'country' => $original->country,
                     'status' => 'pending',

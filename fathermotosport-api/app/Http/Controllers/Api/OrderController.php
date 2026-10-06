@@ -52,7 +52,8 @@ class OrderController extends Controller
      * opción de envío elegida según el país). El nombre, el email y la dirección
      * llegan después, cuando el cliente vuelve de aprobar el pago en PayPal.
      *
-     * No envía ningún correo: todavía no hay a quién escribirle ni pago confirmado.
+     * No envía ningún correo al crearse: todavía no hay pago confirmado. El email que
+     * escribe el cliente queda en notification_email para los avisos del pedido.
      */
     public function storeExpress(StoreExpressOrderRequest $request): JsonResponse
     {
@@ -63,6 +64,10 @@ class OrderController extends Controller
             'payment_method' => 'paypal',
             'shipping_option_id' => $datos['shipping_option_id'],
             'shipping_country_code' => $datos['shipping_country_code'],
+            'locale' => $datos['locale'] ?? null,
+            // El que escribió el cliente: para avisarle. El de PayPal llega al volver
+            // y va a guest_email, verificado (ver completarPedidoConDatosDePaypal).
+            'notification_email' => $datos['email'],
             'address' => [
                 // Marcadores: se sobrescriben con los datos que devuelve PayPal.
                 'full_name' => Order::DATO_PENDIENTE,

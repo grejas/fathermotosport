@@ -20,6 +20,8 @@ export interface CreateOrderPayload {
   shipping_country_code?: string;
   coupon_code?: string;
   notes?: string;
+  /** Idioma de la tienda al comprar: el backend lo usa para escribirle al cliente. */
+  locale?: string;
 }
 
 /** PayPal Express: pedido creado desde el carrito, sin formulario previo. */
@@ -27,6 +29,9 @@ export interface CreateExpressOrderPayload {
   items: { variant_id: string; quantity: number }[];
   shipping_country_code: string;
   shipping_option_id: number;
+  /** Adónde avisarle del pedido. PayPal informa su propio email aparte, al pagar. */
+  email: string;
+  locale?: string;
 }
 
 export async function createExpressOrder(

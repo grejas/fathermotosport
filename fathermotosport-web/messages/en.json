@@ -135,7 +135,8 @@
     "no_photo": "No photo",
     "decrease": "Decrease",
     "increase": "Increase",
-    "view_full_cart": "View full cart"
+    "view_full_cart": "View full cart",
+    "order_cancelled_notice": "That order can no longer be paid because it was cancelled. You can rebuild your purchase from the catalog; if you need help, write to us at contacto@fathermotosport.com."
   },
   "checkout": {
     "shipping_address": "Shipping address",
@@ -192,7 +193,11 @@
     "stripe_error": "We could not process the card payment. Check the details or try another card.",
     "stripe_not_completed": "The payment ended in the status \"{status}\". Your order is still awaiting payment.",
     "email_from_account": "This is your account email.",
-    "express_subtitle": "No forms: we take your address from PayPal.",
+    "express_subtitle": "Just your email: we take your address from PayPal.",
+    "express_email_title": "Where should we notify you?",
+    "express_email_label": "Email",
+    "express_email_hint": "We'll use this email to keep you updated about your order",
+    "express_email_invalid": "Enter a valid email to continue.",
     "express_country_question": "Where are we shipping to?",
     "express_address_note": "You will choose your shipping address inside PayPal.",
     "account_have_account": "Already have an account?",
@@ -204,6 +209,23 @@
     "account_created": "Account created! You can now see your orders.",
     "account_error": "We could not create the account.",
     "account_skip": "Not now, see my order"
+  },
+  "pay_pending": {
+    "title": "Complete your order payment",
+    "order_number": "Order {number}",
+    "text": "Your order is still waiting for payment. You can pay with PayPal or with a credit or debit card: you have more than one option.",
+    "product": "Product",
+    "discount": "Discount",
+    "shipping": "Shipping",
+    "free": "Free",
+    "total": "Total",
+    "pay_card": "Pay with credit or debit card",
+    "payment_error": "We couldn't start the payment. Please try again in a few seconds.",
+    "not_found_title": "We couldn't open this order",
+    "not_found_text": "The link is invalid or incomplete. If you need help, write to us at {email}.",
+    "paid_title": "This order is already paid",
+    "paid_text": "We received the payment for order {number}. There's nothing else you need to do: we'll email you when it ships.",
+    "contact": "Questions? Write to us at <email></email>."
   },
   "auth": {
     "login": "Sign in",

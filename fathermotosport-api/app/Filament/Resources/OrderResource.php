@@ -101,12 +101,18 @@ class OrderResource extends Resource
                     Forms\Components\Placeholder::make('cliente')
                         ->label('Cliente')
                         ->content(fn (?Order $record) => $record
-                            ? ($record->user?->full_name ?? $record->guest_email ?? 'Invitado')
+                            ? ($record->user?->full_name ?? $record->notification_email ?? $record->guest_email ?? 'Invitado')
                             : '—'),
                     Forms\Components\Placeholder::make('contacto')
                         ->label('Contacto')
+                        // El email al que se le avisa (el que escribió en la tienda, si lo
+                        // hay) y, si PayPal informó otro, ese también: es el verificado,
+                        // el que se usa para vincular pedidos y crear la cuenta.
                         ->content(fn (?Order $record) => $record
-                            ? ($record->user?->email ?? $record->guest_email ?? '—')
+                            ? collect([
+                                $record->emailDelCliente() ?? '—',
+                                ($paypal = static::emailDePaypalDistinto($record)) ? "PayPal (verificado): {$paypal}" : null,
+                            ])->filter()->implode(' · ')
                             : '—'),
                     Forms\Components\Placeholder::make('direccion')
                         ->label('Dirección de entrega')
@@ -183,8 +189,11 @@ class OrderResource extends Resource
                     ->tooltip(fn (?string $state) => $state),
                 Tables\Columns\TextColumn::make('customer_name')
                     ->label('Cliente')
-                    ->getStateUsing(fn (Order $r) => $r->user?->full_name ?? $r->guest_email ?? 'Invitado')
-                    ->searchable(query: fn ($query, $search) => $query->where('guest_email', 'like', "%{$search}%")),
+                    ->getStateUsing(fn (Order $r) => $r->user?->full_name ?? $r->notification_email ?? $r->guest_email ?? 'Invitado')
+                    // Encuentra el pedido por el email escrito en la tienda o por el de PayPal.
+                    ->searchable(query: fn ($query, $search) => $query->where(fn ($q) => $q
+                        ->where('guest_email', 'like', "%{$search}%")
+                        ->orWhere('notification_email', 'like', "%{$search}%"))),
                 Tables\Columns\TextColumn::make('total')->label('Total')->money('USD')->sortable(),
                 Tables\Columns\TextColumn::make('payment_status')
                     ->label('Pago')
@@ -309,10 +318,23 @@ class OrderResource extends Resource
                 ->orderBy('created_at', 'desc'));
     }
 
+    /**
+     * Email que informó PayPal, solo si es distinto del que el cliente escribió en la
+     * tienda (si son el mismo, mostrarlo dos veces es ruido).
+     */
+    public static function emailDePaypalDistinto(Order $order): ?string
+    {
+        if ($order->email_verificado_por !== 'paypal' || blank($order->guest_email)) {
+            return null;
+        }
+
+        return strcasecmp($order->guest_email, (string) $order->emailDelCliente()) === 0 ? null : $order->guest_email;
+    }
+
     /** Genera y descarga un CSV con los pedidos seleccionados. */
     protected static function exportCsv($records)
     {
-        $headers = ['N° pedido', 'Cliente', 'Email', 'Total', 'Pago', 'Envío', 'País', 'Fecha'];
+        $headers = ['N° pedido', 'Cliente', 'Email', 'Email PayPal (verificado)', 'Total', 'Pago', 'Envío', 'País', 'Fecha'];
 
         $callback = function () use ($records, $headers) {
             $out = fopen('php://output', 'w');
@@ -321,7 +343,8 @@ class OrderResource extends Resource
                 fputcsv($out, [
                     $r->order_number,
                     $r->user?->full_name ?? 'Invitado',
-                    $r->user?->email ?? $r->guest_email,
+                    $r->emailDelCliente(),
+                    static::emailDePaypalDistinto($r),
                     $r->total,
                     $r->payment_status,
                     $r->shipping_status,

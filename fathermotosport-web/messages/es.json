@@ -135,7 +135,8 @@
     "no_photo": "Sin foto",
     "decrease": "Reducir",
     "increase": "Aumentar",
-    "view_full_cart": "Ver carrito completo"
+    "view_full_cart": "Ver carrito completo",
+    "order_cancelled_notice": "Ese pedido ya no se puede pagar porque fue cancelado. Puedes volver a armar tu compra desde el catálogo; si necesitas ayuda, escríbenos a contacto@fathermotosport.com."
   },
   "checkout": {
     "shipping_address": "Dirección de envío",
@@ -192,7 +193,11 @@
     "stripe_error": "No se pudo procesar el pago con tarjeta. Revisá los datos o probá otra tarjeta.",
     "stripe_not_completed": "El pago quedó en estado \"{status}\". Tu pedido sigue pendiente de pago.",
     "email_from_account": "Este es el email de tu cuenta.",
-    "express_subtitle": "Sin llenar formularios: tu dirección la tomamos de PayPal.",
+    "express_subtitle": "Solo tu correo: la dirección la tomamos de PayPal.",
+    "express_email_title": "¿Dónde te avisamos?",
+    "express_email_label": "Correo electrónico",
+    "express_email_hint": "Usaremos este correo para avisarte de tu pedido",
+    "express_email_invalid": "Ingresa un correo válido para continuar.",
     "express_country_question": "¿A qué país enviamos?",
     "express_address_note": "Vas a elegir tu dirección de envío dentro de PayPal.",
     "account_have_account": "¿Ya tenés cuenta?",
@@ -204,6 +209,23 @@
     "account_created": "¡Cuenta creada! Ya podés ver tus pedidos.",
     "account_error": "No pudimos crear la cuenta.",
     "account_skip": "Ahora no, ver mi pedido"
+  },
+  "pay_pending": {
+    "title": "Completa el pago de tu pedido",
+    "order_number": "Pedido {number}",
+    "text": "Tu pedido sigue pendiente de pago. Puedes pagarlo con PayPal o con tarjeta de crédito o débito: tienes más de una opción.",
+    "product": "Producto",
+    "discount": "Descuento",
+    "shipping": "Envío",
+    "free": "Gratis",
+    "total": "Total",
+    "pay_card": "Pagar con tarjeta de crédito o débito",
+    "payment_error": "No pudimos iniciar el pago. Inténtalo de nuevo en unos segundos.",
+    "not_found_title": "No pudimos abrir este pedido",
+    "not_found_text": "El enlace no es válido o está incompleto. Si necesitas ayuda, escríbenos a {email}.",
+    "paid_title": "Este pedido ya está pagado",
+    "paid_text": "Recibimos el pago del pedido {number}. No tienes que hacer nada más: te avisaremos por correo cuando lo despachemos.",
+    "contact": "¿Tienes dudas? Escríbenos a <email></email>."
   },
   "auth": {
     "login": "Ingresar",

@@ -124,7 +124,7 @@ class PaymentController extends Controller
         }
 
         try {
-            $result = $this->paypal->captureOrder($paypalOrderId);
+            $result = $this->capturarOReleer($paypalOrderId);
         } catch (RequestException $e) {
             // Ej. el cliente volvió sin aprobar el pago (ORDER_NOT_APPROVED).
             Log::warning('PayPal rechazó la captura.', [
@@ -134,8 +134,17 @@ class PaymentController extends Controller
                 'body' => $e->response->json(),
             ]);
 
+            $motivo = data_get($e->response->json(), 'details.0.issue', 'CAPTURE_FAILED');
+
+            // Volver sin aprobar no es un pago fallido: el cliente no llegó a pagar, y
+            // eso lo cubre el aviso por abandono. Cualquier otro rechazo (fondos, tarjeta
+            // de la cuenta PayPal declinada...) sí lo es.
+            if ($motivo !== 'ORDER_NOT_APPROVED') {
+                $this->registrarPagoFallido($order, 'paypal', $motivo);
+            }
+
             return response()->json([
-                'status' => data_get($e->response->json(), 'details.0.issue', 'CAPTURE_FAILED'),
+                'status' => $motivo,
                 'message' => 'PayPal no pudo confirmar el pago. Tu pedido quedó pendiente.',
                 // Para que la pantalla de error muestre "FMS-0001" y no el UUID.
                 'order_number' => $order->order_number,
@@ -144,42 +153,98 @@ class PaymentController extends Controller
 
         $status = $result['status'] ?? null;
 
-        if ($status === 'COMPLETED') {
-            if (! $this->montoCoincide($result, $order)) {
-                Log::error('Captura de PayPal con monto distinto al del pedido.', [
-                    'order' => $order->id,
-                    'esperado' => $order->total,
-                    'paypal' => $result,
-                ]);
-
-                return response()->json([
-                    'status' => $status,
-                    'message' => 'El monto cobrado no coincide con el del pedido. Contactanos por WhatsApp.',
-                    'order_number' => $order->order_number,
-                ], 409);
-            }
-
-            // Express: los datos del comprador llegan recién ahora. Se completan ANTES
-            // de markPaid(), porque si no el pedido no tendría email al que enviar
-            // la confirmación y el envío se saltaría en silencio.
-            if ($order->esperaDatosDePaypal()) {
-                $this->completarPedidoConDatosDePaypal($order, $result);
-                $payment->setRelation('order', $order->fresh('address'));
-            }
-
-            $this->markPaid($payment, $result);
-        } else {
-            // PayPal respondió 200 pero sin COMPLETED (ej. PENDING o DECLINED):
-            // hasta ahora este caso tampoco quedaba en el log.
-            Log::warning('Captura de PayPal sin estado COMPLETED.', [
-                'pedido' => $order->order_number,
-                'paypal_order' => $paypalOrderId,
-                'estado' => $status,
-                'respuesta' => json_encode($result),
-            ]);
+        if (! $this->aplicarCapturaPaypal($payment, $result)) {
+            return response()->json([
+                'status' => $status,
+                'message' => 'El monto cobrado no coincide con el del pedido. Contactanos por WhatsApp.',
+                'order_number' => $order->order_number,
+            ], 409);
         }
 
         return $this->estadoDelPago($status, $order->fresh('address'));
+    }
+
+    /**
+     * Captura la orden de PayPal. Si ya estaba capturada (el webhook de aprobación se
+     * adelantó al retorno del cliente, o al revés), la relee en vez de fallar: la
+     * respuesta de la consulta trae las mismas capturas, montos y datos del comprador.
+     *
+     * @return array<string, mixed>
+     *
+     * @throws RequestException si PayPal rechaza la captura por cualquier otro motivo
+     */
+    private function capturarOReleer(string $paypalOrderId): array
+    {
+        try {
+            return $this->paypal->captureOrder($paypalOrderId);
+        } catch (RequestException $e) {
+            if (data_get($e->response->json(), 'details.0.issue') !== 'ORDER_ALREADY_CAPTURED') {
+                throw $e;
+            }
+
+            return $this->paypal->getOrder($paypalOrderId);
+        }
+    }
+
+    /**
+     * Aplica una captura de PayPal, venga del retorno del cliente o del webhook de
+     * aprobación: mismas validaciones en los dos caminos. Devuelve false solo si se
+     * cobró un monto o una moneda que no son los del pedido.
+     *
+     * @param  array<string, mixed>  $result
+     */
+    private function aplicarCapturaPaypal(Payment $payment, array $result): bool
+    {
+        $order = $payment->order;
+        $status = $result['status'] ?? null;
+
+        if ($status !== 'COMPLETED') {
+            // PayPal respondió 200 pero sin COMPLETED (ej. PENDING o DECLINED).
+            Log::warning('Captura de PayPal sin estado COMPLETED.', [
+                'pedido' => $order->order_number,
+                'paypal_order' => $payment->transaction_id,
+                'estado' => $status,
+                'respuesta' => json_encode($result),
+            ]);
+
+            // PENDING no es un fallo: PayPal todavía lo está procesando.
+            if (in_array($status, ['DECLINED', 'FAILED', 'VOIDED'], true)) {
+                $this->registrarPagoFallido($order, 'paypal', (string) $status);
+            }
+
+            return true;
+        }
+
+        if (! $this->montoCoincide($result, $order)) {
+            Log::error('Captura de PayPal con monto o moneda distintos a los del pedido.', [
+                'order' => $order->id,
+                'esperado' => $order->total,
+                'paypal' => $result,
+            ]);
+
+            // El dinero entró pero no es lo acordado: no se marca pagado y lo resuelve
+            // una persona. La marca además lo saca del cron de abandonos y del aviso de
+            // recuperación, que si no le dirían al cliente que no recibimos su pago.
+            $this->marcarParaAtencion($order, sprintf(
+                'PayPal cobró un monto o moneda distintos de los del pedido (%s %s). Revisar antes de enviar.',
+                number_format((float) $order->total, 2),
+                config('services.paypal.currency', 'USD')
+            ));
+
+            return false;
+        }
+
+        // Express: los datos del comprador llegan recién ahora. Se completan dentro de
+        // markPaid, con el pedido bloqueado y antes de marcarlo pagado: así la
+        // confirmación tiene email, y si el retorno y el webhook llegan juntos los datos
+        // se completan una sola vez.
+        $this->markPaid($payment, $result, function (Order $bloqueado) use ($result) {
+            if ($bloqueado->esperaDatosDePaypal()) {
+                $this->completarPedidoConDatosDePaypal($bloqueado, $result);
+            }
+        });
+
+        return true;
     }
 
     /**
@@ -215,12 +280,24 @@ class PaymentController extends Controller
 
         $cambios = [];
 
-        // Sin cuenta en el sitio: el email de PayPal es el único contacto del pedido.
-        // Se deja constancia de que lo informó PayPal (y no alguien escribiéndolo en
-        // un formulario): es lo que habilita vincular otros pedidos con ese email.
+        // Sin cuenta en el sitio: el email de PayPal queda como el email verificado del
+        // pedido. Se deja constancia de que lo informó PayPal (y no alguien
+        // escribiéndolo en un formulario): es lo que habilita vincular otros pedidos y
+        // crear la cuenta con ese email. El que escribió el cliente en la tienda sigue
+        // en notification_email, intacto: los avisos van a ese.
         if ($email && ! $order->user_id && ! $order->guest_email) {
             $cambios['guest_email'] = $email;
             $cambios['email_verificado_por'] = 'paypal';
+        }
+
+        $escrito = $order->notification_email;
+
+        if ($email && $escrito && strcasecmp(trim($email), trim($escrito)) !== 0) {
+            $cambios['notes'] = trim((string) $order->notes."\n".sprintf(
+                'Email de PayPal (%s) distinto del escrito en la tienda (%s). Los avisos van al escrito.',
+                $email,
+                $escrito
+            ));
         }
 
         // El país del envío cobrado vs. el que PayPal informó.
@@ -360,7 +437,14 @@ class PaymentController extends Controller
         $capturas = data_get($result, 'purchase_units.*.payments.captures.*.amount.value');
         $cobrado = array_sum(array_map('floatval', $capturas ?: []));
 
-        return abs($cobrado - (float) $order->total) < 0.01;
+        // Todas las capturas en la moneda con la que se creó la orden: 304.90 BRL no
+        // son 304.90 USD aunque el número coincida.
+        $monedas = array_values(array_unique(array_filter(
+            (array) data_get($result, 'purchase_units.*.payments.captures.*.amount.currency_code')
+        )));
+        $monedaOk = $monedas === [] || $monedas === [config('services.paypal.currency', 'USD')];
+
+        return $monedaOk && abs($cobrado - (float) $order->total) < 0.01;
     }
 
     // ───────────────────────── Stripe ─────────────────────────
@@ -545,9 +629,28 @@ class PaymentController extends Controller
 
         $event = $request->input('event_type');
 
-        // Solo la captura confirma el cobro. CHECKOUT.ORDER.APPROVED significa que el
-        // comprador aprobó, pero el dinero todavía no se movió: si se marcara pagado ahí,
-        // un pedido podría quedar como pagado sin haber cobrado nada.
+        // Captura rechazada: solo se anota el fallo, para adelantar el aviso de
+        // recuperación. No se cancela ni se toca el estado de pago.
+        if ($event === 'PAYMENT.CAPTURE.DENIED') {
+            $reference = $request->input('resource.supplementary_data.related_ids.order_id')
+                ?? $request->input('resource.id');
+            $order = Payment::with('order')->where('provider', 'paypal')->where('transaction_id', $reference)->first()?->order;
+
+            if ($order) {
+                $this->registrarPagoFallido($order, 'paypal', 'PAYMENT.CAPTURE.DENIED');
+            }
+
+            return response()->json(['received' => true, 'handled' => (bool) $order]);
+        }
+
+        // El comprador aprobó en PayPal. El dinero todavía no se movió, así que esto NO
+        // marca pagado: captura la orden desde el servidor, con las mismas validaciones
+        // que el retorno, y solo una captura COMPLETED marca el pedido.
+        if ($event === 'CHECKOUT.ORDER.APPROVED') {
+            return $this->capturarAprobadaDesdeWebhook((string) $request->input('resource.id'));
+        }
+
+        // Solo la captura confirma el cobro.
         if ($event !== 'PAYMENT.CAPTURE.COMPLETED') {
             return response()->json(['received' => true, 'handled' => false]);
         }
@@ -570,6 +673,56 @@ class PaymentController extends Controller
         return response()->json(['received' => true, 'handled' => true]);
     }
 
+    /**
+     * Captura una orden que el cliente aprobó en PayPal. Normalmente la captura el
+     * retorno al sitio (paypalCapture); pero si el cliente cerró la pestaña después de
+     * aprobar, nadie la capturaba y el pedido quedaba sin cobrar ni completar.
+     *
+     * Seguro frente al retorno simultáneo: PayPal captura una orden una sola vez (el
+     * segundo intento recibe ORDER_ALREADY_CAPTURED y la relee) y markPaid procesa el
+     * pedido una sola vez, bloqueado. Un 2xx sin capturar no hace que PayPal reintente:
+     * el retorno del cliente, si llega, lo vuelve a intentar.
+     */
+    private function capturarAprobadaDesdeWebhook(string $paypalOrderId): JsonResponse
+    {
+        $payment = Payment::with('order')
+            ->where('provider', 'paypal')
+            ->where('transaction_id', $paypalOrderId)
+            ->first();
+
+        if (! $payment?->order) {
+            Log::warning('Webhook de aprobación de PayPal sin pago asociado.', ['paypal_order' => $paypalOrderId]);
+
+            return response()->json(['received' => true, 'handled' => false]);
+        }
+
+        if ($payment->order->payment_status === 'paid') {
+            return response()->json(['received' => true, 'handled' => true]);
+        }
+
+        try {
+            $result = $this->capturarOReleer($paypalOrderId);
+        } catch (RequestException $e) {
+            $motivo = data_get($e->response->json(), 'details.0.issue', 'CAPTURE_FAILED');
+
+            Log::warning('Webhook de aprobación de PayPal: la captura falló.', [
+                'pedido' => $payment->order->order_number,
+                'paypal_order' => $paypalOrderId,
+                'motivo' => $motivo,
+            ]);
+
+            if ($motivo !== 'ORDER_NOT_APPROVED') {
+                $this->registrarPagoFallido($payment->order, 'paypal', $motivo);
+            }
+
+            return response()->json(['received' => true, 'handled' => false]);
+        }
+
+        $aplicado = $this->aplicarCapturaPaypal($payment, $result);
+
+        return response()->json(['received' => true, 'handled' => $aplicado && ($result['status'] ?? null) === 'COMPLETED']);
+    }
+
     public function stripeWebhook(Request $request): JsonResponse
     {
         $payload = $request->getContent();
@@ -583,8 +736,29 @@ class PaymentController extends Controller
 
         $event = $request->input('type');
 
-        // Único evento con efecto. El resto sale por el 'received' de abajo: contestar 2xx
-        // evita que Stripe reintente algo que de todos modos no vamos a procesar.
+        // Cobro rechazado (fondos insuficientes, tarjeta declinada...): solo se anota el
+        // fallo, para adelantar el aviso de recuperación. El cliente puede reintentar con
+        // el mismo intent, así que ni se cancela el pedido ni se toca su estado de pago.
+        if ($event === 'payment_intent.payment_failed') {
+            $intentId = $request->input('data.object.id');
+            $order = Payment::with('order')->where('provider', 'stripe')->where('transaction_id', $intentId)->first()?->order;
+
+            if ($order) {
+                $this->registrarPagoFallido(
+                    $order,
+                    'stripe',
+                    (string) $request->input('data.object.last_payment_error.code', 'payment_failed')
+                );
+            } else {
+                Log::warning('Webhook Stripe de pago fallido sobre un pago que no existe.', ['intent' => $intentId]);
+            }
+
+            return response()->json(['received' => true]);
+        }
+
+        // payment_intent.succeeded es el otro evento con efecto. El resto sale por el
+        // 'received' de abajo: contestar 2xx evita que Stripe reintente algo que de
+        // todos modos no vamos a procesar.
         if ($event !== 'payment_intent.succeeded') {
             return response()->json(['received' => true]);
         }
@@ -679,51 +853,96 @@ class PaymentController extends Controller
         );
     }
 
-    private function markPaid(Payment $payment, array $gatewayResponse): void
+    /**
+     * Anota que la pasarela rechazó un cobro. Solo sirve para que el aviso de
+     * recuperación salga a los pocos minutos del rechazo (ver RecuperarPagosPendientes):
+     * no marca nada como pagado ni cancela. Si el pedido ya no está pendiente, no se
+     * anota: un rechazo viejo que llega tarde no debe pisar un pago que sí entró.
+     */
+    private function registrarPagoFallido(Order $order, string $pasarela, string $motivo): void
     {
-        $payment->update([
-            'status' => 'approved',
-            'gateway_response' => $gatewayResponse,
-            'paid_at' => now(),
-        ]);
+        if ($order->payment_status !== 'pending') {
+            return;
+        }
 
-        $order = $payment->order;
+        // Cada rechazo reinicia la espera: si reintenta y vuelve a fallar, se le da el
+        // mismo margen desde el último intento.
+        $order->forceFill(['payment_failed_at' => now()])->save();
+
+        Log::info('Pago rechazado por la pasarela.', [
+            'pedido' => $order->order_number,
+            'pasarela' => $pasarela,
+            'motivo' => $motivo,
+        ]);
+    }
+
+    /**
+     * Marca el pago aprobado y el pedido pagado, descuenta el stock y avisa al cliente.
+     *
+     * Todo con el pedido bloqueado: el retorno del cliente y un webhook pueden llegar a
+     * la vez, y sin el bloqueo los dos verían "pendiente" y descontarían el stock (y
+     * mandarían la confirmación) dos veces. El segundo encuentra el pedido pagado y no
+     * hace nada más.
+     *
+     * @param  (callable(Order): void)|null  $antesDeMarcar  Corre con el pedido bloqueado
+     *                                                       y solo si todavía no estaba pagado.
+     */
+    private function markPaid(Payment $payment, array $gatewayResponse, ?callable $antesDeMarcar = null): void
+    {
+        $order = DB::transaction(function () use ($payment, $gatewayResponse, $antesDeMarcar) {
+            $payment->update([
+                'status' => 'approved',
+                'gateway_response' => $gatewayResponse,
+                'paid_at' => now(),
+            ]);
+
+            $order = Order::with('address')->whereKey($payment->order_id)->lockForUpdate()->first();
+
+            // Ya pagado (lo procesó el otro camino): ni stock ni email de nuevo.
+            if (! $order || $order->payment_status === 'paid') {
+                return null;
+            }
+
+            if ($antesDeMarcar) {
+                $antesDeMarcar($order);
+                $order->refresh();
+            }
+
+            // El link de aprobación de PayPal vive más que la ventana del cron de
+            // abandonos, así que un pedido ya cancelado puede pagarse después. El pago
+            // manda (el dinero entró), pero el admin tiene que saber que revivió algo
+            // que había dado por muerto.
+            $revivido = $order->status === 'cancelled';
+
+            $order->update([
+                'payment_status' => 'paid',
+                'status' => 'processing',
+            ]);
+
+            if ($revivido) {
+                $this->marcarParaAtencion($order, 'Pedido cancelado por falta de pago y luego pagado. Confirmar que sigue vigente.');
+            }
+
+            // El stock se descuenta acá, con el pago confirmado, no al crear el pedido.
+            $this->descontarStock($order);
+
+            return $order;
+        });
+
         if (! $order) {
             return;
         }
 
-        // Evitar reenviar el email (y volver a descontar stock) si ya estaba pagado:
-        // el webhook y el retorno del cliente pueden llegar los dos.
-        $yaPagado = $order->payment_status === 'paid';
+        // Fuera de la transacción: un SMTP lento no debe tener el pedido bloqueado.
+        // Va al email que el cliente escribió en la tienda, si lo hay (ver emailDelCliente).
+        $order = $order->fresh(['items.variant.product', 'address', 'user']);
+        $email = $order->emailDelCliente();
 
-        // El link de aprobación de PayPal vive más que la ventana del cron de abandonos,
-        // así que un pedido ya cancelado puede pagarse después. El pago manda (el dinero
-        // entró), pero el admin tiene que saber que revivió algo que había dado por muerto.
-        $revivido = ! $yaPagado && $order->status === 'cancelled';
-
-        $order->update([
-            'payment_status' => 'paid',
-            'status' => 'processing',
-        ]);
-
-        if ($revivido) {
-            $this->marcarParaAtencion($order, 'Pedido cancelado por falta de pago y luego pagado. Confirmar que sigue vigente.');
-        }
-
-        // El stock se descuenta acá, con el pago confirmado, no al crear el pedido.
-        if (! $yaPagado) {
-            $this->descontarStock($order);
-        }
-
-        // Email de confirmación a todos los compradores (guest o registrados).
-        if (! $yaPagado) {
-            $email = $order->guest_email ?: optional($order->user)->email;
-            if ($email) {
-                try {
-                    Mail::to($email)->send(new OrderConfirmedMail($order->fresh(['items.variant.product', 'address', 'user'])));
-                } catch (\Throwable $e) {
-                    Log::error('Error enviando confirmación de pedido', ['order' => $order->id, 'error' => $e->getMessage()]);
-                }
+        if ($email) {
+            try {
+                Mail::to($email)->send(new OrderConfirmedMail($order));
+            } catch (\Throwable $e) {
+                Log::error('Error enviando confirmación de pedido', ['order' => $order->id, 'error' => $e->getMessage()]);
             }
         }
     }

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/lib/i18n/navigation";
-import { ShieldCheck, Tag, Truck } from "lucide-react";
+import { Mail, ShieldCheck, Tag, Truck } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { PaymentMethods } from "./PaymentMethods";
@@ -22,7 +22,7 @@ import {
   shippingCountryName,
 } from "@/lib/data/shippingCountries";
 import { ENABLED_PAYMENT_METHODS } from "@/lib/data/paymentMethods";
-import { validateCheckout, hasErrors, type FieldErrors } from "@/lib/validators";
+import { validateCheckout, hasErrors, isEmail, type FieldErrors } from "@/lib/validators";
 import { cn, formatPrice } from "@/lib/utils";
 import type { Order, PaymentMethod, ShippingQuote } from "@/lib/types";
 import toast from "react-hot-toast";
@@ -181,11 +181,18 @@ export function CheckoutForm() {
   };
 
   /**
-   * PayPal Express: el pedido se crea solo con los items y el envío elegido.
-   * El nombre, el email y la dirección los aporta PayPal y el backend los guarda
-   * al capturar el pago, así que acá no se pide ningún dato más.
+   * PayPal Express: el pedido se crea con los items, el envío elegido y el email al que
+   * avisarle. El nombre y la dirección los aporta PayPal al capturar el pago, igual que
+   * su propio email, que el backend guarda aparte como verificado sin pisar este.
    */
   const pagarConPaypal = async () => {
+    if (!isEmail(form.email)) {
+      setErrors((previos) => ({ ...previos, email: t("express_email_invalid") }));
+      toast.error(t("express_email_invalid"));
+      document.querySelector<HTMLElement>('[name="express_email"]')?.focus();
+      return;
+    }
+
     if (!selectedOption) {
       toast.error(t("shipping_unavailable", { country: countryLabel }));
       return;
@@ -197,6 +204,8 @@ export function CheckoutForm() {
         items: items.map((i) => ({ variant_id: i.variantId, quantity: i.quantity })),
         shipping_country_code: form.country,
         shipping_option_id: selectedOption.id,
+        email: form.email.trim(),
+        locale,
       });
 
       const paypal = await createPaypalOrder(order.id, order.access_token ?? undefined);
@@ -303,8 +312,9 @@ export function CheckoutForm() {
       const recalculado = validateCheckout({
         first_name: nuevos.first_name,
         last_name: nuevos.last_name,
-        // Con sesión iniciada el email sale de la cuenta y no se valida.
-        email: isAuth ? undefined : nuevos.email,
+        // Con sesión iniciada el email sale de la cuenta y no se valida; salvo en
+        // PayPal Express, donde el cliente lo puede cambiar.
+        email: isAuth && !isPaypal ? undefined : nuevos.email,
         phone: nuevos.phone,
         country: nuevos.country,
         city: nuevos.city,
@@ -341,6 +351,7 @@ export function CheckoutForm() {
       shipping_option_id: selectedOption?.id,
       shipping_country_code: selectedOption ? form.country : undefined,
       coupon_code: coupon.trim() || undefined,
+      locale,
     });
 
   /** Pantalla de éxito, con el token para que un invitado pueda ver su pedido. */
@@ -401,7 +412,31 @@ export function CheckoutForm() {
           )}
         </section>
 
-        {/* Con PayPal no se piden datos del cliente: los aporta PayPal al pagar. */}
+        {/* Con PayPal, el único dato que se pide es adónde avisarle: nombre y dirección
+            los aporta PayPal al pagar. Con sesión iniciada viene el de la cuenta, y se
+            puede cambiar. */}
+        {isPaypal && (
+          <section>
+            <h3 className="mb-3 text-lg font-bold text-brand-white">{t("express_email_title")}</h3>
+            <div className="rounded-2xl border border-white/10 bg-brand-card p-4">
+              <Input
+                label={t("express_email_label")}
+                name="express_email"
+                type="email"
+                autoComplete="email"
+                inputMode="email"
+                required
+                leftIcon={<Mail size={16} />}
+                value={form.email}
+                onChange={(e) => actualizar("email", e.target.value)}
+                hint={t("express_email_hint")}
+                error={errors.email}
+              />
+            </div>
+          </section>
+        )}
+
+        {/* Con PayPal no se piden más datos del cliente: los aporta PayPal al pagar. */}
         {!isPaypal && (
         <section>
           <h3 className="mb-3 text-lg font-bold text-brand-white">{t("your_data")}</h3>

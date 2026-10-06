@@ -65,6 +65,13 @@ class PaypalWebhookTest extends TestCase
     {
         $order = $this->pedidoPendiente();
 
+        // La aprobación hace que el servidor intente capturar, pero solo una captura
+        // COMPLETED marca el pedido: con la captura todavía PENDING, sigue pendiente.
+        $this->mock(PaypalService::class, function ($mock) {
+            $mock->shouldReceive('verifyWebhook')->andReturn(true);
+            $mock->shouldReceive('captureOrder')->once()->andReturn(['id' => self::PAYPAL_ORDER_ID, 'status' => 'PENDING']);
+        });
+
         $this->postJson('/api/v1/webhooks/paypal', [
             'event_type' => 'CHECKOUT.ORDER.APPROVED',
             'resource' => ['id' => self::PAYPAL_ORDER_ID],
@@ -128,7 +135,7 @@ class PaypalWebhookTest extends TestCase
     {
         $order = $this->pedidoPendiente();
 
-        foreach (['PAYMENT.CAPTURE.DENIED', 'PAYMENT.CAPTURE.REFUNDED', 'CHECKOUT.ORDER.COMPLETED'] as $evento) {
+        foreach (['PAYMENT.CAPTURE.REFUNDED', 'CHECKOUT.ORDER.COMPLETED'] as $evento) {
             $this->postJson('/api/v1/webhooks/paypal', [
                 'event_type' => $evento,
                 'resource' => ['id' => self::PAYPAL_ORDER_ID],
@@ -138,6 +145,29 @@ class PaypalWebhookTest extends TestCase
         }
 
         $this->assertSame('pending', $order->fresh()->payment_status);
+        $this->assertNull($order->fresh()->payment_failed_at);
+    }
+
+    public function test_capture_denied_only_records_the_failure(): void
+    {
+        $order = $this->pedidoPendiente();
+
+        // El aviso de recuperación sale antes con un rechazo; nada más cambia.
+        $this->postJson('/api/v1/webhooks/paypal', [
+            'event_type' => 'PAYMENT.CAPTURE.DENIED',
+            'resource' => [
+                'id' => 'CAPTURA-1',
+                'supplementary_data' => ['related_ids' => ['order_id' => self::PAYPAL_ORDER_ID]],
+            ],
+        ])
+            ->assertOk()
+            ->assertJsonPath('handled', true);
+
+        $order->refresh();
+        $this->assertNotNull($order->payment_failed_at);
+        $this->assertSame('pending', $order->payment_status);
+        $this->assertSame('pending', $order->status);
+        $this->assertSame('pending', Payment::where('transaction_id', self::PAYPAL_ORDER_ID)->value('status'));
     }
 
     public function test_capture_for_an_unknown_payment_is_acknowledged_without_error(): void
