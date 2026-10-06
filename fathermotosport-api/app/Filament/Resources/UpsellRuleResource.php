@@ -6,6 +6,7 @@ use App\Filament\Resources\UpsellRuleResource\Pages;
 use App\Models\Product;
 use App\Models\UpsellRule;
 use App\Services\UpsellService;
+use Closure;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -39,6 +40,7 @@ class UpsellRuleResource extends Resource
                     Forms\Components\Select::make('trigger_product_id')
                         ->label('Si compra este producto')
                         ->options(fn () => self::opcionesDeProducto())
+                        ->optionsLimit(self::sinLimiteDeOpciones())
                         ->searchable()
                         ->preload()
                         ->required()
@@ -49,6 +51,7 @@ class UpsellRuleResource extends Resource
                     Forms\Components\Select::make('offer_product_id')
                         ->label('Ofrecerle este otro')
                         ->options(fn () => self::opcionesDeProducto())
+                        ->optionsLimit(self::sinLimiteDeOpciones())
                         ->searchable()
                         ->preload()
                         ->required()
@@ -147,6 +150,17 @@ class UpsellRuleResource extends Resource
             ->orderBy('name')
             ->pluck('name', 'id')
             ->all();
+    }
+
+    /**
+     * Para ->optionsLimit(): que el selector muestre todas sus opciones. Filament deja
+     * 50 por defecto, y lo que pasa de ahí no aparece en la lista y la búsqueda nunca
+     * devuelve más de 50: con un catálogo grande, parte de los productos no se podía
+     * elegir.
+     */
+    public static function sinLimiteDeOpciones(): Closure
+    {
+        return fn (Forms\Components\Select $component): int => max(50, count($component->getOptions()));
     }
 
     public static function getPages(): array

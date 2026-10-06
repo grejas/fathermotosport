@@ -7,9 +7,11 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\UpsellRule;
 use App\Models\User;
+use App\Services\UpsellService;
 use Database\Seeders\DatabaseSeeder;
 use Filament\Notifications\Notification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -249,32 +251,91 @@ class UpsellBulkCreateTest extends TestCase
         Notification::assertNotified('0 creadas, 2 actualizadas (ya existían)');
     }
 
-    public function test_more_than_100_rules_is_rejected_and_nothing_is_created(): void
+    /**
+     * Disparadores y ofertas distintos: el lote tiene exactamente $d × $o combinaciones.
+     *
+     * @return array{product_ids: array<int, string>, offer_product_ids: array<int, string>}
+     */
+    private function seleccion(int $disparadores, int $ofertas): array
     {
-        // 11 × 10 = 110 combinaciones.
-        $disparadores = Product::factory()->count(11)->create(['is_active' => true]);
-        $ofertas = Product::factory()->count(10)->create(['is_active' => true]);
-
-        $this->lote([
-            'product_ids' => $disparadores->pluck('id')->all(),
-            'offer_product_ids' => $ofertas->pluck('id')->all(),
-        ]);
-
-        $this->assertSame(0, UpsellRule::count());
-        Notification::assertNotified('No se creó ninguna regla');
+        return [
+            'product_ids' => Product::factory()->count($disparadores)->create(['is_active' => true])->pluck('id')->all(),
+            'offer_product_ids' => Product::factory()->count($ofertas)->create(['is_active' => true])->pluck('id')->all(),
+        ];
     }
 
-    public function test_exactly_100_rules_is_allowed(): void
+    /** Cuántas consultas hace $accion. */
+    private function consultas(callable $accion): int
     {
-        $disparadores = Product::factory()->count(10)->create(['is_active' => true]);
-        $ofertas = Product::factory()->count(10)->create(['is_active' => true]);
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $accion();
+        DB::disableQueryLog();
 
-        $this->lote([
-            'product_ids' => $disparadores->pluck('id')->all(),
-            'offer_product_ids' => $ofertas->pluck('id')->all(),
-        ])->assertHasNoActionErrors();
+        return count(DB::getQueryLog());
+    }
 
-        $this->assertSame(100, UpsellRule::count());
+    public function test_110_rules_now_fit_in_one_batch(): void
+    {
+        $this->lote($this->seleccion(11, 10))->assertHasNoActionErrors();
+
+        $this->assertSame(110, UpsellRule::count());
+        Notification::assertNotified('110 creadas');
+    }
+
+    public function test_more_than_1000_rules_is_rejected_and_nothing_is_created(): void
+    {
+        // 77 × 13 = 1001 combinaciones.
+        $this->lote($this->seleccion(77, 13));
+
+        $this->assertSame(0, UpsellRule::count());
+        Notification::assertNotified(
+            Notification::make()
+                ->title('No se creó ninguna regla')
+                ->body('Son 1001 reglas y el tope es 1000 por vez. Achicá la selección y repetí en otra tanda.')
+                ->danger()
+        );
+    }
+
+    public function test_exactly_1000_rules_is_allowed(): void
+    {
+        $this->lote($this->seleccion(40, 25))->assertHasNoActionErrors();
+
+        $this->assertSame(1000, UpsellRule::count());
+        $this->assertSame(1000, UpsellRule::where('discount_percent', 15)->where('priority', 5)->where('is_active', true)->count());
+        $this->assertNotNull(UpsellRule::first()->created_at);
+        Notification::assertNotified('1000 creadas');
+    }
+
+    public function test_creating_and_overwriting_do_not_run_one_query_per_rule(): void
+    {
+        $upsell = app(UpsellService::class);
+        $pares = fn (array $s) => $upsell->paresDelLote(collect($s['product_ids']), collect($s['offer_product_ids']));
+
+        $chico = $pares($this->seleccion(2, 2));
+        $grande = $pares($this->seleccion(40, 25));
+        $descuentos = fn ($p) => [$p->first()['offer'] => 40];
+
+        $crearChico = $this->consultas(fn () => $upsell->crearReglasEnLote($chico, 15, 5));
+        $crearGrande = $this->consultas(fn () => $upsell->crearReglasEnLote($grande, 15, 5));
+
+        // Las 1000 entran en 2 INSERT de 500: una consulta más que el lote de 4, no 996.
+        $this->assertSame(1000 + 4, UpsellRule::count());
+        $this->assertLessThanOrEqual($crearChico + 1, $crearGrande);
+
+        // Sobrescribir las 1000 ya existentes, con un descuento propio para una oferta:
+        // una actualización por descuento distinto (y por bloque de 500), no por regla.
+        $pisarChico = $this->consultas(fn () => $upsell->crearReglasEnLote($chico, 20, 5, true, $descuentos($chico)));
+        $pisarGrande = $this->consultas(fn () => $upsell->crearReglasEnLote($grande, 20, 5, true, $descuentos($grande)));
+
+        $this->assertLessThanOrEqual($pisarChico + 2, $pisarGrande);
+
+        // De las 1000: las 40 de la oferta con descuento propio, al 40%; las 960 restantes, al 20%.
+        $delLote = UpsellRule::whereIn('offer_product_id', $grande->pluck('offer')->unique());
+        $this->assertSame(40, (clone $delLote)->where('discount_percent', 40)->count());
+        $this->assertSame(960, (clone $delLote)->where('discount_percent', 20)->count());
+        // Prioridad y estado no se tocan al sobrescribir.
+        $this->assertSame(1000, (clone $delLote)->where('priority', 5)->where('is_active', true)->count());
     }
 
     public function test_without_valid_combinations_nothing_is_created(): void
@@ -317,13 +378,40 @@ class UpsellBulkCreateTest extends TestCase
 
     public function test_the_live_counter_warns_when_over_the_cap(): void
     {
-        $disparadores = Product::factory()->count(11)->create(['is_active' => true]);
-        $ofertas = Product::factory()->count(10)->create(['is_active' => true]);
+        $this->resumen($this->seleccion(77, 13))
+            ->assertSee('Serían 1001 reglas (77 disparadores × 13 ofertas): el tope es 1000 por vez.');
+    }
 
-        $this->resumen([
-            'product_ids' => $disparadores->pluck('id')->all(),
-            'offer_product_ids' => $ofertas->pluck('id')->all(),
-        ])->assertSee('Serían 110 reglas (11 disparadores × 10 ofertas): el tope es 100 por vez.');
+    public function test_the_live_counter_handles_1000_rules_without_one_query_per_rule(): void
+    {
+        $chico = $this->seleccion(2, 2);
+        $grande = $this->seleccion(40, 25);
+
+        // Toda la selección en una sola actualización, como la manda el multiselect del
+        // navegador. (setActionData manda una por cada id: un render por id.)
+        $pagina = Livewire::test(ListUpsellRules::class)->mountAction('crearEnLote');
+        $elegir = fn (array $seleccion) => $pagina->set('mountedActionsData.0', $this->datos($seleccion));
+
+        $consultasChico = $this->consultas(fn () => $elegir($chico));
+        $pagina->assertSee('Se crearán 4 reglas (2 disparadores × 2 ofertas).');
+
+        $consultasGrande = $this->consultas(fn () => $elegir($grande));
+        $pagina->assertSee('Se crearán 1000 reglas (40 disparadores × 25 ofertas).');
+
+        $this->assertSame($consultasChico, $consultasGrande);
+    }
+
+    public function test_the_selectors_offer_every_active_product_not_just_50(): void
+    {
+        // Filament muestra 50 opciones por defecto; con más productos, el resto no
+        // aparecía en la lista ni en la búsqueda.
+        Product::factory()->count(60)->create(['is_active' => true]);
+        $activos = Product::where('is_active', true)->count();
+        $this->assertGreaterThan(50, $activos);
+
+        Livewire::test(ListUpsellRules::class)
+            ->mountAction('crearEnLote')
+            ->assertSeeHtml('optionsLimit: '.$activos);
     }
 
     public function test_the_modal_warns_when_a_trigger_would_have_more_than_three_offers(): void

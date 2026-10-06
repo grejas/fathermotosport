@@ -40,8 +40,14 @@ class UpsellService
 
     public const MENSAJE_OFERTA_CERRADA = 'Esta oferta ya no está disponible.';
 
-    /** Cuántas reglas puede tocar una sola creación masiva desde el panel. */
-    public const MAX_REGLAS_POR_LOTE = 100;
+    /**
+     * Cuántas reglas puede tocar una sola creación masiva desde el panel. Es la única
+     * fuente del tope: la usan el contador del modal, su aviso y la validación.
+     */
+    public const MAX_REGLAS_POR_LOTE = 1000;
+
+    /** Filas por INSERT o UPDATE en la creación masiva: lejos del tope de parámetros de la base. */
+    private const FILAS_POR_CONSULTA = 500;
 
     /**
      * Ofertas que corresponden a un pedido pagado, ya ordenadas y recortadas.
@@ -376,7 +382,24 @@ class UpsellService
      * @param  Collection<int, array{trigger: string, offer: string}>  $pares
      * @return Collection<int, array{trigger: string, offer: string}>
      */
-    public function paresExistentes(Collection $pares, bool $bloquear = false): Collection
+    public function paresExistentes(Collection $pares): Collection
+    {
+        $existentes = $this->reglasExistentes($pares)
+            ->map(fn (UpsellRule $r) => $r->trigger_product_id.'|'.$r->offer_product_id)
+            ->flip();
+
+        return $pares->filter(fn (array $p) => $existentes->has($p['trigger'].'|'.$p['offer']))->values();
+    }
+
+    /**
+     * Reglas ya cargadas para los pares del lote, en una sola consulta. Los whereIn
+     * traen el producto cartesiano de disparadores y ofertas, así que se filtra a los
+     * pares pedidos.
+     *
+     * @param  Collection<int, array{trigger: string, offer: string}>  $pares
+     * @return Collection<int, UpsellRule>
+     */
+    private function reglasExistentes(Collection $pares, bool $bloquear = false): Collection
     {
         if ($pares->isEmpty()) {
             return collect();
@@ -389,11 +412,11 @@ class UpsellService
             $consulta->lockForUpdate();
         }
 
-        $existentes = $consulta->get(['trigger_product_id', 'offer_product_id'])
-            ->map(fn (UpsellRule $r) => $r->trigger_product_id.'|'.$r->offer_product_id)
-            ->flip();
+        $pedidos = $pares->map(fn (array $p) => $p['trigger'].'|'.$p['offer'])->flip();
 
-        return $pares->filter(fn (array $p) => $existentes->has($p['trigger'].'|'.$p['offer']))->values();
+        return $consulta->get(['id', 'trigger_product_id', 'offer_product_id'])
+            ->filter(fn (UpsellRule $r) => $pedidos->has($r->trigger_product_id.'|'.$r->offer_product_id))
+            ->values();
     }
 
     /**
@@ -478,28 +501,42 @@ class UpsellService
 
         $descuentoDe = fn (string $offerId): int => $descuentosPorOferta[$offerId] ?? $descuento;
 
+        // Todo por lotes: con 1000 reglas, una consulta por regla haría el modal lento y
+        // la transacción larga. La cantidad de consultas no crece con el lote.
         return DB::transaction(function () use ($pares, $prioridad, $sobrescribir, $descuentoDe) {
-            $existentes = $this->paresExistentes($pares, bloquear: true);
+            $filasExistentes = $this->reglasExistentes($pares, bloquear: true);
+            $existentes = $filasExistentes
+                ->map(fn (UpsellRule $r) => ['trigger' => $r->trigger_product_id, 'offer' => $r->offer_product_id])
+                ->values();
             $claves = $existentes->map(fn (array $p) => $p['trigger'].'|'.$p['offer'])->flip();
             $nuevos = $pares->reject(fn (array $p) => $claves->has($p['trigger'].'|'.$p['offer']))->values();
 
-            foreach ($nuevos as $par) {
-                UpsellRule::create([
-                    'trigger_product_id' => $par['trigger'],
-                    'offer_product_id' => $par['offer'],
-                    'discount_percent' => $descuentoDe($par['offer']),
-                    'priority' => $prioridad,
-                    'is_active' => true,
-                ]);
+            // insert() directo y no create(): el modelo no tiene eventos ni observers,
+            // así que solo faltan las fechas.
+            $ahora = now();
+            $filas = $nuevos->map(fn (array $par) => [
+                'trigger_product_id' => $par['trigger'],
+                'offer_product_id' => $par['offer'],
+                'discount_percent' => $descuentoDe($par['offer']),
+                'priority' => $prioridad,
+                'is_active' => true,
+                'created_at' => $ahora,
+                'updated_at' => $ahora,
+            ]);
+
+            foreach ($filas->chunk(self::FILAS_POR_CONSULTA) as $bloque) {
+                UpsellRule::insert($bloque->values()->all());
             }
 
             if ($sobrescribir) {
-                // Una actualización por producto ofrecido: cada uno puede llevar su
-                // propio descuento.
-                foreach ($existentes->groupBy('offer') as $offerId => $grupo) {
-                    UpsellRule::where('offer_product_id', $offerId)
-                        ->whereIn('trigger_product_id', $grupo->pluck('trigger'))
-                        ->update(['discount_percent' => $descuentoDe($offerId)]);
+                // Una actualización por cada descuento distinto (el global y los propios
+                // por producto), no una por regla.
+                $porDescuento = $filasExistentes->groupBy(fn (UpsellRule $r) => $descuentoDe($r->offer_product_id));
+
+                foreach ($porDescuento as $porcentaje => $reglas) {
+                    foreach ($reglas->pluck('id')->chunk(self::FILAS_POR_CONSULTA) as $ids) {
+                        UpsellRule::whereIn('id', $ids->all())->update(['discount_percent' => $porcentaje]);
+                    }
                 }
             }
 

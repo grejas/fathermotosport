@@ -102,6 +102,7 @@ class ListUpsellRules extends ListRecords
                                         'offer_category_id' => $get('../../offer_category_id'),
                                         'offer_product_ids' => $get('../../offer_product_ids'),
                                     ])))
+                                    ->optionsLimit(UpsellRuleResource::sinLimiteDeOpciones())
                                     ->searchable()
                                     ->distinct()
                                     ->disableOptionsWhenSelectedInSiblingRepeaterItems()
@@ -155,6 +156,7 @@ class ListUpsellRules extends ListRecords
             ->label($label)
             ->helperText('Incluye sus subcategorías. Solo productos activos.')
             ->options(fn () => Category::orderBy('name')->pluck('name', 'id')->all())
+            ->optionsLimit(UpsellRuleResource::sinLimiteDeOpciones())
             ->searchable()
             ->live();
     }
@@ -165,6 +167,8 @@ class ListUpsellRules extends ListRecords
             ->label($label)
             ->multiple()
             ->options(fn () => UpsellRuleResource::opcionesDeProducto())
+            // Sin maxItems: se pueden elegir todos los productos activos.
+            ->optionsLimit(UpsellRuleResource::sinLimiteDeOpciones())
             ->searchable()
             ->live();
     }
