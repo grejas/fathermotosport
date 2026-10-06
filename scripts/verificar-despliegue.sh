@@ -10,11 +10,11 @@
 # Imprime FALTA / DIFIERE por archivo y, al final, la lista lista para subir:
 #   tar czf - -C fathermotosport-api -T faltantes.txt | ssh ... "tar xzf - -C /ruta/al/api"
 #
-# Cubre TODO el backend en a16a867: los 328 archivos trackeados que forman parte de un
+# Cubre TODO el backend en 03c239f: los 346 archivos trackeados que forman parte de un
 # despliegue, no solo los de la última tanda. La idea es que el script sea la fuente de
 # verdad del estado del servidor, sin depender de recordar qué se subió y qué no.
 #
-# Quedan FUERA a propósito (20 de los 348 trackeados):
+# Quedan FUERA a propósito (20 de los 366 trackeados):
 #   - storage/**/.gitignore, bootstrap/cache/.gitignore, database/.gitignore: marcadores
 #     de carpeta. En el servidor esos directorios tienen contenido de runtime y
 #     compararlos solo genera ruido.
@@ -53,26 +53,27 @@ ce154cbda0fc9b2eb53bfd977994f258 DOC .env.example
 4d3fc4ce89d95f4fa939e0c68e13d6a1 APP app/Console/Commands/CancelAbandonedOrders.php
 b0bfbb41997af71a54d6f34a74d0173b APP app/Console/Commands/FixCommaSizes.php
 74ff6786e51e8aa395d9a7dc29195b6a APP app/Console/Commands/GenerateFlashPromoOccurrences.php
+3bc9700a4f3a6e961eb2bdbc0b7e0cd2 APP app/Filament/Concerns/SincronizaOrdenConFiltro.php
 251b76077bd523abc5fdb2b1c9b394f2 APP app/Filament/Pages/ShippingReturnsPage.php
 7ecc786f59faa28e7f0d5f6e0db1c0bd APP app/Filament/Pages/StoreSettingsPage.php
 66eb384c2d5b320f568cd888a326b1fe APP app/Filament/Resources/BannerResource.php
-dd4a0861e172e27e59c4dbb516fb34e0 APP app/Filament/Resources/BannerResource/Pages/CreateBanner.php
-82671d8eb05d99abfab09dbc8464228d APP app/Filament/Resources/BannerResource/Pages/EditBanner.php
+74c550d0ca540120f7f448a05409c2b2 APP app/Filament/Resources/BannerResource/Pages/CreateBanner.php
+d6a41f37ad4f4a84ef6257dc529df838 APP app/Filament/Resources/BannerResource/Pages/EditBanner.php
 12abf8d9ffedccaaa0332f6910532f9e APP app/Filament/Resources/BannerResource/Pages/ListBanners.php
 ee63fe009f07717229518f427c8ecb37 APP app/Filament/Resources/BrandResource.php
-e3a442c082710fdd6f81115a22d4ed12 APP app/Filament/Resources/BrandResource/Pages/CreateBrand.php
-afb8afe2d9e0469e108675f35105e67d APP app/Filament/Resources/BrandResource/Pages/EditBrand.php
+ed0fb9c6464b50fabf06a9cd512d71f2 APP app/Filament/Resources/BrandResource/Pages/CreateBrand.php
+29c300c6bcdca3a65c1f54d3592b6c1a APP app/Filament/Resources/BrandResource/Pages/EditBrand.php
 72cb1ab578b79dc06cddecb5d5c1b35b APP app/Filament/Resources/BrandResource/Pages/ListBrands.php
 21bf907f0c72bff6d4574bb998536d60 APP app/Filament/Resources/CategoryResource.php
-991f8fc99ef7cf1cc2d57073d85ece83 APP app/Filament/Resources/CategoryResource/Pages/CreateCategory.php
-000ffc46e541e1d525acbd4887fd7e93 APP app/Filament/Resources/CategoryResource/Pages/EditCategory.php
+ad522d09a6e035d1b29a1ce4acd4a3d8 APP app/Filament/Resources/CategoryResource/Pages/CreateCategory.php
+939b623dff44febbd024545eedc5993b APP app/Filament/Resources/CategoryResource/Pages/EditCategory.php
 762cc72ffc03706a031a22edc3c9930c APP app/Filament/Resources/CategoryResource/Pages/ListCategories.php
 4ff848043b4261aaeb1191ee5ed770e1 APP app/Filament/Resources/CouponResource.php
-ff416f88a20b7a3fd96fc70ac7fb7287 APP app/Filament/Resources/CouponResource/Pages/CreateCoupon.php
-19abe20c9daa7c203f5e3e7c6a5e56b7 APP app/Filament/Resources/CouponResource/Pages/EditCoupon.php
+c15709edd819615ae9ae39cf736fd8a5 APP app/Filament/Resources/CouponResource/Pages/CreateCoupon.php
+11c6bf5788dc64e3396a9aecda342881 APP app/Filament/Resources/CouponResource/Pages/EditCoupon.php
 c09b8c3d4060886131a7cea802b5fdd5 APP app/Filament/Resources/CouponResource/Pages/ListCoupons.php
-c1b54d27ed7e5b3585a823c95ab392ef APP app/Filament/Resources/CustomerResource.php
-69ee315d433b0a4ded514cd8e547bc19 APP app/Filament/Resources/CustomerResource/Pages/ListCustomers.php
+468cbf726b8234e612fac02c4a1011d9 APP app/Filament/Resources/CustomerResource.php
+749ad95d0336ef8592e0e18e6513d2a1 APP app/Filament/Resources/CustomerResource/Pages/ListCustomers.php
 906c94692e8c101f22def73988690c65 APP app/Filament/Resources/CustomerResource/Pages/ViewCustomer.php
 f7514dda9fbd7d5ba22d6da1e9585297 APP app/Filament/Resources/EmployeeResource.php
 7080deb8e7e86d2a3daaa48113d6e2c0 APP app/Filament/Resources/EmployeeResource/Pages/CreateEmployee.php
@@ -87,7 +88,7 @@ f7514dda9fbd7d5ba22d6da1e9585297 APP app/Filament/Resources/EmployeeResource.php
 1f2d442718cb102b9f93d937cbff0d98 APP app/Filament/Resources/InventoryMovementResource/Pages/EditInventoryMovement.php
 ac78755784027f6a52c51c4bc2ed91ae APP app/Filament/Resources/InventoryMovementResource/Pages/ListInventoryMovements.php
 9f2f79c45130630900141db2e628dda2 APP app/Filament/Resources/InventoryMovementResource/Pages/ViewInventoryMovement.php
-f0b1d4e59ca28740a27dea85e425f08f APP app/Filament/Resources/OrderResource.php
+39a062f9d264718b8316c39533e9b11f APP app/Filament/Resources/OrderResource.php
 8888b428060d04e98160f19efbc45026 APP app/Filament/Resources/OrderResource/Pages/CreateOrder.php
 5f8a5d0a8f1fa1c38123a2a9b7537380 APP app/Filament/Resources/OrderResource/Pages/EditOrder.php
 73db53c8df1bef5627293fbda9b381e2 APP app/Filament/Resources/OrderResource/Pages/ListOrders.php
@@ -96,10 +97,10 @@ fe33a57c5363e4cb9a036161e87c8338 APP app/Filament/Resources/PostResource.php
 f2c50195abec234d4a7d4d2e5bb6d13a APP app/Filament/Resources/PostResource/Pages/CreatePost.php
 8f39dd47cf400fab1690c6a697ea71fd APP app/Filament/Resources/PostResource/Pages/EditPost.php
 3b19d8f70deac56cf27ccc5d5c73c74b APP app/Filament/Resources/PostResource/Pages/ListPosts.php
-ab5830e4e8f9c609f2d8f92f5d01d023 APP app/Filament/Resources/ProductResource.php
+94bbe594b6db26a88aa0a6e3b42b1503 APP app/Filament/Resources/ProductResource.php
 eb8b5dde8bed4865aa1acaa9be3229ce APP app/Filament/Resources/ProductResource/Pages/CreateProduct.php
-5d0124dc19f390c297f1061286c67c81 APP app/Filament/Resources/ProductResource/Pages/EditProduct.php
-d4cc6e3ea72caed5fc80bb0312dcf46b APP app/Filament/Resources/ProductResource/Pages/ListProducts.php
+e40037f55754c6cef78a064ecad02a50 APP app/Filament/Resources/ProductResource/Pages/EditProduct.php
+8903ac99fec02ac01ebbdcfb8d4935b4 APP app/Filament/Resources/ProductResource/Pages/ListProducts.php
 eff8f29bb1371e31641505cdb81df384 APP app/Filament/Resources/ReviewResource.php
 ca899e9cbf3e9718a3c445e4326d4eae APP app/Filament/Resources/ReviewResource/Pages/CreateReview.php
 2f039d810e38e95b0b69f2a7d1ca0f5d APP app/Filament/Resources/ReviewResource/Pages/EditReview.php
@@ -112,10 +113,15 @@ c02dae8580e9bad4e1d3d4d3960a5841 APP app/Filament/Resources/ShippingMethodResour
 5c31d5ac3a1d5ad894a428caeb602ba9 APP app/Filament/Resources/ShippingOptionResource/Pages/CreateShippingOption.php
 369e46544f27da28399d1d9535a36250 APP app/Filament/Resources/ShippingOptionResource/Pages/EditShippingOption.php
 0e5f1eb0bfc46b540244423476c4bc99 APP app/Filament/Resources/ShippingOptionResource/Pages/ListShippingOptions.php
+c9bc29f168822f7122243db854e5e1c8 APP app/Filament/Resources/UpsellRuleResource.php
+73aa81783a59063189ed376690bd56ca APP app/Filament/Resources/UpsellRuleResource/Pages/CreateUpsellRule.php
+d432570a89a56d23245fad361336e7c4 APP app/Filament/Resources/UpsellRuleResource/Pages/EditUpsellRule.php
+fedcb7d80a66dbd7d0524666921381ce APP app/Filament/Resources/UpsellRuleResource/Pages/ListUpsellRules.php
 8679320fef5174f9146c03365e885a15 APP app/Filament/Resources/VisorColorResource.php
 424f8ed874b7adf30c33542d12a4e080 APP app/Filament/Resources/VisorColorResource/Pages/CreateVisorColor.php
 fd5c60c0201db7114817de12c7811c33 APP app/Filament/Resources/VisorColorResource/Pages/EditVisorColor.php
 53044c07ebd2b8d6ef1dca12e77a5182 APP app/Filament/Resources/VisorColorResource/Pages/ListVisorColors.php
+ecbb07f1de65da7c9f4e40466559798d APP app/Filament/Support/FiltroDeOrden.php
 b34051c63825e22c0e63d44e74111ed4 APP app/Filament/Widgets/LowStockWidget.php
 c396a2568f90a06c31dc7c77acb143c3 APP app/Filament/Widgets/RecentOrdersWidget.php
 cfb084b44f6e5d03c44964e5a7130781 APP app/Filament/Widgets/SalesChartWidget.php
@@ -125,20 +131,21 @@ cfb084b44f6e5d03c44964e5a7130781 APP app/Filament/Widgets/SalesChartWidget.php
 054e506c55baed4feb82200621d68f87 APP app/Http/Controllers/Api/Admin/DashboardController.php
 aa46ac107754a82761b1210cb81f47ae APP app/Http/Controllers/Api/Admin/OrderController.php
 db7a546d743f15d1ad2d06ec51063545 APP app/Http/Controllers/Api/Admin/ProductController.php
-0b1e27301ab8990ae2001fbda2944880 APP app/Http/Controllers/Api/AuthController.php
+dfe89c0c5b47bdc5f1144a50da119137 APP app/Http/Controllers/Api/AuthController.php
 d8d50096a1aff652af257ec641a3f8db APP app/Http/Controllers/Api/BannerController.php
 9bcc7cfc5fe54ab56b6a70b42f5e02b2 APP app/Http/Controllers/Api/BrandController.php
-102f55f15b476deb639ecc086a96f8ce APP app/Http/Controllers/Api/CartController.php
-e517926935ae42ddfb3ccca447f78f1c APP app/Http/Controllers/Api/CategoryController.php
+77e7f831c26aea2fc15bd36fa9ec204a APP app/Http/Controllers/Api/CartController.php
+ad9f45aab1d478c3391498bb64e4ea52 APP app/Http/Controllers/Api/CategoryController.php
 0674645ddb446dca4556e1c347714d0e APP app/Http/Controllers/Api/CouponController.php
 0842345bc20f11e44eef09817d199ccd APP app/Http/Controllers/Api/FlashPromoController.php
 c4686e4ea179ba8ad4395a9df6f1906a APP app/Http/Controllers/Api/OrderController.php
 8ff1e6dfb21dcf20d038cd457eb70018 APP app/Http/Controllers/Api/PaymentController.php
 ac0988f343681cbcc928a3023b23c67d APP app/Http/Controllers/Api/PostController.php
-fb066d1a40e35cad56b78d8d31b70fb6 APP app/Http/Controllers/Api/ProductController.php
+a7b35f422a7f758a6dac5d5b3e315449 APP app/Http/Controllers/Api/ProductController.php
 c08929c866756d078a1ada5c8e091ade APP app/Http/Controllers/Api/ReviewController.php
 c9b22c42f79d98fc11dbef94c3bb7725 APP app/Http/Controllers/Api/ShippingController.php
 7e61589b5fefe7607583a55d6e7c52f8 APP app/Http/Controllers/Api/ShippingReturnsController.php
+74513d2bfd2ff5e5afff5c5d2381b0c8 APP app/Http/Controllers/Api/UpsellController.php
 12b42913e1449e09ffbb0678bc2e84aa APP app/Http/Controllers/Api/UserController.php
 c2a20fdca609dee26d4c79cfae6381ec APP app/Http/Controllers/Api/VisorColorController.php
 25a307335c0719bc9a91b3f7babd186d APP app/Http/Controllers/Controller.php
@@ -150,12 +157,13 @@ bb05b0c4b81a52b7d206eafc98ac5c9d APP app/Http/Middleware/SecurityHeaders.php
 74e67939e0fafdf1ef60b2ad6f7fb6b0 APP app/Http/Requests/Auth/LoginRequest.php
 10bfd7c1ee768d3db56230723bdb01f0 APP app/Http/Requests/Auth/RegisterFromOrderRequest.php
 f66e32a89951412bedf9aec2852a322e APP app/Http/Requests/Auth/ResetPasswordRequest.php
-84cf2373a67eba1b4100e571f2a6e81b APP app/Http/Requests/Auth/SendVerificationCodeRequest.php
-f67319893a72240412ca5f33109a4fd1 APP app/Http/Requests/Auth/VerifyAndRegisterRequest.php
+1e423be946c1cd194cc9efb2f6e27461 APP app/Http/Requests/Auth/SendVerificationCodeRequest.php
+650a8a3fd4c1ee3b2c27844dc562f879 APP app/Http/Requests/Auth/VerifyAndRegisterRequest.php
 eab92c776a006cbe04a6c95d93e9c69c APP app/Http/Requests/Cart/AddCartItemRequest.php
 a58a0b7641ff662597e2253c3c728f4c APP app/Http/Requests/Cart/UpdateCartItemRequest.php
 59be57aea37bc0285f39a43279d36aeb APP app/Http/Requests/Order/StoreExpressOrderRequest.php
 64b3f427b2482c49a5e5624f5e89860b APP app/Http/Requests/Order/StoreOrderRequest.php
+741d3af361cb8718a74da3a0dda6d348 APP app/Http/Requests/Order/StoreUpsellRequest.php
 88b571feb65db61a6654e9fa5229ec78 APP app/Http/Requests/Product/StoreProductRequest.php
 f371ef7a55c0f64449d24fdfc66e8173 APP app/Http/Requests/Product/UpdateProductRequest.php
 8998e9c9734b5e8e1e7dc10454f4aac3 APP app/Http/Requests/User/StoreAddressRequest.php
@@ -167,7 +175,7 @@ f371ef7a55c0f64449d24fdfc66e8173 APP app/Http/Requests/Product/UpdateProductRequ
 c7426b83ef6070b5178f5357bfe613da APP app/Http/Resources/CartResource.php
 6a89bed5b2d22f56dce77a9b96a3539b APP app/Http/Resources/CategoryResource.php
 7e5a9277b5041e477c5159a18214ca85 APP app/Http/Resources/OrderItemResource.php
-69a66f5faad439f5c2610eb008e61564 APP app/Http/Resources/OrderResource.php
+9a2479b4d4e1541dc8df72d62d5ac41a APP app/Http/Resources/OrderResource.php
 71345aed6ee3e5899fb0ed41acad830e APP app/Http/Resources/PaymentResource.php
 37dd33e7471c05110b528d5556b77459 APP app/Http/Resources/PostResource.php
 1cf734318de9ecf8f6e2b97487e6f866 APP app/Http/Resources/Product3dModelResource.php
@@ -196,7 +204,7 @@ d86c4f973da0a4f16a76422245bfdf3e APP app/Models/Concerns/HasUuid.php
 b120497dfdbab99a8b70d0291331b161 APP app/Models/Favorite.php
 c5b7aa67d436d8b6e285f90370e26c27 APP app/Models/FlashPromo.php
 121d9c6338e2d12c344b2df673b8f2c8 APP app/Models/InventoryMovement.php
-9b10ee5ef90e431afc73c497e2de10ae APP app/Models/Order.php
+8bbe9079602c51737a0b76f0a58a9928 APP app/Models/Order.php
 c8ec264de7a156f677e7f36bb5402340 APP app/Models/OrderCoupon.php
 b5f1daf32ca25c19611babb7679ded5c APP app/Models/OrderItem.php
 6d2b6cc8a86bd27fad819c0cc405bbe5 APP app/Models/Payment.php
@@ -213,7 +221,8 @@ bc9e6b015d09ad5ed418bbb30b8fc4e8 APP app/Models/ShippingMethod.php
 f133d908ce35016e6aeb8576314c9dfc APP app/Models/ShippingOption.php
 3b0774c41c80ce8dab06a4022f946f5f APP app/Models/ShippingReturnsSetting.php
 4eabb0f314662ca6b31d4f3bca4bf574 APP app/Models/StoreConfig.php
-2cb99678217723de72eeb465b895ec9d APP app/Models/User.php
+4108080de0220f4680f33b49ef645ee6 APP app/Models/UpsellRule.php
+126ac2173285cdf7568c8b8ffb147ada APP app/Models/User.php
 60fe6bb2f85113dd4a57cd75ea9bb363 APP app/Models/VisorColor.php
 c0094f35cad6bba7636002a62186dae4 APP app/Providers/AppServiceProvider.php
 d417c9fc28640cc0d4e0617ba6902f32 APP app/Providers/Filament/AdminPanelProvider.php
@@ -222,12 +231,13 @@ d417c9fc28640cc0d4e0617ba6902f32 APP app/Providers/Filament/AdminPanelProvider.p
 d6023236d13a06321fa71ef5b8fcb872 APP app/Services/CouponService.php
 367eaaa4ce3729792942da332c45939a APP app/Services/EmailService.php
 b314cf224e9ba70f6c4091b09b91511b APP app/Services/FrontendRevalidator.php
-df80323dac380edff8b5427295c6e926 APP app/Services/OrderService.php
+6d11de86260f43771f77c00121d67f13 APP app/Services/OrderService.php
 0dd60cb6468e57f98c058b066ab98436 APP app/Services/Payments/MercadoPagoService.php
 b1056b32bc6743ab53cb1f5a53ff592d APP app/Services/Payments/PaypalService.php
 8334852d295e7fad8cd29863b485a89c APP app/Services/Payments/StripeService.php
 e0167d31244ab663aad925d91e083613 APP app/Services/ShippingWeightService.php
 558cfc5b9dc3b1ce22949b1f4dea47ef APP app/Services/StorageService.php
+c4d266ef47fb4ce488ac0887f23a7461 APP app/Services/UpsellService.php
 f004bc121829c4fdc6810cb78eff4af5 APP app/Support/Countries.php
 11794c60ea09facec4cf4fda401a658c APP app/Support/ShippingCountries.php
 d4e6c270d034c912a3166a4440fe55e6 APP app/Support/SizeCatalog.php
@@ -308,6 +318,8 @@ b7f75cd860aa81b06c41afdc469344cb APP database/migrations/2026_09_22_100002_simpl
 cb6eadff613d98ba0c5f408d93069fe4 APP database/migrations/2026_09_24_100001_change_payment_method_to_string_on_orders.php
 17f2bb8cbd9e96a6bedc59e2820cbebd APP database/migrations/2026_09_30_100001_add_email_verificado_por_to_orders_table.php
 a27d897f007e9d983ee9a90e2929dcd1 APP database/migrations/2026_10_01_100001_add_attention_reason_to_orders_table.php
+124ad937e7f08d7dc3efff243ce135c5 APP database/migrations/2026_10_02_100001_create_upsell_rules_table.php
+8c593ae426f2e889c065e51f77dbb152 APP database/migrations/2026_10_05_100001_add_upsell_window_to_orders_table.php
 71e9d1e92fc38e56b0740e8040fc2759 APP database/migrations/2026_10_05_100001_create_shipping_returns_settings_table.php
 2e48ae742cb93d2f1b92da51a12b639e APP database/seeders/AdminUserSeeder.php
 754586202649f4c72fa085e9f36c60c4 APP database/seeders/BrandSeeder.php
@@ -353,14 +365,17 @@ b26c722849e708761904ccd5423aa337 APP resources/views/emails/welcome-employee.bla
 ea31b313963964bd4a5bf95fd06ed22b APP resources/views/emails/welcome.blade.php
 436dda3b22d3eea4569a9b56e6a3cb3d APP resources/views/filament/pages/store-settings-page.blade.php
 f9f90b3bab40fd1d366e9b54466deac7 APP resources/views/welcome.blade.php
-1d64c68a2edd0e5a930618227eb98992 APP routes/api.php
+423e8d039e6e8a39bbd64f9f5d313d52 APP routes/api.php
 7a84e84d40e85f2b1c6eeb37cc39ee18 APP routes/console.php
 84625c52e743b1a4178bb27b7afb3615 APP routes/web.php
 a9abbb01c2ea0da5aeada2d937b10e1a TEST tests/Feature/AdminPanelTest.php
+9361a037c15bfce408d416f78796fb62 TEST tests/Feature/AdminSortSelectorTest.php
+d086fb86c8ecc25fe479b61f73439e81 TEST tests/Feature/AdminSortingAndRedirectTest.php
 ca7593e7daed1a7481c7dc1adaf7a957 TEST tests/Feature/CancelAbandonedOrdersTest.php
 0f870bb01125ffdc7708d1fbd96bc1f9 TEST tests/Feature/EmployeePermissionsTest.php
 0f4d91c9c5bbcd4e2f46cf885acb7fb6 TEST tests/Feature/ExampleTest.php
 3b4e7630783b2beb8d2a0589683e0a1f TEST tests/Feature/FilamentLoginTest.php
+f3517dc2e7748851a10e065f96e9ff37 TEST tests/Feature/InactiveProductVisibilityTest.php
 c3004b8c3acd3539960b92fc8714edb2 TEST tests/Feature/OrderAccessTest.php
 0d1fb27c4a9c7f7f3e5fc5f93fcf2dcf TEST tests/Feature/OrderPanelFiltersTest.php
 667eb88e4a21e7bb69afa1275f8d5f92 TEST tests/Feature/PaymentRoutesTest.php
@@ -368,12 +383,15 @@ c3004b8c3acd3539960b92fc8714edb2 TEST tests/Feature/OrderAccessTest.php
 4b88869a064e1e8e2e6a7a72aa7f5911 TEST tests/Feature/PaypalExpressTest.php
 fb2797609be6a1f00c3bf7f497ae8623 TEST tests/Feature/PaypalWebhookTest.php
 8d4b971fe4f40e0f88ceedd732081fd1 TEST tests/Feature/ProductImageUploadTest.php
-8a44f9b025f9a42c8f0741732932fa58 TEST tests/Feature/RegisterFromOrderTest.php
+0f9ed8d8e1317eae2148eca92d4104b1 TEST tests/Feature/ReclaimUnverifiedAccountTest.php
+1b911e92dce0dde181536881518c86a4 TEST tests/Feature/RegisterFromOrderTest.php
 895bbf1502fb8e842a61a8d204c3d83d TEST tests/Feature/ShippingOptionTest.php
 7f23963c65a4969d4bc619439acfacdf TEST tests/Feature/ShippingReturnsTest.php
 1420e2ca24f8e42bb425d072b2e2ee2c TEST tests/Feature/StockAtPaymentTest.php
 6d86787afbc21750b7ed31bc2f6d2e35 TEST tests/Feature/StoreSettingsSaveTest.php
 4bbfb42d8ccf31b85af71bcbf6cfcc1c TEST tests/Feature/StripePaymentTest.php
+ec2e82fba213bb4e57fb58e8bedb2445 TEST tests/Feature/UpsellBulkCreateTest.php
+ca7f72c6556454e35f487be2a57c3018 TEST tests/Feature/UpsellTest.php
 950c6a6ed8b2bf7411a1a1b8ba1f31e8 TEST tests/Feature/VariantSizeToolsTest.php
 7e567dc27e68d5b57bae16af07f68907 TEST tests/TestCase.php
 3f679e9508c834f0ad95943455fcd836 TEST tests/Unit/ExampleTest.php
