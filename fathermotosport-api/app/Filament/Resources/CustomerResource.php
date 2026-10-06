@@ -3,11 +3,14 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\CustomerResource\Pages;
+use App\Filament\Support\FiltroDeOrden;
+use App\Models\Order;
 use App\Models\User;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -45,10 +48,25 @@ class CustomerResource extends Resource
                 Tables\Columns\TextColumn::make('full_name')
                     ->label('Nombre')
                     ->getStateUsing(fn (User $r) => $r->full_name)
-                    ->searchable(['first_name', 'last_name']),
-                Tables\Columns\TextColumn::make('email')->label('Email')->searchable()->copyable(),
+                    ->searchable(['first_name', 'last_name'])
+                    // full_name no es columna: se ordena como se lee, nombre y después apellido.
+                    ->sortable(query: fn (Builder $query, string $direction): Builder => $query
+                        ->orderBy('first_name', $direction)
+                        ->orderBy('last_name', $direction)),
+                Tables\Columns\TextColumn::make('email')->label('Email')->searchable()->sortable()->copyable(),
                 Tables\Columns\TextColumn::make('phone')->label('Teléfono')->placeholder('—'),
-                Tables\Columns\TextColumn::make('orders_count')->label('Pedidos')->badge(),
+                Tables\Columns\TextColumn::make('country')->label('País')->placeholder('—')->sortable(),
+                Tables\Columns\TextColumn::make('orders_count')
+                    ->label('Pedidos')
+                    ->badge()
+                    // Subconsulta propia, no el alias del withCount: funciona igual en
+                    // MySQL y SQLite y cuenta lo mismo que se muestra.
+                    ->sortable(query: fn (Builder $query, string $direction): Builder => $query->orderBy(
+                        Order::query()
+                            ->selectRaw('COUNT(*)')
+                            ->whereColumn('orders.user_id', 'users.id'),
+                        $direction
+                    )),
                 Tables\Columns\TextColumn::make('total_spent')
                     ->label('Total gastado')
                     ->getStateUsing(fn (User $r) => '$' . number_format($r->orders()->where('payment_status', 'paid')->sum('total'), 2)),
@@ -59,10 +77,22 @@ class CustomerResource extends Resource
                 Tables\Columns\TextColumn::make('created_at')->label('Registro')->date()->sortable(),
             ])
             ->filters([
+                // Mismas columnas que se pueden ordenar desde el encabezado.
+                FiltroDeOrden::make([
+                    'full_name' => 'Nombre',
+                    'email' => 'Email',
+                    'country' => 'País',
+                    'created_at' => 'Fecha de registro',
+                    'orders_count' => 'Cantidad de pedidos',
+                ]),
                 Tables\Filters\SelectFilter::make('status')->label('Estado')->options([
                     'active' => 'Activo', 'inactive' => 'Inactivo', 'banned' => 'Bloqueado',
                 ]),
-            ])
+            ], layout: FiltersLayout::AboveContentCollapsible)
+            ->filtersFormColumns(3)
+            ->filtersTriggerAction(fn (Tables\Actions\Action $action) => FiltroDeOrden::botonPanel($action))
+            ->persistSortInSession()
+            ->persistFiltersInSession()
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\Action::make('toggle_status')

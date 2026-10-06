@@ -10,6 +10,7 @@ use App\Http\Requests\Auth\SendVerificationCodeRequest;
 use App\Http\Requests\Auth\VerifyAndRegisterRequest;
 use App\Http\Requests\Auth\RegisterFromOrderRequest;
 use App\Http\Resources\UserResource;
+use App\Models\Coupon;
 use App\Models\EmailVerificationCode;
 use App\Models\Order;
 use App\Models\Role;
@@ -85,6 +86,13 @@ class AuthController extends Controller
 
         $verification->update(['used_at' => now()]);
 
+        // Ya hay una cuenta sin verificar con este email (creada desde un pedido con
+        // tarjeta, donde el email lo escribió quien compró). Quien acaba de probar con
+        // el código que controla la casilla es el dueño: se queda con la cuenta.
+        if ($reclamada = User::reclamablePorEmail($request->email)) {
+            return $this->reclamarCuenta($reclamada, $request);
+        }
+
         $clienteRole = Role::where('slug', 'cliente')->firstOrFail();
 
         $user = User::create([
@@ -118,8 +126,68 @@ class AuthController extends Controller
     }
 
     /**
-     * Crea una cuenta a partir de un pedido de invitado ya pagado (típicamente de
-     * PayPal Express, donde el cliente nunca llenó un formulario).
+     * El dueño verificado del email se queda con una cuenta que creó otro (o él mismo y
+     * no lo recuerda): se reemplazan los datos y la contraseña por los que acaba de
+     * dar, y se cierran todas las sesiones abiertas con la contraseña anterior.
+     *
+     * De los pedidos vinculados se quedan solo los de email confirmado por PayPal; el
+     * resto vuelve a ser de invitado (ver desvincularPedidosSinEmailVerificado).
+     */
+    private function reclamarCuenta(User $user, VerifyAndRegisterRequest $request): JsonResponse
+    {
+        DB::transaction(function () use ($user, $request) {
+            $user->forceFill([
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'phone' => $request->phone,
+                'birth_date' => $request->birth_date,
+                'country' => $request->country,
+                'password' => Hash::make($request->password),
+                'email_verified_at' => now(),
+                'last_password_change' => now(),
+            ])->save();
+
+            $user->tokens()->delete();
+            $this->desvincularPedidosSinEmailVerificado($user);
+        });
+
+        // Ya recibió un cupón de bienvenida al crearse la cuenta: si sigue vigente se
+        // devuelve ese; si venció o se usó, se le da uno nuevo como a cualquier alta.
+        $coupon = Coupon::where('user_id', $user->id)
+            ->where('used_count', 0)
+            ->where('expires_at', '>', now())
+            ->latest()
+            ->first();
+
+        if (! $coupon) {
+            $coupon = $this->coupons->generateWelcomeCoupon($user->id);
+            $this->emails->sendWelcome($user, $coupon);
+        }
+
+        return response()->json([
+            'user' => new UserResource($user->load('role')),
+            'welcome_coupon' => ['code' => $coupon->code, 'value' => $coupon->value],
+            'token' => $user->createToken('auth')->plainTextToken,
+        ], 201);
+    }
+
+    /**
+     * Al reclamar una cuenta sin verificar, sus pedidos con email escrito a mano vuelven
+     * a ser de invitado: los pudo hacer un tercero con este email, y el dueño real no
+     * tiene por qué ver su dirección ni su teléfono. Quien compró los sigue viendo con
+     * el token de su pedido. Los de PayPal se quedan: ese email lo confirmó PayPal.
+     */
+    private function desvincularPedidosSinEmailVerificado(User $user): void
+    {
+        Order::where('user_id', $user->id)
+            ->where(fn ($q) => $q->whereNull('email_verificado_por')
+                ->orWhere('email_verificado_por', '!=', 'paypal'))
+            ->update(['user_id' => null]);
+    }
+
+    /**
+     * Crea una cuenta a partir de un pedido de invitado ya pagado, con PayPal o con
+     * tarjeta: el pedido ya tiene nombre y email, solo falta la contraseña.
      *
      * Autorización: el token del pedido (X-Order-Token), el mismo que autorizó el
      * pago. Conocer el order_id NO alcanza: si no, cualquiera podría reclamar el
@@ -169,9 +237,10 @@ class AuthController extends Controller
                 'country' => $order->country,
                 'password' => Hash::make($request->password),
                 'status' => 'active',
-                // El email lo informó PayPal al pagar, así que quien compró controla
-                // esa casilla: no hace falta el código de verificación.
-                'email_verified_at' => now(),
+                // Si el email lo informó PayPal al pagar, quien compró controla esa
+                // casilla. Si lo escribió a mano en el checkout (pago con tarjeta),
+                // no hay nada que lo pruebe: la cuenta queda sin verificar.
+                'email_verified_at' => $order->email_verificado_por === 'paypal' ? now() : null,
                 'last_password_change' => now(),
             ]);
 
@@ -299,7 +368,13 @@ class AuthController extends Controller
                 $user->forceFill([
                     'password' => $password,
                     'last_password_change' => now(),
+                    // Usar el enlace del correo prueba que controla la casilla. Es la
+                    // salida para quien encuentra una cuenta sin verificar con su email.
+                    'email_verified_at' => $user->email_verified_at ?? now(),
                 ])->save();
+
+                // Las sesiones abiertas con la contraseña anterior dejan de valer.
+                $user->tokens()->delete();
             }
         );
 
@@ -369,6 +444,21 @@ class AuthController extends Controller
             // Mismo beneficio que el registro normal: cupón de $5 + email.
             $coupon = $this->coupons->generateWelcomeCoupon($user->id);
             $this->emails->sendWelcome($user, $coupon);
+        }
+
+        // Google confirma el email: si la cuenta existía sin verificar (creada desde un
+        // pedido con tarjeta), queda verificada y la contraseña que puso quien la creó
+        // deja de valer, igual que al reclamarla con el código.
+        if ($user->email_verified_at === null && $user->isCliente()) {
+            DB::transaction(function () use ($user) {
+                $user->forceFill([
+                    'email_verified_at' => now(),
+                    'password' => Hash::make(Str::random(32)),
+                    'last_password_change' => now(),
+                ])->save();
+                $user->tokens()->delete();
+                $this->desvincularPedidosSinEmailVerificado($user);
+            });
         }
 
         if ($user->status !== 'active') {

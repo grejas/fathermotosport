@@ -20,7 +20,9 @@ class CategoryController extends Controller
             ->active()
             ->root()
             ->with(['children' => fn ($q) => $q->active()->orderBy('sort_order')])
-            ->withCount('products')
+            // Solo los que se ven en la tienda: contar los inactivos prometía productos
+            // que al entrar a la categoría no aparecen.
+            ->withCount(['products' => fn ($q) => $q->active()])
             ->orderBy('sort_order')
             ->get();
 

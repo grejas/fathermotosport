@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Filament\Resources\BannerResource\Pages;
+namespace App\Filament\Resources\UpsellRuleResource\Pages;
 
-use App\Filament\Resources\BannerResource;
+use App\Filament\Resources\UpsellRuleResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
-class EditBanner extends EditRecord
+class EditUpsellRule extends EditRecord
 {
-    protected static string $resource = BannerResource::class;
+    protected static string $resource = UpsellRuleResource::class;
 
     protected function getRedirectUrl(): string
     {

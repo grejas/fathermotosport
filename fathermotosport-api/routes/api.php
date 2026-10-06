@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\ShippingController;
+use App\Http\Controllers\Api\UpsellController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VisorColorController;
 use Illuminate\Support\Facades\Route;
@@ -91,6 +92,12 @@ Route::prefix('v1')->group(function () {
     // PayPal Express: pedido creado desde el carrito, sin formulario previo.
     Route::post('/orders/paypal-express', [OrderController::class, 'storeExpress']);
     Route::get('/orders/{id}', [OrderController::class, 'show']);
+
+    // Venta cruzada post-compra. Van antes de nada que capture /orders/{id}/*, y se
+    // autorizan con el access_token del pedido, como los pagos.
+    Route::get('/orders/{id}/upsell', [UpsellController::class, 'index']);
+    Route::post('/orders/{id}/upsell', [UpsellController::class, 'store']);
+    Route::post('/orders/{id}/upsell/dismiss', [UpsellController::class, 'dismiss']);
 
     // PayPal ACTIVO. Va antes del catch-all de abajo porque Laravel resuelve las rutas
     // por orden de registro: estas dos pasan y el resto de /payments/* sigue bloqueado.

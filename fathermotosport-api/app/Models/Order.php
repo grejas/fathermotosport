@@ -41,6 +41,7 @@ class Order extends Model
         'order_number',
         'access_token',
         'user_id',
+        'upsell_of_order_id',
         'address_id',
         'guest_email',
         'email_verificado_por',
@@ -66,6 +67,9 @@ class Order extends Model
         'shipping' => 'decimal:2',
         'tax' => 'decimal:2',
         'total' => 'decimal:2',
+        // Ventana de la venta cruzada. No van en $fillable: solo las escribe UpsellService.
+        'upsell_offered_at' => 'datetime',
+        'upsell_dismissed_at' => 'datetime',
     ];
 
     protected static function booted(): void
@@ -150,6 +154,24 @@ class Order extends Model
     public function requiereCoordinacionManual(): bool
     {
         return in_array($this->payment_method, self::METODOS_CON_COORDINACION_MANUAL, true);
+    }
+
+    /** Pedido del que salió esta venta cruzada, si es una. */
+    public function upsellOf(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'upsell_of_order_id');
+    }
+
+    /** Ventas cruzadas generadas a partir de este pedido. */
+    public function upsellOrders(): HasMany
+    {
+        return $this->hasMany(self::class, 'upsell_of_order_id');
+    }
+
+    /** ¿Este pedido es una venta cruzada de otro? Se envía junto con aquel. */
+    public function esUpsell(): bool
+    {
+        return $this->upsell_of_order_id !== null;
     }
 
     public function items(): HasMany

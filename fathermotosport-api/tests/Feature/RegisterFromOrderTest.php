@@ -10,6 +10,7 @@ use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 /**
@@ -233,5 +234,88 @@ class RegisterFromOrderTest extends TestCase
         ], ['X-Order-Token' => $order->access_token])
             ->assertStatus(422)
             ->assertJsonValidationErrors('password');
+    }
+
+    public function test_a_card_order_can_be_claimed_but_the_email_stays_unverified(): void
+    {
+        // Pago con tarjeta: el email lo escribió el cliente, nadie lo comprobó.
+        $order = $this->pedidoPagadoDeInvitado(['payment_method' => 'stripe', 'email_verificado_por' => null]);
+
+        $this->postJson('/api/v1/auth/register-from-order', [
+            'order_id' => $order->id,
+            'password' => self::PASSWORD,
+            'password_confirmation' => self::PASSWORD,
+        ], ['X-Order-Token' => $order->access_token])->assertCreated();
+
+        $user = User::where('email', 'ana.perez@example.com')->firstOrFail();
+        $this->assertNull($user->email_verified_at);
+        $this->assertSame($user->id, $order->fresh()->user_id);
+    }
+
+    public function test_the_order_endpoint_says_whether_it_is_a_guest_order(): void
+    {
+        $order = $this->pedidoPagadoDeInvitado(['payment_method' => 'stripe']);
+
+        // Es lo que lee la pantalla de éxito para ofrecer crear la cuenta.
+        $this->getJson("/api/v1/orders/{$order->id}", ['X-Order-Token' => $order->access_token])
+            ->assertOk()
+            ->assertJsonPath('data.is_guest', true);
+
+        $order->update(['user_id' => User::factory()->create()->id]);
+
+        $this->getJson("/api/v1/orders/{$order->id}", ['X-Order-Token' => $order->access_token])
+            ->assertOk()
+            ->assertJsonPath('data.is_guest', false);
+    }
+
+    /** Pedido de invitado pagado con tarjeta: el email lo escribió quien compró. */
+    private function pedidoConTarjeta(array $overrides = []): Order
+    {
+        return $this->pedidoPagadoDeInvitado(array_merge([
+            'payment_method' => 'stripe',
+            'email_verificado_por' => null,
+        ], $overrides));
+    }
+
+    private function reclamar(Order $order, ?string $token): TestResponse
+    {
+        return $this->postJson('/api/v1/auth/register-from-order', [
+            'order_id' => $order->id,
+            'password' => self::PASSWORD,
+            'password_confirmation' => self::PASSWORD,
+        ], $token === null ? [] : ['X-Order-Token' => $token]);
+    }
+
+    public function test_a_card_order_without_a_valid_token_is_rejected(): void
+    {
+        $order = $this->pedidoConTarjeta();
+
+        $this->reclamar($order, null)->assertForbidden();
+        $this->reclamar($order, 'token-incorrecto')->assertForbidden();
+
+        $this->assertSame(0, User::where('email', 'ana.perez@example.com')->count());
+        $this->assertNull($order->fresh()->user_id);
+    }
+
+    public function test_an_unpaid_card_order_is_rejected(): void
+    {
+        $order = $this->pedidoConTarjeta(['payment_status' => 'pending', 'status' => 'pending']);
+
+        $this->reclamar($order, $order->access_token)->assertStatus(409);
+
+        $this->assertSame(0, User::where('email', 'ana.perez@example.com')->count());
+    }
+
+    public function test_an_already_claimed_card_order_is_rejected(): void
+    {
+        $order = $this->pedidoConTarjeta();
+        $this->reclamar($order, $order->access_token)->assertCreated();
+        $duenio = $order->fresh()->user_id;
+
+        // Segundo intento con el mismo token: el pedido ya tiene dueño.
+        $this->reclamar($order, $order->access_token)->assertStatus(409);
+
+        $this->assertSame($duenio, $order->fresh()->user_id);
+        $this->assertSame(1, User::where('email', 'ana.perez@example.com')->count());
     }
 }

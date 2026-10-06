@@ -45,7 +45,9 @@ class OrderService
                 $variant = $variants->get($line['variant_id']);
                 $qty = (int) $line['quantity'];
 
-                if (! $variant || ! $variant->is_active) {
+                // También el producto: desactivarlo en el panel tiene que sacarlo de la
+                // venta aunque sus tallas sigan marcadas como activas.
+                if (! $variant || ! $variant->is_active || ! $variant->product?->is_active) {
                     throw ValidationException::withMessages([
                         'items' => ["La variante {$line['variant_id']} no está disponible."],
                     ]);

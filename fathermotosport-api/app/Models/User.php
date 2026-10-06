@@ -13,9 +13,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Unique;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable implements FilamentUser, HasAvatar, HasName
@@ -167,6 +170,31 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasName
     public function isCliente(): bool
     {
         return optional($this->role)->slug === 'cliente';
+    }
+
+    /**
+     * Cuenta de cliente cuyo email nadie comprobó: la creada desde un pedido pagado con
+     * tarjeta, donde el email lo escribió quien compró. El dueño real de ese email puede
+     * reclamarla verificando el código por correo. El personal nunca entra acá.
+     */
+    public static function reclamablePorEmail(string $email): ?self
+    {
+        return self::where('email', $email)
+            ->whereNull('email_verified_at')
+            ->whereHas('role', fn (Builder $q) => $q->where('slug', 'cliente'))
+            ->first();
+    }
+
+    /**
+     * "Email ya registrado" para el registro normal: toda cuenta salvo las reclamables
+     * (las borradas también cuentan, porque el email sigue ocupado en la tabla).
+     */
+    public static function reglaEmailOcupado(): Unique
+    {
+        return Rule::unique('users', 'email')->where(fn (QueryBuilder $q) => $q
+            ->whereNotNull('email_verified_at')
+            ->orWhereNotNull('deleted_at')
+            ->orWhereNotIn('role_id', Role::where('slug', 'cliente')->pluck('id')->all()));
     }
 
     /** Personal del panel: Administrador o Empleado. */

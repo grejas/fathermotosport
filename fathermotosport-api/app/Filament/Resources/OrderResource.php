@@ -48,6 +48,17 @@ class OrderResource extends Resource
                         ->content(fn (?Order $record) => $record?->attention_reason),
                 ]),
 
+            // Aviso de envío conjunto: el upsell no pagó envío porque va en el mismo
+            // paquete. Preparar dos envíos anula el ahorro que se le prometió al cliente.
+            Forms\Components\Section::make('📦 Se envía junto con otro pedido')
+                ->description('Esta venta cruzada no pagó envío: va en el mismo paquete que el pedido original.')
+                ->visible(fn (?Order $record) => $record?->esUpsell() ?? false)
+                ->schema([
+                    Forms\Components\Placeholder::make('upsell_de')
+                        ->label('Pedido original')
+                        ->content(fn (?Order $record) => $record?->upsellOf?->order_number ?? '—'),
+                ]),
+
             Forms\Components\Section::make('Información del pedido')
                 ->columns(2)
                 ->schema([
@@ -153,6 +164,14 @@ class OrderResource extends Resource
                     ->label('N° pedido')
                     ->searchable()
                     ->sortable(),
+                // Venta cruzada: viaja en el MISMO paquete que el pedido original, porque
+                // no se le cobró envío. Sin esta marca se despachan dos envíos separados.
+                Tables\Columns\TextColumn::make('upsellOf.order_number')
+                    ->label('Envía con')
+                    ->badge()
+                    ->color('info')
+                    ->icon('heroicon-o-arrow-trending-up')
+                    ->placeholder('—'),
                 // Marca los pedidos que necesitan una decisión humana: cobrados sin stock,
                 // o con el país que informó PayPal distinto del envío cobrado.
                 Tables\Columns\TextColumn::make('attention_reason')

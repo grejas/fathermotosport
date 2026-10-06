@@ -11,6 +11,11 @@ interface PaypalButtonProps {
   loading?: boolean;
   disabled?: boolean;
   className?: string;
+  /**
+   * Si se pasa, el botón actúa por sí mismo en vez de enviar un formulario. Lo necesita
+   * la venta cruzada post-compra, que no tiene formulario alrededor.
+   */
+  onClick?: () => void;
 }
 
 /**
@@ -18,10 +23,18 @@ interface PaypalButtonProps {
  * como el del checkout de PayPal. El logotipo se arma con el nombre en dos tonos en
  * vez de incrustar la marca oficial.
  */
-export function PaypalButton({ label, ariaLabel, loading, disabled, className }: PaypalButtonProps) {
+export function PaypalButton({
+  label,
+  ariaLabel,
+  loading,
+  disabled,
+  className,
+  onClick,
+}: PaypalButtonProps) {
   return (
     <button
-      type="submit"
+      type={onClick ? "button" : "submit"}
+      onClick={onClick}
       disabled={loading || disabled}
       aria-label={ariaLabel}
       className={cn(

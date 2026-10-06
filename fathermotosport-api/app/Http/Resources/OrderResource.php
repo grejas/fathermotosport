@@ -17,6 +17,8 @@ class OrderResource extends JsonResource
             'access_token' => $this->access_token,
             'user_id' => $this->user_id,
             'guest_email' => $this->guest_email,
+            // Pedido sin cuenta: la pantalla de éxito ofrece crearla con estos datos.
+            'is_guest' => $this->user_id === null,
             'status' => $this->status,
             'subtotal' => $this->subtotal,
             'discount' => $this->discount,

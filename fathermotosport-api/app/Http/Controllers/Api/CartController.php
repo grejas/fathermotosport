@@ -34,6 +34,13 @@ class CartController extends Controller
     {
         $variant = ProductVariant::with('product')->findOrFail($request->variant_id);
 
+        // Ni una talla desactivada ni un producto inactivo (o borrado) entran al carrito.
+        if (! $variant->is_active || ! $variant->product?->is_active) {
+            throw ValidationException::withMessages([
+                'variant_id' => ['Este producto no está disponible.'],
+            ]);
+        }
+
         $cart = $this->carts->resolveCart($request);
         $existing = $cart->items()->where('product_variant_id', $variant->id)->first();
         $desiredQty = ($existing?->quantity ?? 0) + (int) $request->quantity;

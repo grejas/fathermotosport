@@ -21,15 +21,12 @@ import {
   countryFlag,
   shippingCountryName,
 } from "@/lib/data/shippingCountries";
+import { ENABLED_PAYMENT_METHODS } from "@/lib/data/paymentMethods";
 import { validateCheckout, hasErrors, type FieldErrors } from "@/lib/validators";
 import { cn, formatPrice } from "@/lib/utils";
 import type { Order, PaymentMethod, ShippingQuote } from "@/lib/types";
 import toast from "react-hot-toast";
 
-// Métodos de pago habilitados. Los que no estén acá se muestran en gris
-// ("Próximamente") y el checkout ofrece coordinar el pago por WhatsApp.
-// Para habilitar otro: agregarlo a esta lista.
-const ENABLED_PAYMENT_METHODS: readonly PaymentMethod[] = ["paypal", "stripe"];
 const WHATSAPP_URL = "https://wa.me/59168736384";
 
 /** Lo único que el checkout necesita de un pedido recién creado. */

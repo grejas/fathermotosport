@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 
 class SendVerificationCodeRequest extends FormRequest
@@ -14,7 +15,9 @@ class SendVerificationCodeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'email:rfc,dns', 'max:255', 'unique:users,email'],
+            // Una cuenta de cliente sin verificar no bloquea: quien verifique el código
+            // la reclama (ver User::reclamablePorEmail).
+            'email' => ['required', 'email:rfc,dns', 'max:255', User::reglaEmailOcupado()],
             'recaptcha_token' => ['required', 'string'],
         ];
     }

@@ -10,6 +10,11 @@ class EditCoupon extends EditRecord
 {
     protected static string $resource = CouponResource::class;
 
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
+
     protected function getHeaderActions(): array
     {
         return [

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProductResource\Pages;
+use App\Filament\Support\FiltroDeOrden;
 use App\Models\Brand;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -14,6 +15,7 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -396,13 +398,20 @@ class ProductResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->limit(30),
+                // No ocultables: Filament solo ordena por columnas visibles, y el
+                // selector "Ordenar por" las ofrece.
+                Tables\Columns\TextColumn::make('sku')
+                    ->label('SKU')
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('brand.name')
                     ->label('Marca')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('category.name')
                     ->label('Categoría')
-                    ->badge(),
+                    ->badge()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('price')
                     ->label('Precio')
                     ->money('USD')
@@ -411,20 +420,41 @@ class ProductResource extends Resource
                     ->label('Stock')
                     ->sum('variants', 'stock')
                     ->badge()
-                    ->color(fn ($state) => $state > 0 ? 'success' : 'danger'),
+                    ->color(fn ($state) => $state > 0 ? 'success' : 'danger')
+                    // Subconsulta propia en vez del alias del sum(): no depende de cómo
+                    // arme Filament el select y funciona igual en MySQL y SQLite. Sin
+                    // variantes cuenta como 0, igual que lo que se muestra.
+                    ->sortable(query: fn (Builder $query, string $direction): Builder => $query->orderBy(
+                        ProductVariant::query()
+                            ->selectRaw('COALESCE(SUM(stock), 0)')
+                            ->whereColumn('product_variants.product_id', 'products.id'),
+                        $direction
+                    )),
                 Tables\Columns\IconColumn::make('is_featured')
                     ->label('Destacado')
                     ->boolean(),
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('Activo')
-                    ->boolean(),
+                    ->boolean()
+                    ->sortable(),
+                // Siempre visible: es el orden por defecto de la tabla y una opción del
+                // selector, y Filament no ordena por columnas ocultas.
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Creado')
                     ->date()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->sortable(),
             ])
             ->filters([
+                // Mismas columnas que se pueden ordenar desde el encabezado.
+                FiltroDeOrden::make([
+                    'name' => 'Nombre',
+                    'sku' => 'SKU',
+                    'category.name' => 'Categoría',
+                    'price' => 'Precio',
+                    'variants_sum_stock' => 'Stock total',
+                    'is_active' => 'Estado',
+                    'created_at' => 'Fecha de creación',
+                ]),
                 Tables\Filters\SelectFilter::make('category')
                     ->relationship('category', 'name')
                     ->label('Categoría'),
@@ -434,7 +464,15 @@ class ProductResource extends Resource
                 Tables\Filters\TernaryFilter::make('is_active')->label('Activo'),
                 Tables\Filters\TernaryFilter::make('is_featured')->label('Destacado'),
                 Tables\Filters\TrashedFilter::make(),
-            ])
+            ], layout: FiltersLayout::AboveContentCollapsible)
+            // Plegado por defecto: se abre con "Filtros y orden". Orden (2) + categoría +
+            // marca en la primera fila; el resto en la segunda.
+            ->filtersFormColumns(4)
+            ->filtersTriggerAction(fn (Tables\Actions\Action $action) => FiltroDeOrden::botonPanel($action))
+            // Juntos: el orden y el selector se guardan y vuelven a la par al volver de
+            // editar un producto (ver SincronizaOrdenConFiltro).
+            ->persistSortInSession()
+            ->persistFiltersInSession()
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\ReplicateAction::make()

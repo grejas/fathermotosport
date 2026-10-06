@@ -203,6 +203,8 @@ export interface Order {
   access_token?: string | null;
   user_id: string | null;
   guest_email: string | null;
+  /** Pedido sin cuenta: la pantalla de éxito ofrece crearla. */
+  is_guest?: boolean;
   status: OrderStatus;
   subtotal: string;
   discount: string;

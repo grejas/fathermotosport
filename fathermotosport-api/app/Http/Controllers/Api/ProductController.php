@@ -34,7 +34,9 @@ class ProductController extends Controller
      */
     public function show(string $slug): ProductResource
     {
+        // Un producto inactivo no tiene página pública: 404, igual que si no existiera.
         $product = Product::query()
+            ->active()
             ->where('slug', $slug)
             ->with([
                 'brand',
