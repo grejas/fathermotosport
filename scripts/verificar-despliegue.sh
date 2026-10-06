@@ -113,10 +113,10 @@ c02dae8580e9bad4e1d3d4d3960a5841 APP app/Filament/Resources/ShippingMethodResour
 5c31d5ac3a1d5ad894a428caeb602ba9 APP app/Filament/Resources/ShippingOptionResource/Pages/CreateShippingOption.php
 369e46544f27da28399d1d9535a36250 APP app/Filament/Resources/ShippingOptionResource/Pages/EditShippingOption.php
 0e5f1eb0bfc46b540244423476c4bc99 APP app/Filament/Resources/ShippingOptionResource/Pages/ListShippingOptions.php
-c9bc29f168822f7122243db854e5e1c8 APP app/Filament/Resources/UpsellRuleResource.php
+6ee014236cdabb5f022e82e9eda92887 APP app/Filament/Resources/UpsellRuleResource.php
 73aa81783a59063189ed376690bd56ca APP app/Filament/Resources/UpsellRuleResource/Pages/CreateUpsellRule.php
 d432570a89a56d23245fad361336e7c4 APP app/Filament/Resources/UpsellRuleResource/Pages/EditUpsellRule.php
-fedcb7d80a66dbd7d0524666921381ce APP app/Filament/Resources/UpsellRuleResource/Pages/ListUpsellRules.php
+89668aa46fb26debd50a29d23663eb8b APP app/Filament/Resources/UpsellRuleResource/Pages/ListUpsellRules.php
 8679320fef5174f9146c03365e885a15 APP app/Filament/Resources/VisorColorResource.php
 424f8ed874b7adf30c33542d12a4e080 APP app/Filament/Resources/VisorColorResource/Pages/CreateVisorColor.php
 fd5c60c0201db7114817de12c7811c33 APP app/Filament/Resources/VisorColorResource/Pages/EditVisorColor.php
@@ -237,7 +237,7 @@ b1056b32bc6743ab53cb1f5a53ff592d APP app/Services/Payments/PaypalService.php
 8334852d295e7fad8cd29863b485a89c APP app/Services/Payments/StripeService.php
 e0167d31244ab663aad925d91e083613 APP app/Services/ShippingWeightService.php
 558cfc5b9dc3b1ce22949b1f4dea47ef APP app/Services/StorageService.php
-c4d266ef47fb4ce488ac0887f23a7461 APP app/Services/UpsellService.php
+4574fd4c7bc537ca7b1b8327b897cfeb APP app/Services/UpsellService.php
 f004bc121829c4fdc6810cb78eff4af5 APP app/Support/Countries.php
 11794c60ea09facec4cf4fda401a658c APP app/Support/ShippingCountries.php
 d4e6c270d034c912a3166a4440fe55e6 APP app/Support/SizeCatalog.php
@@ -390,7 +390,7 @@ fb2797609be6a1f00c3bf7f497ae8623 TEST tests/Feature/PaypalWebhookTest.php
 1420e2ca24f8e42bb425d072b2e2ee2c TEST tests/Feature/StockAtPaymentTest.php
 6d86787afbc21750b7ed31bc2f6d2e35 TEST tests/Feature/StoreSettingsSaveTest.php
 4bbfb42d8ccf31b85af71bcbf6cfcc1c TEST tests/Feature/StripePaymentTest.php
-ec2e82fba213bb4e57fb58e8bedb2445 TEST tests/Feature/UpsellBulkCreateTest.php
+2a6445d746e568002ac13840e2de7774 TEST tests/Feature/UpsellBulkCreateTest.php
 ca7f72c6556454e35f487be2a57c3018 TEST tests/Feature/UpsellTest.php
 950c6a6ed8b2bf7411a1a1b8ba1f31e8 TEST tests/Feature/VariantSizeToolsTest.php
 7e567dc27e68d5b57bae16af07f68907 TEST tests/TestCase.php
