@@ -10,11 +10,12 @@
 # Imprime FALTA / DIFIERE por archivo y, al final, la lista lista para subir:
 #   tar czf - -C fathermotosport-api -T faltantes.txt | ssh ... "tar xzf - -C /ruta/al/api"
 #
-# Cubre TODO el backend en e4f86ea: los 357 archivos trackeados que forman parte de un
-# despliegue, no solo los de la última tanda. La idea es que el script sea la fuente de
-# verdad del estado del servidor, sin depender de recordar qué se subió y qué no.
+# Cubre TODO el backend en c559c44 + el upsell por categorías: los 363 archivos que
+# forman parte de un despliegue, no solo los de la última tanda. La idea es que el
+# script sea la fuente de verdad del estado del servidor, sin depender de recordar qué
+# se subió y qué no.
 #
-# Quedan FUERA a propósito (20 de los 377 trackeados):
+# Quedan FUERA a propósito (20 de los 383 trackeados):
 #   - storage/**/.gitignore, bootstrap/cache/.gitignore, database/.gitignore: marcadores
 #     de carpeta. En el servidor esos directorios tienen contenido de runtime y
 #     compararlos solo genera ruido.
@@ -114,9 +115,10 @@ c02dae8580e9bad4e1d3d4d3960a5841 APP app/Filament/Resources/ShippingMethodResour
 5c31d5ac3a1d5ad894a428caeb602ba9 APP app/Filament/Resources/ShippingOptionResource/Pages/CreateShippingOption.php
 369e46544f27da28399d1d9535a36250 APP app/Filament/Resources/ShippingOptionResource/Pages/EditShippingOption.php
 0e5f1eb0bfc46b540244423476c4bc99 APP app/Filament/Resources/ShippingOptionResource/Pages/ListShippingOptions.php
-6ee014236cdabb5f022e82e9eda92887 APP app/Filament/Resources/UpsellRuleResource.php
-73aa81783a59063189ed376690bd56ca APP app/Filament/Resources/UpsellRuleResource/Pages/CreateUpsellRule.php
-d432570a89a56d23245fad361336e7c4 APP app/Filament/Resources/UpsellRuleResource/Pages/EditUpsellRule.php
+e676fedb695b5902f987d91971b74f98 APP app/Filament/Resources/UpsellRuleResource.php
+23fb5dff473b3b7f16e1e5695ade715b APP app/Filament/Resources/UpsellRuleResource/Pages/CreateUpsellRule.php
+94b24fd9968b59caef6f362c12ec3eb6 APP app/Filament/Resources/UpsellRuleResource/Pages/EditUpsellRule.php
+a7e5409924d3eeacf1c8605e431c25b7 APP app/Filament/Resources/UpsellRuleResource/Pages/GuardaReglas.php
 89668aa46fb26debd50a29d23663eb8b APP app/Filament/Resources/UpsellRuleResource/Pages/ListUpsellRules.php
 8679320fef5174f9146c03365e885a15 APP app/Filament/Resources/VisorColorResource.php
 424f8ed874b7adf30c33542d12a4e080 APP app/Filament/Resources/VisorColorResource/Pages/CreateVisorColor.php
@@ -189,7 +191,7 @@ ff6c95a3e988c6b7e21133f74e703dae APP app/Http/Resources/UserResource.php
 cfd441691e1ff1573ff0ea553006ccce APP app/Mail/EmailVerificationCodeMail.php
 51dbba15e2d47452cda0376565b8fc03 APP app/Mail/OrderConfirmedMail.php
 163380478d1f0bda4cfd370ce6fce1e0 APP app/Mail/OrderReceivedMail.php
-670dd9a9ba7cfb3dcff0bbc0632057fb APP app/Mail/PaymentRecoveryMail.php
+39621fb3111943aba8bb98c9a4a51eed APP app/Mail/PaymentRecoveryMail.php
 dd113bd12e2add2635a7c285b39cf61f APP app/Mail/ResetPasswordMail.php
 068d41c2bff6bb36f785593fee135c26 APP app/Mail/ShippingUpdateMail.php
 0e529e827cd1f52ba2ca1a950403937d APP app/Mail/WelcomeEmployeeMail.php
@@ -223,7 +225,7 @@ bc9e6b015d09ad5ed418bbb30b8fc4e8 APP app/Models/ShippingMethod.php
 f133d908ce35016e6aeb8576314c9dfc APP app/Models/ShippingOption.php
 3b0774c41c80ce8dab06a4022f946f5f APP app/Models/ShippingReturnsSetting.php
 4eabb0f314662ca6b31d4f3bca4bf574 APP app/Models/StoreConfig.php
-4108080de0220f4680f33b49ef645ee6 APP app/Models/UpsellRule.php
+19578350d3e3464f6c7aff07af154ff0 APP app/Models/UpsellRule.php
 126ac2173285cdf7568c8b8ffb147ada APP app/Models/User.php
 60fe6bb2f85113dd4a57cd75ea9bb363 APP app/Models/VisorColor.php
 c0094f35cad6bba7636002a62186dae4 APP app/Providers/AppServiceProvider.php
@@ -239,9 +241,10 @@ d1941ed3502d53b71f43cc0566bc1533 APP app/Services/Payments/PaypalService.php
 8334852d295e7fad8cd29863b485a89c APP app/Services/Payments/StripeService.php
 e0167d31244ab663aad925d91e083613 APP app/Services/ShippingWeightService.php
 558cfc5b9dc3b1ce22949b1f4dea47ef APP app/Services/StorageService.php
-283012b2dec843d03e749cf452e65a99 APP app/Services/UpsellService.php
+ef501621ecd7b10122ed88a915a7025e APP app/Services/UpsellService.php
 f004bc121829c4fdc6810cb78eff4af5 APP app/Support/Countries.php
-dc8c2536a3f8ab87479ff10069bbfeb5 APP app/Support/PieDeCorreo.php
+7d2b1311c00b975b48f1e847e3b6ee5a APP app/Support/ImagenDeCorreo.php
+0c9d53f67fbc33de12bc8e77f34bdae6 APP app/Support/PieDeCorreo.php
 11794c60ea09facec4cf4fda401a658c APP app/Support/ShippingCountries.php
 d4e6c270d034c912a3166a4440fe55e6 APP app/Support/SizeCatalog.php
 e66bb13691f6184c762c196427d8e685 APP artisan
@@ -326,6 +329,7 @@ a27d897f007e9d983ee9a90e2929dcd1 APP database/migrations/2026_10_01_100001_add_a
 71e9d1e92fc38e56b0740e8040fc2759 APP database/migrations/2026_10_05_100001_create_shipping_returns_settings_table.php
 0217f3587a936facc1f40637b9662709 APP database/migrations/2026_10_06_100001_add_payment_recovery_to_orders_table.php
 f49f693b565b0f293e4392a622711e8e APP database/migrations/2026_10_07_100001_add_notification_email_to_orders_table.php
+d0ae372233a8b38b9d19cad51e01a989 APP database/migrations/2026_10_08_100001_add_category_targets_to_upsell_rules_table.php
 2e48ae742cb93d2f1b92da51a12b639e APP database/seeders/AdminUserSeeder.php
 754586202649f4c72fa085e9f36c60c4 APP database/seeders/BrandSeeder.php
 e31e5c442de49b636f0a118a7f370786 APP database/seeders/CategorySeeder.php
@@ -335,9 +339,9 @@ baffe5d7871be7033b21b6a3bcc3e7f3 APP database/seeders/RoleSeeder.php
 be473521a6acaecac743dbe3cf7dd4a1 APP database/seeders/ShippingMethodSeeder.php
 c2d16007ed8ff017903f04f54c309459 APP database/seeders/ShippingReturnsSettingsSeeder.php
 f846f589c5a0652604c1c24b764f1fe9 APP database/seeders/StoreConfigSeeder.php
-ecf95c2f770039e119514b3ce645c7fa APP lang/en/payment_recovery.php
-7c42978beb769e232281ff9de6043144 APP lang/es/payment_recovery.php
-b40bfbb32ef8cb07d06209c573866176 APP lang/pt/payment_recovery.php
+a0f1fdc9d132855a6c1b2f60db53434c APP lang/en/payment_recovery.php
+95e37c8bcc12940117e9a10c43da4fe3 APP lang/es/payment_recovery.php
+d603ad052cb2fd43288d5c605b59cc42 APP lang/pt/payment_recovery.php
 2bcd3ce99aeb9da0e231c84b725d4305 TEST phpunit.xml
 b47546deac54c7da15ac289fc4aefd67 APP public/css/filament/filament/app.css
 52a22e8c274255c724f848d751b0f568 APP public/css/filament/forms/forms.css
@@ -363,15 +367,15 @@ b6216d61c03e6ce0c9aea6ca7808f7ca APP public/robots.txt
 c975d4e4cf9b38d9e07f8499a0714a27 APP resources/css/app.css
 1ccf2b9101110f40ecaab1608a6f91cf APP resources/js/app.js
 78f909acc19aea4717eddca5a87c1ba3 APP resources/js/bootstrap.js
-893e1f6e84522b29d576a31741d94f3c APP resources/views/emails/layouts/base.blade.php
+9ebf27bdf9628f0c6f292a8f96764d33 APP resources/views/emails/layouts/base.blade.php
 8526b351703bbb8b66ccb3f604924e0c APP resources/views/emails/order-confirmed.blade.php
 db2fe6958db45fb14f0384cba9599252 APP resources/views/emails/order-received.blade.php
-05cf64e701be22e733686db8e4106402 APP resources/views/emails/payment-recovery.blade.php
+21d0195fbe36cf606bb4f16451e015e6 APP resources/views/emails/payment-recovery.blade.php
 b8e73e3bb5646158ecd3fca54c397d77 APP resources/views/emails/reset-password.blade.php
 8a0c16358d0a67b161dbdbd1849953a5 APP resources/views/emails/shipping-update.blade.php
 a8e49bb150340021897980cc716b60dc APP resources/views/emails/verification-code.blade.php
 b26c722849e708761904ccd5423aa337 APP resources/views/emails/welcome-employee.blade.php
-ea31b313963964bd4a5bf95fd06ed22b APP resources/views/emails/welcome.blade.php
+f3d346bf26652adc62119fa590167f46 APP resources/views/emails/welcome.blade.php
 436dda3b22d3eea4569a9b56e6a3cb3d APP resources/views/filament/pages/store-settings-page.blade.php
 f9f90b3bab40fd1d366e9b54466deac7 APP resources/views/welcome.blade.php
 423e8d039e6e8a39bbd64f9f5d313d52 APP routes/api.php
@@ -385,14 +389,16 @@ ca7593e7daed1a7481c7dc1adaf7a957 TEST tests/Feature/CancelAbandonedOrdersTest.ph
 0f4d91c9c5bbcd4e2f46cf885acb7fb6 TEST tests/Feature/ExampleTest.php
 e188f0ed95e8f9f174e9c229fabee253 TEST tests/Feature/ExpressNotificationEmailTest.php
 3b4e7630783b2beb8d2a0589683e0a1f TEST tests/Feature/FilamentLoginTest.php
+d35eecc6b0e06a96acdaa303954a135c TEST tests/Feature/ImagenDeCorreoTest.php
 f3517dc2e7748851a10e065f96e9ff37 TEST tests/Feature/InactiveProductVisibilityTest.php
 c3004b8c3acd3539960b92fc8714edb2 TEST tests/Feature/OrderAccessTest.php
 0d1fb27c4a9c7f7f3e5fc5f93fcf2dcf TEST tests/Feature/OrderPanelFiltersTest.php
-3f027697e3b8426a87ad3f6e4553fa6e TEST tests/Feature/PaymentRecoveryTest.php
+d0c13d48f8364ce4aa7f6834b3007f6d TEST tests/Feature/PaymentRecoveryTest.php
 667eb88e4a21e7bb69afa1275f8d5f92 TEST tests/Feature/PaymentRoutesTest.php
 8f3fbf8b978ed45898f6ed4f2a84e41c TEST tests/Feature/PaypalCaptureLoggingTest.php
 a2284866a8c94a2da4512a1ebc95e3eb TEST tests/Feature/PaypalExpressTest.php
 2e831abb7c48f596e28f0aa9276f6418 TEST tests/Feature/PaypalWebhookTest.php
+f7a87759aace82e055c7e0f51bbe9d66 TEST tests/Feature/PieDeCorreoTest.php
 8d4b971fe4f40e0f88ceedd732081fd1 TEST tests/Feature/ProductImageUploadTest.php
 0f9ed8d8e1317eae2148eca92d4104b1 TEST tests/Feature/ReclaimUnverifiedAccountTest.php
 1b911e92dce0dde181536881518c86a4 TEST tests/Feature/RegisterFromOrderTest.php
@@ -401,8 +407,9 @@ a2284866a8c94a2da4512a1ebc95e3eb TEST tests/Feature/PaypalExpressTest.php
 1420e2ca24f8e42bb425d072b2e2ee2c TEST tests/Feature/StockAtPaymentTest.php
 6d86787afbc21750b7ed31bc2f6d2e35 TEST tests/Feature/StoreSettingsSaveTest.php
 4bbfb42d8ccf31b85af71bcbf6cfcc1c TEST tests/Feature/StripePaymentTest.php
-2a6445d746e568002ac13840e2de7774 TEST tests/Feature/UpsellBulkCreateTest.php
-ca7f72c6556454e35f487be2a57c3018 TEST tests/Feature/UpsellTest.php
+5ded93a494193048269a1128536cff9b TEST tests/Feature/UpsellBulkCreateTest.php
+c421bcd5996b113bb78cb5dbcaf28ad7 TEST tests/Feature/UpsellRuleFormTest.php
+2d1108af599e523d71deb697c27b374a TEST tests/Feature/UpsellTest.php
 950c6a6ed8b2bf7411a1a1b8ba1f31e8 TEST tests/Feature/VariantSizeToolsTest.php
 7e567dc27e68d5b57bae16af07f68907 TEST tests/TestCase.php
 3f679e9508c834f0ad95943455fcd836 TEST tests/Unit/ExampleTest.php
