@@ -414,28 +414,33 @@ class UpsellBulkCreateTest extends TestCase
             ->assertSeeHtml('optionsLimit: '.$activos);
     }
 
-    public function test_the_modal_warns_when_a_trigger_would_have_more_than_three_offers(): void
+    public function test_the_modal_warns_when_a_trigger_would_have_more_than_five_offers(): void
     {
         $casco = $this->producto('Casco AGV');
         $otro = $this->producto('Casco B');
-        // Casco AGV ya tiene 2 ofertas activas; una inactiva no cuenta.
+        // Casco AGV ya tiene 4 ofertas activas; una inactiva no cuenta.
         $this->regla($casco, $this->producto('Visera'));
         $this->regla($casco, $this->producto('Balaclava'));
+        $this->regla($casco, $this->producto('Mangas'));
+        $this->regla($casco, $this->producto('Intercomunicador'));
         $this->regla($casco, $this->producto('Pinlock'), ['is_active' => false]);
 
         $nuevas = [$this->producto('Riñonera')->id, $this->producto('Guantes')->id];
 
-        // AGV: 2 + 2 = 4 → aviso. Casco B: 0 + 2 = 2 → sin aviso.
+        // AGV: 4 + 2 = 6 → aviso. Casco B: 0 + 2 = 2 → sin aviso.
         $this->resumen(['product_ids' => [$casco->id, $otro->id], 'offer_product_ids' => $nuevas])
-            ->assertSee('Nota: 1 disparador quedará con más de 3 ofertas activas.')
+            ->assertSee('Nota: 1 disparador quedará con más de 5 ofertas activas.')
             ->assertSee('Casco AGV.')
             ->assertDontSee('Casco B.');
     }
 
-    public function test_no_warning_when_every_trigger_stays_within_three_offers(): void
+    public function test_no_warning_when_every_trigger_stays_within_five_offers(): void
     {
         $casco = $this->producto('Casco AGV');
+        // 3 + 2 = 5: justo el tope, sin aviso.
         $this->regla($casco, $this->producto('Visera'));
+        $this->regla($casco, $this->producto('Balaclava'));
+        $this->regla($casco, $this->producto('Mangas'));
 
         $this->resumen([
             'product_ids' => [$casco->id],

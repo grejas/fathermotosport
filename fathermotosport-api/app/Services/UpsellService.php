@@ -8,6 +8,8 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\UpsellRule;
+use Closure;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -28,7 +30,7 @@ class UpsellService
      * Cuántas ofertas entran en la pantalla de éxito. Es una decisión de diseño de esa
      * pantalla y no un parámetro de negocio, así que vive en el código.
      */
-    public const MAX_OFERTAS = 3;
+    public const MAX_OFERTAS = 5;
 
     /**
      * Cuánto dura la oferta desde que se mostró por primera vez. Es una regla interna:
@@ -83,21 +85,33 @@ class UpsellService
             return collect();
         }
 
+        $categorias = $this->categoriasDelPedido($comprados);
+
         return UpsellRule::active()
             ->with(['offerProduct.images', 'offerProduct.variants'])
-            ->whereIn('trigger_product_id', $comprados)
-            // No se ofrece algo que el cliente acaba de comprar.
-            ->whereNotIn('offer_product_id', $comprados)
+            ->where(fn ($q) => $q->whereIn('trigger_product_id', $comprados)
+                ->orWhereIn('trigger_category_id', $categorias))
+            // No se ofrece algo que el cliente acaba de comprar. Sin el whereNull, el
+            // NOT IN sobre NULL descartaría las reglas que ofrecen una categoría.
+            ->where(fn ($q) => $q->whereNull('offer_product_id')
+                ->orWhereNotIn('offer_product_id', $comprados))
             ->orderByDesc('priority')
             ->orderBy('id')
             ->get()
+            // Una regla de categoría se resuelve a UN producto: el front identifica cada
+            // oferta por su rule_id, y así los lugares se reparten entre reglas.
+            ->map(fn (UpsellRule $regla) => $regla->ofreceCategoria()
+                ? $this->productoDeCategoria($regla, $comprados)
+                : $regla)
+            ->filter()
             ->filter(fn (UpsellRule $regla) => $this->variantesDisponibles($regla)->isNotEmpty())
             // Dos disparadores pueden ofrecer el mismo producto con descuentos distintos.
             // Gana el más alto: mostrar el peor existiendo uno mejor es indefendible si
             // el cliente lo compara. A igual descuento manda priority (ya está ordenado).
             ->sortByDesc('discount_percent')
             ->unique('offer_product_id')
-            ->sortBy([['priority', 'desc'], ['id', 'asc']])
+            // Orden en pantalla: prioridad; a igual prioridad, el mejor descuento primero.
+            ->sortBy([['priority', 'desc'], ['discount_percent', 'desc'], ['id', 'asc']])
             ->take(self::MAX_OFERTAS)
             ->values();
     }
@@ -193,7 +207,7 @@ class UpsellService
         }
 
         $comprados = $this->productosDelPedido($original);
-        $lineas = $this->validarSeleccion($seleccion, $comprados);
+        $lineas = $this->validarSeleccion($seleccion, $comprados, $this->categoriasDelPedido($comprados));
 
         return DB::transaction(function () use ($original, $lineas) {
             // Reutiliza el pedido pendiente si el cliente ya había elegido antes y no
@@ -267,11 +281,12 @@ class UpsellService
      *
      * @param  array<int, array{rule_id: int|string, variant_id: string}>  $seleccion
      * @param  Collection<int, string>  $comprados
+     * @param  array<int, int>  $categorias  Las de los productos comprados, con sus ancestros.
      * @return array<int, array{variant: ProductVariant, precio: float, subtotal: float, descuento: float}>
      *
      * @throws ValidationException
      */
-    private function validarSeleccion(array $seleccion, Collection $comprados): array
+    private function validarSeleccion(array $seleccion, Collection $comprados, array $categorias): array
     {
         $lineas = [];
         $ofrecidos = [];
@@ -281,13 +296,30 @@ class UpsellService
                 ->with('offerProduct.variants')
                 ->find($item['rule_id']);
 
+            // En una regla de categoría el producto sale de la talla elegida, y tiene
+            // que pertenecer a la categoría ofrecida (o a una subcategoría).
+            if ($regla?->ofreceCategoria()) {
+                $producto = ProductVariant::with('product.variants')->find($item['variant_id'])?->product;
+
+                if (! $producto || ! in_array($producto->category_id, $this->categoriaConDescendientes((int) $regla->offer_category_id))) {
+                    throw ValidationException::withMessages([
+                        "items.{$i}.variant_id" => ['Ese producto no corresponde a la oferta.'],
+                    ]);
+                }
+
+                $regla = $regla->paraProducto($producto);
+            }
+
             if (! $regla || ! $regla->offerProduct?->is_active) {
                 throw ValidationException::withMessages([
                     "items.{$i}.rule_id" => ['Esa oferta ya no está disponible.'],
                 ]);
             }
 
-            if (! $comprados->contains($regla->trigger_product_id)) {
+            $disparada = ($regla->trigger_product_id !== null && $comprados->contains($regla->trigger_product_id))
+                || ($regla->trigger_category_id !== null && in_array($regla->trigger_category_id, $categorias));
+
+            if (! $disparada) {
                 throw ValidationException::withMessages([
                     "items.{$i}.rule_id" => ['Esa oferta no corresponde a este pedido.'],
                 ]);
@@ -343,6 +375,52 @@ class UpsellService
             ->filter()
             ->unique()
             ->values();
+    }
+
+    /**
+     * Categorías que disparan reglas para un pedido: las de sus productos y todas sus
+     * ancestras, porque una regla sobre "Cascos" vale también para "Cascos → Integrales".
+     *
+     * @param  Collection<int, string>  $comprados
+     * @return array<int, int>
+     */
+    private function categoriasDelPedido(Collection $comprados): array
+    {
+        $ids = Product::whereIn('id', $comprados)->whereNotNull('category_id')
+            ->distinct()->pluck('category_id')->map(fn ($id) => (int) $id)->all();
+        $nivel = $ids;
+
+        // Mismo límite que categoriaConDescendientes, por si hubiera un ciclo de padres.
+        for ($i = 0; $i < 10 && $nivel; $i++) {
+            $nivel = Category::whereIn('id', $nivel)->whereNotNull('parent_id')
+                ->whereNotIn('parent_id', $ids)->pluck('parent_id')->map(fn ($id) => (int) $id)->unique()->all();
+            $ids = array_merge($ids, $nivel);
+        }
+
+        return $ids;
+    }
+
+    /**
+     * La regla de categoría aplicada al producto que se muestra: uno activo, con alguna
+     * talla en stock y que el cliente no acaba de comprar. Primero los destacados y
+     * populares; null si la categoría no tiene nada que ofrecer.
+     *
+     * @param  Collection<int, string>  $comprados
+     */
+    private function productoDeCategoria(UpsellRule $regla, Collection $comprados): ?UpsellRule
+    {
+        $producto = Product::query()
+            ->with(['images', 'variants'])
+            ->where('is_active', true)
+            ->whereIn('category_id', $this->categoriaConDescendientes((int) $regla->offer_category_id))
+            ->whereNotIn('id', $comprados)
+            ->whereHas('variants', fn ($q) => $q->where('is_active', true)->where('stock', '>', 0))
+            ->orderByDesc('is_featured')
+            ->orderByDesc('is_popular')
+            ->latest()
+            ->first();
+
+        return $producto ? $regla->paraProducto($producto) : null;
     }
 
     /**
@@ -552,6 +630,194 @@ class UpsellService
                 'existentes' => $existentes->map($etiqueta)->sort()->values(),
             ];
         });
+    }
+
+    /**
+     * Qué haría el formulario de regla individual con estos datos: las ofertas que
+     * quedan por crear y las que ya tienen regla con ese disparador (se omiten). Lo usan
+     * el aviso en vivo del formulario y el guardado, así los dos dicen lo mismo.
+     *
+     * @param  array<string, mixed>  $datos  Ver guardarReglas().
+     * @return array{nuevas: Collection<int, string|int>, existentes: Collection<int, string|int>}
+     *               Ids de producto ofrecido, o el id de la categoría ofrecida.
+     */
+    public function planDeReglas(array $datos, ?int $exceptoId = null): array
+    {
+        $ofertas = $this->ofertasDelFormulario($datos);
+
+        if ($ofertas->isEmpty() || ! $this->tieneDisparador($datos)) {
+            return ['nuevas' => $ofertas, 'existentes' => collect()];
+        }
+
+        $columna = filled($datos['offer_category_id'] ?? null) ? 'offer_category_id' : 'offer_product_id';
+
+        $existentes = $this->conDisparador(UpsellRule::query(), $datos)
+            ->whereIn($columna, $ofertas)
+            ->when($exceptoId, fn ($q) => $q->whereKeyNot($exceptoId))
+            ->pluck($columna);
+
+        // Comparación laxa: el id de categoría puede llegar como texto del formulario.
+        return [
+            'nuevas' => $ofertas->reject(fn ($id) => $existentes->contains($id))->values(),
+            'existentes' => $ofertas->filter(fn ($id) => $existentes->contains($id))->values(),
+        ];
+    }
+
+    /**
+     * Cuántas ofertas activas distintas tendría el disparador tras guardar. Si pasa de
+     * MAX_OFERTAS, el cliente verá solo las de mayor prioridad.
+     *
+     * @param  array<string, mixed>  $datos  Ver guardarReglas().
+     */
+    public function ofertasActivasTrasGuardar(array $datos, ?int $exceptoId = null): int
+    {
+        if (! $this->tieneDisparador($datos)) {
+            return 0;
+        }
+
+        $clave = fn (UpsellRule $r) => $r->offer_category_id !== null ? 'c'.$r->offer_category_id : 'p'.$r->offer_product_id;
+
+        $actuales = $this->conDisparador(UpsellRule::active(), $datos)
+            ->when($exceptoId, fn ($q) => $q->whereKeyNot($exceptoId))
+            ->get(['offer_product_id', 'offer_category_id'])
+            // toBase(): vacía, la colección Eloquent no sabría fusionar textos.
+            ->toBase()
+            ->map($clave);
+
+        $nuevas = ($datos['is_active'] ?? true)
+            ? $this->ofertasDelFormulario($datos)->map(fn ($id) => (filled($datos['offer_category_id'] ?? null) ? 'c' : 'p').$id)
+            : collect();
+
+        return $actuales->merge($nuevas)->unique()->count();
+    }
+
+    /**
+     * Guarda el formulario de regla individual: un disparador (producto o categoría) y
+     * una categoría o varios productos ofrecidos. Una regla por producto; las que ya
+     * existen con ese disparador se omiten y se informan. Al editar, la regla editada
+     * conserva su producto si sigue elegido (si no, toma el primero) y el resto se crea.
+     *
+     * @param  array{trigger_product_id?: ?string, trigger_category_id?: int|string|null, offer_category_id?: int|string|null, offer_product_ids?: array<int, string>, discount_percent: int|string, descuentos?: array<string, int|string>, priority?: int|string|null, is_active?: bool}  $datos
+     * @return array{regla: UpsellRule, creadas: Collection<int, string>, omitidas: Collection<int, string>}
+     *               Las listas, con el nombre de lo ofrecido.
+     *
+     * @throws ValidationException  Claves: trigger, offer_product_ids, offer_category_id, discount_percent, descuentos.
+     */
+    public function guardarReglas(array $datos, ?UpsellRule $regla = null): array
+    {
+        if (! $this->tieneDisparador($datos)) {
+            throw ValidationException::withMessages(['trigger' => 'Elegí el disparador: un producto o una categoría.']);
+        }
+
+        $porCategoria = filled($datos['offer_category_id'] ?? null);
+        $campoOferta = $porCategoria ? 'offer_category_id' : 'offer_product_ids';
+        $ofertas = $this->ofertasDelFormulario($datos);
+
+        if ($ofertas->isEmpty()) {
+            throw ValidationException::withMessages([$campoOferta => 'Elegí qué ofrecer.']);
+        }
+
+        if (! $porCategoria && filled($datos['trigger_product_id'] ?? null) && $ofertas->contains($datos['trigger_product_id'])) {
+            throw ValidationException::withMessages([
+                'offer_product_ids' => 'El disparador no puede ofrecerse a sí mismo.',
+            ]);
+        }
+
+        $descuento = (int) $datos['discount_percent'];
+        $descuentos = $porCategoria ? [] : array_map('intval', $datos['descuentos'] ?? []);
+
+        foreach ([$descuento, ...array_values($descuentos)] as $porcentaje) {
+            if ($porcentaje < 1 || $porcentaje > 90) {
+                throw ValidationException::withMessages(['discount_percent' => 'El descuento va de 1% a 90%.']);
+            }
+        }
+
+        if (array_diff(array_keys($descuentos), $ofertas->all())) {
+            throw ValidationException::withMessages([
+                'descuentos' => 'Hay descuentos propios para productos que no están entre los ofrecidos.',
+            ]);
+        }
+
+        ['nuevas' => $nuevas, 'existentes' => $existentes] = $this->planDeReglas($datos, $regla?->getKey());
+        $nombreDe = $this->nombresDeOfertas($ofertas, $porCategoria);
+
+        if ($nuevas->isEmpty()) {
+            throw ValidationException::withMessages([
+                $campoOferta => $existentes->count() === 1
+                    ? sprintf('Ya existe una regla con este disparador para %s. Buscala en el listado para editarla.', $nombreDe($existentes->first()))
+                    : 'Todo lo elegido ya tiene una regla con este disparador: '.$existentes->map($nombreDe)->implode(', ').'.',
+            ]);
+        }
+
+        $base = [
+            'trigger_product_id' => filled($datos['trigger_category_id'] ?? null) ? null : $datos['trigger_product_id'],
+            'trigger_category_id' => filled($datos['trigger_category_id'] ?? null) ? (int) $datos['trigger_category_id'] : null,
+            'priority' => (int) ($datos['priority'] ?? 0),
+            'is_active' => (bool) ($datos['is_active'] ?? true),
+        ];
+        $paraOferta = fn ($id) => $base + ($porCategoria
+            ? ['offer_product_id' => null, 'offer_category_id' => (int) $id, 'discount_percent' => $descuento]
+            : ['offer_product_id' => $id, 'offer_category_id' => null, 'discount_percent' => $descuentos[$id] ?? $descuento]);
+
+        return DB::transaction(function () use ($regla, $nuevas, $existentes, $paraOferta, $porCategoria, $nombreDe) {
+            $pendientes = $nuevas;
+
+            if ($regla) {
+                // La editada se queda con su oferta si sigue elegida: así su id (y lo que
+                // apunte a ella) sigue significando lo mismo.
+                $actual = $porCategoria ? $regla->offer_category_id : $regla->offer_product_id;
+                $propia = $pendientes->first(fn ($id) => $id == $actual) ?? $pendientes->first();
+                $regla->update($paraOferta($propia));
+                $pendientes = $pendientes->reject(fn ($id) => $id === $propia)->values();
+            }
+
+            $creadas = $pendientes->map(fn ($id) => UpsellRule::create($paraOferta($id)));
+
+            return [
+                'regla' => $regla ?? $creadas->first(),
+                'creadas' => $pendientes->map($nombreDe)->values(),
+                'omitidas' => $existentes->map($nombreDe)->values(),
+            ];
+        });
+    }
+
+    /** @return Collection<int, string|int> */
+    private function ofertasDelFormulario(array $datos): Collection
+    {
+        if (filled($datos['offer_category_id'] ?? null)) {
+            return collect([(int) $datos['offer_category_id']]);
+        }
+
+        return collect($datos['offer_product_ids'] ?? [])->filter()->unique()->values();
+    }
+
+    private function tieneDisparador(array $datos): bool
+    {
+        return filled($datos['trigger_product_id'] ?? null) || filled($datos['trigger_category_id'] ?? null);
+    }
+
+    /**
+     * Reglas con exactamente este disparador. Un disparador por producto y otro por
+     * categoría nunca coinciden, aunque el producto sea de esa categoría.
+     *
+     * @param  Builder<UpsellRule>  $consulta
+     * @return Builder<UpsellRule>
+     */
+    private function conDisparador(Builder $consulta, array $datos): Builder
+    {
+        return filled($datos['trigger_category_id'] ?? null)
+            ? $consulta->where('trigger_category_id', (int) $datos['trigger_category_id'])->whereNull('trigger_product_id')
+            : $consulta->where('trigger_product_id', $datos['trigger_product_id'])->whereNull('trigger_category_id');
+    }
+
+    /** @return Closure(string|int): string */
+    private function nombresDeOfertas(Collection $ofertas, bool $porCategoria): Closure
+    {
+        $nombres = $porCategoria
+            ? Category::whereIn('id', $ofertas)->pluck('name', 'id')->map(fn ($n) => 'la categoría '.$n)
+            : Product::whereIn('id', $ofertas)->pluck('name', 'id');
+
+        return fn ($id) => $nombres[$id] ?? (string) $id;
     }
 
     /** @return array<int, int> */

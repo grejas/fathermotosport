@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Resources\UpsellRuleResource\Pages\CreateUpsellRule;
+use App\Models\Category;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -11,7 +13,9 @@ use App\Services\UpsellService;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
@@ -136,9 +140,9 @@ class UpsellTest extends TestCase
         $casco = $this->producto();
         $order = $this->pedidoPagado($casco);
 
-        // Cuatro candidatas para tres lugares.
+        // Seis candidatas para cinco lugares.
         $esperadas = [];
-        foreach ([5, 30, 20, 10] as $prioridad) {
+        foreach ([5, 30, 20, 10, 1, 15] as $prioridad) {
             $ofrecido = $this->producto(50, 2, null);
             $this->regla($casco, $ofrecido, ['priority' => $prioridad]);
             $esperadas[$prioridad] = $ofrecido->product_id;
@@ -146,10 +150,33 @@ class UpsellTest extends TestCase
 
         $respuesta = $this->getJson("/api/v1/orders/{$order->id}/upsell", $this->cabeceras($order))
             ->assertOk()
-            ->assertJsonCount(UpsellService::MAX_OFERTAS, 'offers');
+            ->assertJsonCount(5, 'offers');
 
         $ids = collect($respuesta->json('offers'))->pluck('product.id')->all();
-        $this->assertSame([$esperadas[30], $esperadas[20], $esperadas[10]], $ids);
+        $this->assertSame([$esperadas[30], $esperadas[20], $esperadas[15], $esperadas[10], $esperadas[5]], $ids);
+    }
+
+    public function test_the_cap_is_five_offers(): void
+    {
+        $this->assertSame(5, UpsellService::MAX_OFERTAS);
+    }
+
+    public function test_at_equal_priority_the_best_discount_goes_first(): void
+    {
+        $casco = $this->producto();
+        $order = $this->pedidoPagado($casco);
+
+        $poco = $this->producto(50, 2, null);
+        $mucho = $this->producto(50, 2, null);
+        $urgente = $this->producto(50, 2, null);
+        // La de menor descuento se crea primero: si mandara el id, saldría antes.
+        $this->regla($casco, $poco, ['priority' => 5, 'discount_percent' => 10]);
+        $this->regla($casco, $mucho, ['priority' => 5, 'discount_percent' => 40]);
+        $this->regla($casco, $urgente, ['priority' => 9, 'discount_percent' => 5]);
+
+        $ids = collect($this->verOfertas($order)->assertOk()->json('offers'))->pluck('product.id')->all();
+
+        $this->assertSame([$urgente->product_id, $mucho->product_id, $poco->product_id], $ids);
     }
 
     public function test_a_product_offered_by_two_rules_appears_once_with_the_best_discount(): void
@@ -657,5 +684,164 @@ class UpsellTest extends TestCase
         $this->assertNull($order->fresh()->upsell_offered_at);
 
         $this->comprarOferta($order, $regla, $visera)->assertStatus(422);
+    }
+
+    // ─────────────── Reglas por categoría ───────────────
+
+    private function categoria(string $nombre, ?Category $padre = null): Category
+    {
+        return Category::create([
+            'name' => $nombre,
+            'slug' => Str::slug($nombre).'-'.Str::random(6),
+            'parent_id' => $padre?->id,
+            'is_active' => true,
+        ]);
+    }
+
+    private function enCategoria(ProductVariant $variante, Category $categoria): ProductVariant
+    {
+        $variante->product->update(['category_id' => $categoria->id]);
+
+        return $variante;
+    }
+
+    public function test_a_category_trigger_covers_its_subcategories(): void
+    {
+        $cascos = $this->categoria('Cascos');
+        $integrales = $this->categoria('Integrales', $cascos);
+        $casco = $this->enCategoria($this->producto(), $integrales);
+        $visera = $this->producto(80, 3, null);
+
+        UpsellRule::create([
+            'trigger_category_id' => $cascos->id,
+            'offer_product_id' => $visera->product_id,
+            'discount_percent' => 25,
+        ]);
+
+        $order = $this->pedidoPagado($casco);
+
+        $this->verOfertas($order)
+            ->assertOk()
+            ->assertJsonCount(1, 'offers')
+            ->assertJsonPath('offers.0.product.id', $visera->product_id)
+            ->assertJsonPath('offers.0.discounted_price', '60.00');
+    }
+
+    public function test_a_category_trigger_does_not_fire_for_other_categories(): void
+    {
+        $cascos = $this->categoria('Cascos');
+        $guantes = $this->enCategoria($this->producto(), $this->categoria('Guantes'));
+        $visera = $this->producto(80, 3, null);
+
+        UpsellRule::create([
+            'trigger_category_id' => $cascos->id,
+            'offer_product_id' => $visera->product_id,
+            'discount_percent' => 25,
+        ]);
+
+        $this->verOfertas($this->pedidoPagado($guantes))->assertOk()->assertJsonCount(0, 'offers');
+    }
+
+    public function test_a_category_offer_shows_one_available_product_not_just_bought(): void
+    {
+        $cascos = $this->categoria('Cascos');
+        $casco = $this->enCategoria($this->producto(), $cascos);
+        $this->enCategoria($this->producto(90, 0), $cascos); // Agotado.
+        $otro = $this->enCategoria($this->producto(200), $cascos);
+
+        $regla = UpsellRule::create([
+            'trigger_category_id' => $cascos->id,
+            'offer_category_id' => $cascos->id,
+            'discount_percent' => 10,
+        ]);
+
+        $order = $this->pedidoPagado($casco);
+
+        $this->verOfertas($order)
+            ->assertOk()
+            ->assertJsonCount(1, 'offers')
+            ->assertJsonPath('offers.0.rule_id', $regla->id)
+            ->assertJsonPath('offers.0.product.id', $otro->product_id)
+            ->assertJsonPath('offers.0.discounted_price', '180.00');
+
+        $this->comprarOferta($order, $regla, $otro)
+            ->assertCreated()
+            ->assertJsonPath('order.discount', '20.00')
+            ->assertJsonPath('order.total', '180.00');
+
+        // La regla en la base sigue siendo de categoría.
+        $this->assertNull($regla->fresh()->offer_product_id);
+    }
+
+    /**
+     * El caso real: "a quien compre cualquier casco, ofrecerle las mangas y la
+     * balaclava". La regla se carga desde el formulario del panel sobre la categoría
+     * Cascos tal como está (sin subcategorías nuevas), y un casco dado de alta DESPUÉS
+     * de la regla dispara las ofertas sin tocarla.
+     */
+    public function test_real_case_helmets_category_offers_sleeves_and_balaclava_even_for_a_newer_helmet(): void
+    {
+        $cascos = Category::where('slug', 'cascos')->firstOrFail();
+        $accesorios = Category::where('slug', 'accesorios')->firstOrFail();
+        $mangas = $this->enCategoria($this->producto(60, 4, 'M'), $accesorios);
+        $mangas->product->update(['name' => 'Mangas UV']);
+        $balaclava = $this->enCategoria($this->producto(35, 4, null), $accesorios);
+        $balaclava->product->update(['name' => 'Balaclava']);
+        $subcategorias = Category::where('parent_id', $cascos->id)->count();
+
+        $this->actingAs(User::where('email', 'admin@fathermotosport.com')->firstOrFail());
+        Livewire::test(CreateUpsellRule::class)
+            ->fillForm([
+                'trigger_tipo' => 'categoria',
+                'trigger_category_id' => $cascos->id,
+                'offer_tipo' => 'producto',
+                'offer_product_ids' => [$mangas->product_id, $balaclava->product_id],
+                'discount_percent' => 20,
+                'descuentos' => [['offer_product_id' => $balaclava->product_id, 'discount_percent' => 30]],
+                'priority' => 0,
+                'is_active' => true,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+        auth()->logout();
+
+        $this->assertSame(2, UpsellRule::where('trigger_category_id', $cascos->id)->count());
+        $this->assertSame($subcategorias, Category::where('parent_id', $cascos->id)->count(), 'No se crean subcategorías.');
+
+        // El casco nace después de la regla.
+        $this->travel(5)->minutes();
+        $casco = $this->enCategoria($this->producto(500), $cascos);
+
+        $ofertas = $this->verOfertas($this->pedidoPagado($casco))
+            ->assertOk()
+            ->assertJsonCount(2, 'offers')
+            ->json('offers');
+
+        $porProducto = collect($ofertas)->keyBy('product.id');
+        $this->assertSame('48.00', $porProducto[$mangas->product_id]['discounted_price']);
+        $this->assertSame('24.50', $porProducto[$balaclava->product_id]['discounted_price']);
+        // Misma prioridad: primero el mejor descuento.
+        $this->assertSame($balaclava->product_id, $ofertas[0]['product']['id']);
+    }
+
+    public function test_a_category_offer_rejects_a_product_outside_the_category(): void
+    {
+        $cascos = $this->categoria('Cascos');
+        $casco = $this->producto();
+        $this->enCategoria($this->producto(200), $cascos);
+        $ajeno = $this->enCategoria($this->producto(10), $this->categoria('Stickers'));
+
+        $regla = UpsellRule::create([
+            'trigger_product_id' => $casco->product_id,
+            'offer_category_id' => $cascos->id,
+            'discount_percent' => 50,
+        ]);
+
+        $order = $this->pedidoPagado($casco);
+        $this->verOfertas($order)->assertOk()->assertJsonCount(1, 'offers');
+
+        $this->comprarOferta($order, $regla, $ajeno)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('items.0.variant_id');
     }
 }
