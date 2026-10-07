@@ -435,35 +435,68 @@ class PaymentRecoveryTest extends TestCase
         }
     }
 
-    public function test_the_mail_shows_the_payment_badges_and_the_button_in_the_three_languages(): void
+    public function test_the_mail_has_a_single_button_and_no_payment_badges_in_the_three_languages(): void
     {
-        config(['app.email_assets_url' => 'https://fathermotosport.com']);
         $botones = ['es' => 'Completar mi pago', 'pt' => 'Concluir meu pagamento', 'en' => 'Complete my payment'];
-        $metodos = [
-            'es' => 'Paga con PayPal o con tarjeta de crédito o débito',
-            'pt' => 'Pague com PayPal ou com cartão de crédito ou débito',
-            'en' => 'Pay with PayPal or with a credit or debit card',
-        ];
 
         foreach ($botones as $locale => $boton) {
             $order = $this->pedido($locale);
-            $html = html_entity_decode((new PaymentRecoveryMail($order))->render(), ENT_QUOTES);
+            // La factory le agrega imágenes al producto: sin ninguna, el correo no tiene <img>.
+            $order->items()->first()->variant->product->images()->delete();
+            $html = html_entity_decode((new PaymentRecoveryMail($order->fresh()))->render(), ENT_QUOTES);
 
-            // Insignias PNG desde una URL pública de la tienda, con texto alternativo y medidas.
-            foreach (['paypal' => 'PayPal', 'visa' => 'Visa', 'mastercard' => 'Mastercard', 'amex' => 'American Express'] as $archivo => $alt) {
-                $this->assertMatchesRegularExpression(
-                    '#<img src="https://fathermotosport\.com/email/payment-badges/'.$archivo.'\.png" width="56" height="36" alt="'.$alt.'"#',
-                    $html,
-                    "{$locale}: insignia {$alt}"
-                );
-            }
-            $this->assertStringNotContainsString('.svg', $html);
-            $this->assertStringNotContainsString('data:image', $html);
-            $this->assertStringContainsString($metodos[$locale], $html);
+            // Transaccional: sin insignias ni imágenes de adorno.
+            $this->assertStringNotContainsString('payment-badges', $html, $locale);
+            $this->assertStringNotContainsString('<img', $html, $locale);
 
-            // El botón, con su enlace, también en la versión VML para Outlook.
-            $this->assertStringContainsString($boton, $html);
+            // Un único botón. Su enlace aparece dos veces: la versión VML es el mismo
+            // botón, solo para Outlook (los demás clientes la ignoran).
+            $this->assertSame(2, substr_count($html, $boton), $locale);
             $this->assertSame(2, substr_count($html, 'href="'.$order->urlParaPagar().'"'), $locale);
+            // Y ningún otro enlace a la tienda, salvo el logo.
+            $this->assertSame(0, substr_count($html, '/unsubscribe'), $locale);
+            $this->assertStringNotContainsString('wa.me', $html, $locale);
+        }
+    }
+
+    public function test_the_mail_has_no_commercial_wording(): void
+    {
+        // Pedido con envío en 0 y sin cupón: el caso en que antes salía "Gratis".
+        $prohibidas = [
+            'es' => ['gratis', 'gratuito', 'oferta', 'descuento', 'aprovecha', 'promoción'],
+            'pt' => ['grátis', 'gratuito', 'oferta', 'desconto', 'aproveite', 'promoção'],
+            'en' => ['free', 'offer', 'discount', 'deal', 'sale', 'promo'],
+        ];
+
+        foreach ($prohibidas as $locale => $palabras) {
+            $order = $this->pedido($locale);
+            $this->assertEquals(0, $order->shipping);
+            $this->assertEquals(0, $order->discount);
+
+            $html = (new PaymentRecoveryMail($order))->render();
+            $texto = mb_strtolower(html_entity_decode(strip_tags(preg_replace('#<(style|title)\b.*?</\1>#s', '', $html)), ENT_QUOTES));
+
+            foreach ($palabras as $palabra) {
+                $this->assertDoesNotMatchRegularExpression('/\b'.preg_quote($palabra, '/').'\b/u', $texto, "{$locale}: {$palabra}");
+            }
+            // El envío en 0 se muestra como importe, no como "gratis".
+            $this->assertStringContainsString('$0.00', $texto, $locale);
+        }
+    }
+
+    public function test_the_mail_sends_no_list_unsubscribe_or_bulk_headers(): void
+    {
+        // Se envía de verdad, por el transporte "array" (en memoria), para ver las
+        // cabeceras reales del mensaje: el fake de setUp no arma el mensaje.
+        $manager = Mail::getFacadeRoot()->manager;
+        $manager->mailer('array')->to('cliente@example.com')->send(new PaymentRecoveryMail($this->pedido()));
+
+        $mensajes = $manager->mailer('array')->getSymfonyTransport()->messages();
+        $this->assertCount(1, $mensajes);
+        $cabeceras = $mensajes->first()->getOriginalMessage()->getHeaders();
+
+        foreach (['List-Unsubscribe', 'List-Unsubscribe-Post', 'List-Id', 'Precedence', 'X-Mailchimp-Campaign', 'Feedback-ID'] as $cabecera) {
+            $this->assertFalse($cabeceras->has($cabecera), $cabecera);
         }
     }
 
@@ -526,7 +559,7 @@ class PaymentRecoveryTest extends TestCase
 
         $html = html_entity_decode((new OrderConfirmedMail($order))->render(), ENT_QUOTES);
 
-        $this->assertStringContainsString('Envío gratuito a Bolivia y Brasil', $html);
+        $this->assertStringContainsString('Envío gratis a toda América y Europa', $html);
         $this->assertStringContainsString('Ver tienda', $html);
     }
 

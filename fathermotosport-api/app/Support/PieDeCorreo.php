@@ -11,14 +11,15 @@ namespace App\Support;
  */
 class PieDeCorreo
 {
-    public const DIRECCION = 'FatherMotoSport · Cochabamba, Bolivia';
+    /** Solo el nombre: el pie no lleva ciudad ni país. */
+    public const TIENDA = 'FatherMotoSport';
 
     public const WHATSAPP = 'https://wa.me/59168736384';
 
     private const TEXTOS = [
-        'es' => ['envio' => 'Envío gratuito a Bolivia y Brasil', 'tienda' => 'Ver tienda', 'baja' => 'Cancelar suscripción'],
-        'pt' => ['envio' => 'Frete grátis para Bolívia e Brasil', 'tienda' => 'Ver loja', 'baja' => 'Cancelar inscrição'],
-        'en' => ['envio' => 'Free shipping to Bolivia and Brazil', 'tienda' => 'Visit store', 'baja' => 'Unsubscribe'],
+        'es' => ['envio' => 'Envío gratis a toda América y Europa', 'tienda' => 'Ver tienda', 'baja' => 'Cancelar suscripción'],
+        'pt' => ['envio' => 'Frete grátis para toda a América e Europa', 'tienda' => 'Ver loja', 'baja' => 'Cancelar inscrição'],
+        'en' => ['envio' => 'Free shipping to all of the Americas and Europe', 'tienda' => 'Visit store', 'baja' => 'Unsubscribe'],
     ];
 
     /** Idioma del pie: el pedido, si es uno de la tienda; si no, español. */

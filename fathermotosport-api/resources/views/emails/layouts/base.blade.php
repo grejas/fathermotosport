@@ -77,7 +77,7 @@
     </div>
     <div class="footer">
       <div class="footer-text">
-        FatherMotoSport · Cochabamba, Bolivia<br>
+        {{ \App\Support\PieDeCorreo::TIENDA }}<br>
         {{ $pie['envio'] }}
       </div>
       <div class="footer-links">

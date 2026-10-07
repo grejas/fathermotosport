@@ -19,7 +19,7 @@
     @endif
   </div>
 
-  <div class="text">Usá el código al finalizar tu compra. Recordá que el envío siempre es <strong style="color:#fff">gratis</strong> en Bolivia y Brasil.</div>
+  <div class="text">Usá el código al finalizar tu compra. Recordá que el envío siempre es <strong style="color:#fff">gratis</strong> a toda América y Europa.</div>
 
   <a href="{{ config('app.frontend_url') }}/catalog" class="btn">Explorar productos</a>
 @endsection

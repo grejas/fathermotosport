@@ -1,5 +1,9 @@
 {{--
-  Correo de recuperación de pago. Plantilla propia en tablas y estilos en línea, para
+  Correo de recuperación de pago. Transaccional a propósito (Gmail lo mandaba a
+  Promociones): una sola imagen por producto, un solo botón, sin insignias, sin
+  promesas comerciales y sin enlaces de lista de correo.
+
+  Plantilla propia en tablas y estilos en línea, para
   Outlook (Word como motor), Gmail (recorta <style> en algunas apps) y Apple Mail.
   Misma estética que el resto de los correos (layouts/base): tarjeta negra, cabecera
   roja con el logo de texto, acento #E8001D.
@@ -60,7 +64,6 @@
                 <td style="font-size:19px; line-height:24px; font-weight:700; letter-spacing:1px; color:#FFFFFF;">
                   <a href="{{ $urlTienda }}" style="color:#FFFFFF; text-decoration:none;"><span style="color:#FFC2C9;">Father</span>MotoSport</a>
                 </td>
-                <td align="right" style="font-size:26px; line-height:26px;">💳</td>
               </tr>
             </table>
           </td>
@@ -114,7 +117,7 @@
               @foreach($order->items as $item)
                 @php
                   $producto = $item->variant?->product;
-                  $imagen = $producto?->primary_image;
+                  $imagen = $miniaturas[$item->id] ?? null;
                   $detalle = collect([
                     $item->size ? $t('size').' '.$item->size : null,
                     $item->color,
@@ -160,7 +163,7 @@
                     @endif
                     <tr>
                       <td style="color:#A3A3A3;">{{ $t('shipping') }}{{ $order->shipping_method_name ? ' · '.$order->shipping_method_name : '' }}</td>
-                      <td align="right" style="color:#FFFFFF;">{{ $order->shipping > 0 ? $dinero($order->shipping) : $t('free') }}</td>
+                      <td align="right" style="color:#FFFFFF;">{{ $dinero($order->shipping) }}</td>
                     </tr>
                   </table>
                 </td>
@@ -204,42 +207,15 @@
           </td>
         </tr>
 
-        {{-- Insignias de los métodos de pago, debajo del botón. --}}
-        <tr>
-          <td class="px" align="center" style="padding:18px 32px 0 32px;">
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
-              <tr>
-                @foreach($insignias as $insignia)
-                  <td style="padding:0 4px;">
-                    <img src="{{ $insignia['src'] }}" width="56" height="36" alt="{{ $insignia['alt'] }}"
-                         style="display:block; width:56px; height:36px; border:0; color:#FFFFFF; font-size:13px;">
-                  </td>
-                @endforeach
-              </tr>
-            </table>
-            <p style="margin:10px 0 0 0; font-size:13px; line-height:19px; color:#A3A3A3;">
-              {{ $t('methods') }}
-            </p>
-          </td>
-        </tr>
+        <tr><td style="height:32px; line-height:32px; font-size:13px;">&nbsp;</td></tr>
 
-        <tr>
-          <td class="px" align="center" style="padding:24px 32px 32px 32px; font-size:14px; line-height:22px; color:#A3A3A3;">
-            {!! $t('contact', ['email' => '<a href="mailto:'.e($contacto).'" style="color:#FF2E45; text-decoration:none; font-weight:600;">'.e($contacto).'</a>']) !!}
-          </td>
-        </tr>
-
-        {{-- Pie: el mismo de los demás correos, más el contacto. --}}
+        {{-- Pie mínimo, de correo transaccional: la tienda y el contacto. Sin promesas de
+             envío, enlaces a la tienda ni "cancelar suscripción" (es un aviso de un pedido,
+             no una lista de correo). --}}
         <tr>
           <td class="px" bgcolor="#050505" align="center" style="background:#050505; border-top:1px solid #1C1C1C; padding:22px 32px; font-size:13px; line-height:21px; color:#8F8F8F;">
-            {{ $direccionTienda }}<br>
-            {{ $pie['envio'] }}<br>
-            <a href="mailto:{{ $contacto }}" style="color:#8F8F8F; text-decoration:none;">{{ $contacto }}</a>
-            <div style="margin-top:10px;">
-              <a href="{{ $urlTienda }}" style="color:#FF5A6B; text-decoration:none; margin:0 8px;">{{ $pie['tienda'] }}</a>
-              <a href="{{ $whatsapp }}" style="color:#FF5A6B; text-decoration:none; margin:0 8px;">WhatsApp</a>
-              <a href="{{ $urlTienda }}/unsubscribe" style="color:#FF5A6B; text-decoration:none; margin:0 8px;">{{ $pie['baja'] }}</a>
-            </div>
+            {{ $nombreTienda }}<br>
+            {!! $t('contact', ['email' => '<a href="mailto:'.e($contacto).'" style="color:#8F8F8F; text-decoration:underline;">'.e($contacto).'</a>']) !!}
           </td>
         </tr>
 
