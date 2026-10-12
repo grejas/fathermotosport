@@ -10,6 +10,11 @@ class CreateBanner extends CreateRecord
 {
     protected static string $resource = BannerResource::class;
 
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        return BannerResource::limpiarSegunTipo($data);
+    }
+
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');

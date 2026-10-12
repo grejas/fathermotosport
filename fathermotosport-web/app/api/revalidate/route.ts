@@ -2,9 +2,10 @@ import { timingSafeEqual } from "node:crypto";
 import { revalidateTag } from "next/cache";
 import { NextResponse, type NextRequest } from "next/server";
 import { SHIPPING_RETURNS_TAG } from "@/lib/api/shippingReturns";
+import { BANNERS_TAG } from "@/lib/api/banners";
 
 /** Solo se pueden invalidar estos tags; cualquier otro responde 400. */
-const ALLOWED_TAGS = new Set<string>([SHIPPING_RETURNS_TAG]);
+const ALLOWED_TAGS = new Set<string>([SHIPPING_RETURNS_TAG, BANNERS_TAG]);
 
 function sameSecret(given: string, expected: string): boolean {
   const a = Buffer.from(given);

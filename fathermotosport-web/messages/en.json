@@ -356,6 +356,26 @@
     "UY": "Uruguay",
     "VE": "Venezuela"
   },
+  "banners": {
+    "video_label": "Video: {title}",
+    "play_video": "Play the video: {title}",
+    "play": "Play",
+    "pause": "Pause",
+    "mute": "Mute",
+    "unmute": "Turn sound on",
+    "fullscreen": "Full screen",
+    "exit_fullscreen": "Exit full screen",
+    "progress": "Video progress",
+    "time_of": "{current} of {total}",
+    "carousel": "carousel",
+    "section_label": "Featured highlights",
+    "slide": "item",
+    "slide_label": "{current} of {total}",
+    "prev": "Previous",
+    "next": "Next",
+    "see_more": "See more",
+    "loading": "Loading video"
+  },
   "upsell": {
     "context": "Offer available only now, with your order",
     "title": "Complete your gear",

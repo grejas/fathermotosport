@@ -14,7 +14,7 @@ import { translateText } from "@/lib/utils/translate";
 export function FooterBanner() {
   const locale = useLocale();
   const [banner, setBanner] = useState<Banner | null>(null);
-  const [translated, setTranslated] = useState<{ title: string; button_text: string | null } | null>(null);
+  const [translated, setTranslated] = useState<{ title: string | null; button_text: string | null } | null>(null);
 
   useEffect(() => {
     getBanners("footer")
@@ -31,7 +31,7 @@ export function FooterBanner() {
     }
     let cancelled = false;
     Promise.all([
-      translateText(banner.title, locale),
+      banner.title ? translateText(banner.title, locale) : Promise.resolve(banner.title),
       banner.button_text ? translateText(banner.button_text, locale) : Promise.resolve(banner.button_text),
     ]).then(([title, button_text]) => {
       if (!cancelled) setTranslated({ title, button_text });

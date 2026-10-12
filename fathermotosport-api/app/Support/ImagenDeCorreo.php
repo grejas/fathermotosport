@@ -9,11 +9,7 @@ use Illuminate\Support\Facades\Storage;
  *
  * Gmail descarga las imágenes por su proxy y descarta las URLs con espacios u otros
  * caracteres sin codificar: un archivo subido como "Black Converse Pants.png" quedaba
- * como imagen rota. Acá la URL sale:
- *   - absoluta (una ruta relativa se completa con APP_URL),
- *   - en https (salvo en un host de desarrollo local, que no lo tiene),
- *   - con cada segmento de la ruta codificado una sola vez: se decodifica antes de
- *     codificar, así "%20" no termina en "%2520".
+ * como imagen rota. La URL sale absoluta, en https y codificada (ver UrlPublica).
  *
  * Y devuelve null, para no dejar una imagen rota, si el formato no lo muestran todos
  * los clientes (WebP, AVIF, SVG) o si es un archivo de nuestro /storage que no existe.
@@ -23,23 +19,16 @@ class ImagenDeCorreo
     /** Formatos que muestran Gmail, Outlook y Apple Mail. */
     private const EXTENSIONES = ['png', 'jpg', 'jpeg', 'gif'];
 
-    /** Hosts de desarrollo: sin certificado, así que no se pasan a https. */
-    private const HOSTS_LOCALES = ['localhost', '127.0.0.1', '::1'];
-
     /**
      * @param  bool  $comprobarArchivo  Si la URL es de nuestro /storage, exige que el
      *                                  archivo exista en el disco public.
      */
     public static function url(?string $url, bool $comprobarArchivo = false): ?string
     {
-        $url = trim((string) $url);
+        $url = UrlPublica::absoluta($url);
 
-        if ($url === '') {
+        if ($url === null) {
             return null;
-        }
-
-        if (! preg_match('#^[a-z][a-z0-9+.-]*:#i', $url)) {
-            $url = rtrim((string) config('app.url'), '/').'/'.ltrim($url, '/');
         }
 
         $partes = parse_url($url);
@@ -60,36 +49,7 @@ class ImagenDeCorreo
             return null;
         }
 
-        $esquema = strtolower($partes['scheme']);
-        $host = strtolower($partes['host'] ?? '');
-
-        // Solo las vistas previas locales usan file:// (el segmento "C:" no se puede
-        // codificar sin romper la ruta): basta con los espacios.
-        if ($esquema === 'file') {
-            return str_replace(' ', '%20', $url);
-        }
-
-        if ($esquema === 'http' && ! self::esHostLocal($host)) {
-            $esquema = 'https';
-        }
-
-        // Cada segmento por separado: las barras quedan como separadores.
-        $rutaCodificada = implode('/', array_map(
-            fn (string $segmento) => rawurlencode(rawurldecode($segmento)),
-            explode('/', $ruta)
-        ));
-
-        $autoridad = $host === '' ? '' : '//'.$host.(isset($partes['port']) ? ':'.$partes['port'] : '');
-
-        return $esquema.':'.$autoridad.$rutaCodificada
-            .(isset($partes['query']) ? '?'.$partes['query'] : '');
-    }
-
-    private static function esHostLocal(string $host): bool
-    {
-        return in_array(trim($host, '[]'), self::HOSTS_LOCALES, true)
-            || str_ends_with($host, '.localhost')
-            || str_ends_with($host, '.test');
+        return UrlPublica::de($url);
     }
 
     /**

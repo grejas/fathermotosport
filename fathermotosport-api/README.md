@@ -7,6 +7,46 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## Desarrollo local: subir videos grandes (banners)
+
+El panel acepta videos de hasta 150 MB (`config/livewire.php` y `BannerResource`). En local,
+lo que corta antes son los límites de PHP del servidor de desarrollo. Hay dos formas:
+
+**A. Una vez, en el php.ini de CLI** (en XAMPP: `C:\xampp\php\php.ini`; `php --ini` dice cuál es):
+
+```ini
+upload_max_filesize = 160M
+post_max_size = 170M
+max_input_time = 900
+memory_limit = 512M
+```
+
+Después **reinicia `php artisan serve`**: el servidor que ya estaba corriendo sigue con los
+límites viejos.
+
+**B. Sin tocar el php.ini**, arrancando el servidor de PHP directamente con los límites
+(PowerShell, desde `fathermotosport-api`):
+
+```powershell
+cd public
+php -d upload_max_filesize=160M -d post_max_size=170M -d max_input_time=900 -d max_execution_time=300 -d memory_limit=512M -S 127.0.0.1:8000 ../vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php
+```
+
+Tiene que correrse desde `public` (el `server.php` de Laravel usa la carpeta actual como raíz).
+
+**No sirve** `php -d upload_max_filesize=... artisan serve`: `artisan serve` lanza otro proceso
+`php -S` que no recibe los `-d`, así que la subida sigue con los límites del php.ini. Y un
+`-d max_execution_time=300` ahí corta el propio `artisan serve` a los 5 minutos ("Maximum
+execution time of 300 seconds exceeded" en `ServeCommand.php`).
+
+Otras cosas del servidor de desarrollo de PHP (no pasan en Hostinger/LiteSpeed):
+
+- Atiende una petición a la vez: una subida de 130 MB tarda 2-3 minutos y mientras tanto el
+  resto de la API espera.
+- No acepta rangos (`Range`): los videos se sirven enteros. Por eso los MP4 se reordenan al
+  guardarlos (índice al principio, `App\Support\VideoInicioRapido`); para los ya subidos:
+  `php artisan banners:preparar-videos --apply`.
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

@@ -25,13 +25,15 @@ class BannerController extends Controller
     }
 
     /**
-     * Banners activos de una posición concreta (hero, sidebar, footer).
+     * Banners activos de una posición concreta (hero, home_after_categories, footer).
+     * A igual sort_order, el más antiguo primero: el orden no cambia entre cargas.
      */
     public function byPosition(string $position): JsonResponse
     {
         $banners = Banner::where('is_active', true)
             ->where('position', $position)
             ->orderBy('sort_order')
+            ->orderBy('id')
             ->get();
 
         return response()->json([

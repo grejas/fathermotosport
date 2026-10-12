@@ -356,6 +356,26 @@
     "UY": "Uruguay",
     "VE": "Venezuela"
   },
+  "banners": {
+    "video_label": "Video: {title}",
+    "play_video": "Reproducir el video: {title}",
+    "play": "Reproducir",
+    "pause": "Pausar",
+    "mute": "Silenciar",
+    "unmute": "Activar sonido",
+    "fullscreen": "Pantalla completa",
+    "exit_fullscreen": "Salir de pantalla completa",
+    "progress": "Progreso del video",
+    "time_of": "{current} de {total}",
+    "carousel": "carrusel",
+    "section_label": "Novedades destacadas",
+    "slide": "elemento",
+    "slide_label": "{current} de {total}",
+    "prev": "Anterior",
+    "next": "Siguiente",
+    "see_more": "Ver más",
+    "loading": "Cargando video"
+  },
   "upsell": {
     "context": "Oferta disponible solo ahora, con tu pedido",
     "title": "Completa tu equipo",

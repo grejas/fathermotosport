@@ -1,21 +1,35 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/lib/i18n/navigation";
 import { Box, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { initHeroScroll } from "@/animations/scroll";
-import { getBanners, type Banner } from "@/lib/api/banners";
-import { translateText } from "@/lib/utils/translate";
+import type { Banner } from "@/lib/api/banners";
+import { useTextoTraducido } from "@/lib/hooks/useTextoTraducido";
+import { BannerVideo } from "@/components/media/BannerVideo";
+import { cn } from "@/lib/utils";
 import { HeroParticles } from "./HeroParticles";
 
-export function HeroSection() {
+/**
+ * Hero de la portada. El banner "hero" llega del servidor (page.tsx), así el poster de
+ * un video se precarga con prioridad: es lo primero que se pinta.
+ *
+ * Los textos, los botones y las estadísticas son siempre los fijos del hero: del banner
+ * solo se usan el medio (imagen o video) y su botón opcional. El título y el texto del
+ * banner son para "Debajo de categorías".
+ *
+ * Con video, el video ocupa el lugar de la imagen: en escritorio a la derecha del texto;
+ * en celulares y tablets, entre la descripción y los botones. Siempre con sus controles.
+ */
+export function HeroSection({ banner }: { banner: Banner | null }) {
   const t = useTranslations("home");
   const locale = useLocale();
   const root = useRef<HTMLDivElement>(null);
-  const [heroBanner, setHeroBanner] = useState<Banner | null>(null);
-  const [translatedButtonText, setTranslatedButtonText] = useState<string | null>(null);
+
+  // Contenido del admin, cargado en español: se traduce al vuelo en pt/en.
+  const botonBanner = useTextoTraducido(banner?.button_text, locale);
 
   const stats = [
     { value: "200+", label: t("products") },
@@ -26,28 +40,9 @@ export function HeroSection() {
   // Animación de entrada del hero (texto + botones + stats).
   useEffect(() => initHeroScroll(root.current), []);
 
-  // Banner "hero" configurado desde el panel admin (si existe, se usa como fondo).
-  useEffect(() => {
-    getBanners("hero")
-      .then((banners) => setHeroBanner(banners[0] ?? null))
-      .catch(() => {});
-  }, []);
-
-  // Traduce silenciosamente el button_text del banner (contenido del admin,
-  // vive en español en la base de datos) cuando el locale activo es pt/en.
-  useEffect(() => {
-    if (!heroBanner?.button_text || locale === "es") {
-      setTranslatedButtonText(null);
-      return;
-    }
-    let cancelled = false;
-    translateText(heroBanner.button_text, locale).then((text) => {
-      if (!cancelled) setTranslatedButtonText(text);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [heroBanner, locale]);
+  // El poster es opcional: sin él, BannerVideo muestra fondo oscuro y el primer fotograma.
+  const video = banner?.media_type === "video" && banner.video_url ? banner : null;
+  const imagen = !video ? banner?.image_url : null;
 
   return (
     <section
@@ -65,12 +60,12 @@ export function HeroSection() {
       {/* Fondo: imagen del banner del admin, detrás de partículas y contenido.
           La imagen es cuadrada (874x874); se limita al 55% del ancho y se alinea
           a la derecha para que el casco no invada el texto de la izquierda. */}
-      {heroBanner?.image_url && (
+      {imagen && (
         <div className="absolute inset-0">
           <div
             className="absolute inset-0"
             style={{
-              backgroundImage: `url(${heroBanner.image_url})`,
+              backgroundImage: `url(${imagen})`,
               backgroundSize: "55%",
               backgroundPosition: "right center",
               backgroundRepeat: "no-repeat",
@@ -84,13 +79,15 @@ export function HeroSection() {
         </div>
       )}
       <HeroParticles />
-      {/* Sin banner: se mantiene el gradiente original (hero idéntico al de antes). */}
-      {!heroBanner?.image_url && (
+      {/* Sin imagen (sin banner o con video): el gradiente original. */}
+      {!imagen && (
         <div className="absolute inset-0 bg-gradient-to-t from-brand-carbon via-brand-carbon/40 to-transparent" />
       )}
 
       <div className="relative mx-auto w-full max-w-7xl px-4 sm:px-6">
-        <div className="max-w-2xl">
+        {/* Con video, la columna no es "relative" en escritorio: así el video (que va
+            dentro, entre el texto y los botones) se posiciona respecto del contenedor. */}
+        <div className={cn("relative max-w-2xl", video && "lg:static lg:max-w-[44%]")}>
           <span
             data-hero-tag
             className="inline-flex items-center gap-2 rounded-full border border-brand-red/30 bg-brand-red/10 px-3 py-1 text-xs font-semibold text-brand-red"
@@ -107,6 +104,29 @@ export function HeroSection() {
             {t("hero_desc")}
           </p>
 
+          {video && (
+            // En celulares y tablets, entre la descripción y los botones: va en ese lugar
+            // del DOM (no con CSS order), así el orden de lectura y de tabulación es el
+            // visual. 4:3 en celular y 25:16 en tablet (la columna mide 672px: 430px de
+            // alto), nunca más del 42% del alto de la pantalla. La proporción la reserva el CSS: no hay salto de layout.
+            // En escritorio, el lugar de la imagen: a la derecha del texto (que se
+            // angosta para no taparlo), centrado en alto.
+            <div className="relative mt-8 lg:absolute lg:right-6 lg:top-1/2 lg:mt-0 lg:w-[52%] lg:-translate-y-1/2">
+              <BannerVideo
+                videoUrl={video.video_url!}
+                videoMobileUrl={video.video_mobile_url}
+                posterUrl={video.poster_url}
+                conSonido={video.video_with_sound}
+                etiqueta={`${t("hero_title")} ${t("hero_highlight")}`}
+                modo="hero"
+                prioridad
+                sizes="(min-width: 1024px) 52vw, 100vw"
+                proporcion="aspect-[4/3] max-h-[42svh] md:aspect-[25/16] lg:aspect-video lg:max-h-none"
+                className="shadow-[0_24px_64px_rgba(0,0,0,0.5)]"
+              />
+            </div>
+          )}
+
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/catalog" data-hero-cta>
               <Button variant="primary" size="lg" icon={<ArrowRight size={18} />}>
@@ -120,15 +140,20 @@ export function HeroSection() {
             </Link>
 
             {/* Botón configurado en el admin (button_text), con el mismo estilo
-                glass/pill que "Ver en 3D". Si no hay link_url, cae a /catalog. */}
-            {heroBanner?.button_text && (
-              <a
-                href={heroBanner.link_url ?? "/catalog"}
-                data-hero-cta
-                className="inline-flex h-11 items-center gap-2 rounded-full border border-white/20 bg-white/[0.08] px-6 text-sm font-medium uppercase tracking-widest text-white backdrop-blur-sm transition-all duration-[250ms] hover:border-white/35 hover:bg-white/[0.14]"
-              >
-                {translatedButtonText ?? heroBanner.button_text}
-              </a>
+                glass/pill que "Ver en 3D". Si no hay link_url, cae a /catalog.
+
+                La animación de entrada (GSAP, data-hero-cta) va en un envoltorio sin
+                transición CSS: con transition-all en el mismo elemento, GSAP lo dejaba en
+                opacity 0. Ahora que el banner llega con la página, la animación lo alcanza. */}
+            {banner?.button_text && (
+              <span data-hero-cta className="inline-flex">
+                <a
+                  href={banner.link_url ?? "/catalog"}
+                  className="inline-flex h-11 items-center gap-2 rounded-full border border-white/20 bg-white/[0.08] px-6 text-sm font-medium uppercase tracking-widest text-white backdrop-blur-sm transition-all duration-[250ms] hover:border-white/35 hover:bg-white/[0.14]"
+                >
+                  {botonBanner}
+                </a>
+              </span>
             )}
           </div>
 
@@ -143,9 +168,12 @@ export function HeroSection() {
         </div>
       </div>
 
-      <div className="absolute bottom-8 right-8 hidden items-center gap-2 rounded-full bg-black/50 px-4 py-2 text-sm font-bold text-brand-white backdrop-blur lg:flex">
-        <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-brand-red" /> 360° 3D
-      </div>
+      {/* La insignia 3D va en la esquina de la imagen; con video estaría sobre sus controles. */}
+      {!video && (
+        <div className="absolute bottom-8 right-8 hidden items-center gap-2 rounded-full bg-black/50 px-4 py-2 text-sm font-bold text-brand-white backdrop-blur lg:flex">
+          <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-brand-red" /> 360° 3D
+        </div>
+      )}
     </section>
   );
 }
