@@ -9,7 +9,10 @@
     "login": "Entrar",
     "profile": "Perfil",
     "favorites": "Favoritos",
-    "accessories": "Acessórios"
+    "accessories": "Acessórios",
+    "hoodies": "Moletons",
+    "visors": "Viseiras",
+    "all_categories": "Todas as categorias"
   },
   "product": {
     "add_to_cart": "Adicionar ao carrinho",

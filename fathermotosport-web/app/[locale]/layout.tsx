@@ -9,6 +9,7 @@ import { Providers } from "@/components/layout/Providers";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { CartDrawer } from "@/components/cart/CartDrawer";
+import { getMenuCategories } from "@/lib/api/categories";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -42,16 +43,17 @@ export default async function RootLayout({
   if (!locales.includes(locale)) notFound();
 
   setRequestLocale(locale);
-  const messages = await getMessages();
+  // Una lectura cacheada (tag "categories") para el navbar y el footer de todas las páginas.
+  const [messages, categories] = await Promise.all([getMessages(), getMenuCategories()]);
 
   return (
     <html lang={locale} className={inter.variable}>
       <body suppressHydrationWarning className="min-h-screen bg-brand-carbon font-sans text-brand-white antialiased">
         <NextIntlClientProvider messages={messages}>
           <Providers>
-            <Navbar />
+            <Navbar categories={categories} />
             <main className="min-h-screen">{children}</main>
-            <Footer />
+            <Footer categories={categories} />
             <CartDrawer />
           </Providers>
         </NextIntlClientProvider>

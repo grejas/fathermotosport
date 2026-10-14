@@ -9,7 +9,10 @@
     "login": "Sign in",
     "profile": "Profile",
     "favorites": "Favorites",
-    "accessories": "Accessories"
+    "accessories": "Accessories",
+    "hoodies": "Hoodies",
+    "visors": "Visors",
+    "all_categories": "All categories"
   },
   "product": {
     "add_to_cart": "Add to cart",

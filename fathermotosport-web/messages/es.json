@@ -9,7 +9,10 @@
     "login": "Ingresar",
     "profile": "Perfil",
     "favorites": "Favoritos",
-    "accessories": "Accesorios"
+    "accessories": "Accesorios",
+    "hoodies": "Hoddies",
+    "visors": "Viseras",
+    "all_categories": "Todas las categorías"
   },
   "product": {
     "add_to_cart": "Agregar al carrito",

@@ -1,6 +1,7 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/lib/i18n/navigation";
 import { MessageCircle } from "lucide-react";
+import { categoryHref, categoryLabel, type MenuCategory } from "@/lib/api/categories";
 
 const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP ?? "+59168736384";
 const whatsappNumber = whatsapp.replace(/\D/g, "");
@@ -29,15 +30,8 @@ const socialLinks = [
   },
 ];
 
-const categoryLinks = [
-  { key: "helmets", href: "/catalog?category=1" },
-  { key: "gloves", href: "/catalog?category=2" },
-  { key: "boots", href: "/catalog?category=3" },
-  { key: "jackets", href: "/catalog?category=5" },
-  { key: "parts", href: "/catalog?category=6" },
-] as const;
-
-export function Footer() {
+/** categories: las activas de la API (vacío si falló: la columna no se muestra). */
+export function Footer({ categories }: { categories: MenuCategory[] }) {
   const t = useTranslations("footer");
   const tNav = useTranslations("nav");
   const tWhatsapp = useTranslations("whatsapp");
@@ -58,18 +52,21 @@ export function Footer() {
           <p className="mt-3 max-w-xs text-sm text-brand-muted">{t("description")}</p>
         </div>
 
-        <div>
-          <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-brand-white">{t("categories")}</h4>
-          <ul className="space-y-2">
-            {categoryLinks.map((l) => (
-              <li key={l.key}>
-                <Link href={l.href} className="text-sm text-brand-muted transition hover:text-brand-red">
-                  {tNav(l.key)}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
+        {categories.length > 0 && (
+          <div>
+            <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-brand-white">{t("categories")}</h4>
+            {/* Con muchas categorías, en dos columnas para no estirar el footer. */}
+            <ul className={categories.length > 8 ? "grid grid-cols-2 gap-x-4 gap-y-2" : "space-y-2"}>
+              {categories.map((c) => (
+                <li key={c.id}>
+                  <Link href={categoryHref(c)} className="text-sm text-brand-muted transition hover:text-brand-red">
+                    {categoryLabel(tNav, c)}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div>
           <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-brand-white">{t("payments")}</h4>

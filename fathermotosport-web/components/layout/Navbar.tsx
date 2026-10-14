@@ -9,18 +9,12 @@ import { useAuthStore } from "@/store/authStore";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { useMounted } from "@/lib/hooks/useMounted";
 import { LanguageSelector } from "@/components/ui/LanguageSelector";
+import { categoryHref, categoryLabel, featuredCategories, type MenuCategory } from "@/lib/api/categories";
 import { CartIcon } from "./CartIcon";
+import { CategoriesAccordion, CategoriesDropdown } from "./CategoriesMenu";
 
-const links = [
-  { key: "helmets", href: "/catalog?category=1" },
-  { key: "gloves", href: "/catalog?category=2" },
-  { key: "boots", href: "/catalog?category=3" },
-  { key: "jackets", href: "/catalog?category=5" },
-  { key: "parts", href: "/catalog?category=6" },
-  { key: "brands", href: "/catalog" },
-] as const;
-
-export function Navbar() {
+/** categories: las activas de la API (vacío si falló); los enlaces directos salen de acá por slug. */
+export function Navbar({ categories }: { categories: MenuCategory[] }) {
   const t = useTranslations("nav");
   const pathname = usePathname();
   const router = useRouter();
@@ -29,6 +23,7 @@ export function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const featured = featuredCategories(categories);
 
   const mounted = useMounted();
   const isAuthRaw = useAuthStore((s) => s.isAuth);
@@ -63,7 +58,7 @@ export function Navbar() {
         solid ? "border-b border-white/10 bg-brand-carbon/85 backdrop-blur-md" : "bg-transparent"
       )}
     >
-      <nav className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6">
+      <nav className="relative mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6">
         <Link href="/" className="flex items-center gap-2">
           <span translate="no" className="text-lg font-extrabold tracking-wide sm:text-xl">
             <span className="text-brand-red">Father</span>
@@ -71,17 +66,27 @@ export function Navbar() {
           </span>
         </Link>
 
+        {/* Entre 1024 y 1279 px no entran los enlaces directos: quedan el desplegable y Marcas. */}
         <ul className="ml-6 hidden items-center gap-5 lg:flex">
-          {links.map((l) => (
-            <li key={l.key}>
+          {featured.map((c) => (
+            <li key={c.id} className="hidden xl:block">
               <Link
-                href={l.href}
-                className="text-sm font-medium text-brand-white/80 transition hover:text-brand-red"
+                href={categoryHref(c)}
+                className="whitespace-nowrap text-sm font-medium text-brand-white/80 transition hover:text-brand-red"
               >
-                {t(l.key)}
+                {categoryLabel(t, c)}
               </Link>
             </li>
           ))}
+          <CategoriesDropdown categories={categories} />
+          <li>
+            <Link
+              href="/catalog"
+              className="whitespace-nowrap text-sm font-medium text-brand-white/80 transition hover:text-brand-red"
+            >
+              {t("brands")}
+            </Link>
+          </li>
         </ul>
 
         <div className="ml-auto flex items-center gap-1">
@@ -148,7 +153,7 @@ export function Navbar() {
       </nav>
 
       {mobileOpen && (
-        <div className="border-t border-white/10 bg-brand-carbon/95 px-4 py-4 lg:hidden">
+        <div className="max-h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain border-t border-white/10 bg-brand-carbon/95 px-4 py-4 lg:hidden">
           <form onSubmit={onSearch} className="mb-3 flex items-center gap-2 rounded-lg border border-white/10 bg-brand-dark px-3">
             <Search size={18} className="text-brand-muted" />
             <input
@@ -162,17 +167,27 @@ export function Navbar() {
             <LanguageSelector />
           </div>
           <ul className="flex flex-col gap-1">
-            {links.map((l) => (
-              <li key={l.key}>
+            {featured.map((c) => (
+              <li key={c.id}>
                 <Link
-                  href={l.href}
+                  href={categoryHref(c)}
                   onClick={() => setMobileOpen(false)}
                   className="block rounded-lg px-3 py-2 text-sm font-medium text-brand-white/90 hover:bg-white/10"
                 >
-                  {t(l.key)}
+                  {categoryLabel(t, c)}
                 </Link>
               </li>
             ))}
+            <CategoriesAccordion categories={categories} onNavigate={() => setMobileOpen(false)} />
+            <li>
+              <Link
+                href="/catalog"
+                onClick={() => setMobileOpen(false)}
+                className="block rounded-lg px-3 py-2 text-sm font-medium text-brand-white/90 hover:bg-white/10"
+              >
+                {t("brands")}
+              </Link>
+            </li>
             <li>
               <Link
                 href={isAuth ? "/profile" : "/login"}
