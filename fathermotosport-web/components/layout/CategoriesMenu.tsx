@@ -82,7 +82,8 @@ export function CategoriesDropdown({ categories }: { categories: MenuCategory[] 
         hidden={!open}
         className="absolute inset-x-4 top-full mt-2 sm:inset-x-6"
       >
-        <div className="mx-auto max-h-[min(70vh,32rem)] max-w-5xl overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-brand-carbon/95 p-4 shadow-2xl backdrop-blur-md">
+        {/* Borde fino en el rojo de marca, parejo en los cuatro lados. */}
+        <div className="mx-auto max-h-[min(70vh,32rem)] max-w-5xl overflow-y-auto overscroll-contain rounded-2xl border border-brand-red/40 bg-brand-carbon/95 p-4 shadow-2xl backdrop-blur-md">
           <ul className="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-1">
             {categories.map((c) => (
               <li key={c.id}>
@@ -91,7 +92,11 @@ export function CategoriesDropdown({ categories }: { categories: MenuCategory[] 
                   onClick={() => setOpen(false)}
                   title={categoryLabel(t, c)}
                   className={cn(
-                    "block truncate rounded-lg px-3 py-2 text-sm text-brand-white/90 transition hover:bg-white/10 hover:text-brand-red focus-visible:bg-white/10",
+                    // Hover: fondo rojo muy suave, texto blanco y barra roja de 2 px a la izquierda
+                    // (sombra interior, no mueve el texto). El foco de teclado suma un anillo rojo.
+                    "block truncate rounded-lg px-3 py-2 text-sm text-brand-white/90 outline-none transition",
+                    "hover:bg-brand-red/[0.07] hover:text-white hover:shadow-[inset_2px_0_0_#E8001D]",
+                    "focus-visible:bg-brand-red/[0.07] focus-visible:text-white focus-visible:shadow-[inset_2px_0_0_#E8001D] focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-brand-red",
                     c.depth > 0 && "pl-6 text-brand-white/70"
                   )}
                 >
