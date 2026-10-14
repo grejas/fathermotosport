@@ -7,6 +7,8 @@ interface MarqueeItem {
   /** Si es pill, se resalta con etiqueta dorada + ícono. */
   pill?: boolean;
   icon?: string;
+  /** Nombre de marca: nunca se traduce (translate="no"). */
+  brand?: boolean;
 }
 
 export function MarqueeBar() {
@@ -16,13 +18,13 @@ export function MarqueeBar() {
   const items: MarqueeItem[] = [
     { label: t("free_shipping"), pill: true },
     { label: t("international_shipping"), pill: true},
-    { label: "PayPal" },
-    { label: "Stripe" },
-    { label: "MercadoPago" },
+    { label: "PayPal", brand: true },
+    { label: "Stripe", brand: true },
+    { label: "MercadoPago", brand: true },
     { label: `${tNav("helmets")} ECE 22.06` },
-    { label: "AGV" },
-    { label: "Shoei" },
-    { label: "Shark" },
+    { label: "AGV", brand: true },
+    { label: "Shoei", brand: true },
+    { label: "Shark", brand: true },
   ];
   const row = [...items, ...items];
 
@@ -36,6 +38,8 @@ export function MarqueeBar() {
                 {item.icon && <span aria-hidden>{item.icon}</span>}
                 {item.label}
               </span>
+            ) : item.brand ? (
+              <span translate="no">{item.label}</span>
             ) : (
               item.label
             )}

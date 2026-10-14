@@ -90,7 +90,7 @@ export function CatalogFilters({ brands, value, onChange, onClear }: Props) {
                 onChange={() => toggleBrand(b.id)}
                 className="accent-brand-red"
               />
-              {b.name}
+              <span translate="no">{b.name}</span>
             </label>
           ))}
         </div>

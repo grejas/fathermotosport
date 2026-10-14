@@ -5,6 +5,7 @@ import { useLocale } from "next-intl";
 import Link from "next/link";
 import { getBanners, type Banner } from "@/lib/api/banners";
 import { translateText } from "@/lib/utils/translate";
+import { TextoConMarcas } from "@/components/ui/TextoConMarcas";
 
 /**
  * Sección promocional configurada desde el panel admin (banner position=footer).
@@ -65,7 +66,7 @@ export function FooterBanner() {
       <div className="relative z-10 flex flex-col items-center justify-center gap-6 px-6 py-16 text-center">
         {displayTitle && (
           <h2 className="max-w-2xl text-3xl font-semibold leading-tight tracking-tight text-white md:text-4xl">
-            {displayTitle}
+            <TextoConMarcas texto={displayTitle} />
           </h2>
         )}
         {displayButtonText && (
@@ -73,7 +74,7 @@ export function FooterBanner() {
             href={banner.link_url ?? "/catalog"}
             className="inline-flex h-12 items-center gap-2 rounded-full bg-brand-red px-8 text-sm font-medium uppercase tracking-widest text-white transition-all duration-[250ms] hover:opacity-85 hover:shadow-red-glow active:scale-[0.97]"
           >
-            {displayButtonText}
+            <TextoConMarcas texto={displayButtonText} />
           </Link>
         )}
       </div>

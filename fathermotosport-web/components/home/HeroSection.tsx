@@ -11,6 +11,7 @@ import { useTextoTraducido } from "@/lib/hooks/useTextoTraducido";
 import { BannerVideo } from "@/components/media/BannerVideo";
 import { cn } from "@/lib/utils";
 import { HeroParticles } from "./HeroParticles";
+import { TextoConMarcas } from "@/components/ui/TextoConMarcas";
 
 /**
  * Hero de la portada. El banner "hero" llega del servidor (page.tsx), así el poster de
@@ -151,7 +152,7 @@ export function HeroSection({ banner }: { banner: Banner | null }) {
                   href={banner.link_url ?? "/catalog"}
                   className="inline-flex h-11 items-center gap-2 rounded-full border border-white/20 bg-white/[0.08] px-6 text-sm font-medium uppercase tracking-widest text-white backdrop-blur-sm transition-all duration-[250ms] hover:border-white/35 hover:bg-white/[0.14]"
                 >
-                  {botonBanner}
+                  {botonBanner && <TextoConMarcas texto={botonBanner} />}
                 </a>
               </span>
             )}

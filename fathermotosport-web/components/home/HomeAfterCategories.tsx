@@ -8,6 +8,7 @@ import type { Banner } from "@/lib/api/banners";
 import { useTextoTraducido } from "@/lib/hooks/useTextoTraducido";
 import { BannerVideo } from "@/components/media/BannerVideo";
 import { cn } from "@/lib/utils";
+import { TextoConMarcas } from "@/components/ui/TextoConMarcas";
 
 /** Hasta cuántos elementos se muestran en cuadrícula; desde el siguiente, carrusel. */
 const MAX_EN_CUADRICULA = 3;
@@ -174,10 +175,14 @@ function Elemento({ banner, ancho = false }: { banner: Banner; ancho?: boolean }
         <div className={cn("flex flex-1 flex-col gap-2 p-5", ancho && "lg:p-8")}>
           {titulo && (
             <h3 id={tituloId} className={cn("font-bold leading-snug text-white", ancho ? "text-2xl lg:text-3xl" : "text-lg")}>
-              {titulo}
+              <TextoConMarcas texto={titulo} />
             </h3>
           )}
-          {texto && <p className="text-sm leading-relaxed text-brand-muted">{texto}</p>}
+          {texto && (
+            <p className="text-sm leading-relaxed text-brand-muted">
+              <TextoConMarcas texto={texto} />
+            </p>
+          )}
           {banner.link_url && (
             <a
               href={banner.link_url}
@@ -185,7 +190,7 @@ function Elemento({ banner, ancho = false }: { banner: Banner; ancho?: boolean }
               // y no llega a AA para texto chico; este da ~5,8:1.
               className="mt-auto inline-flex w-fit items-center gap-2 pt-2 text-sm font-semibold uppercase tracking-wider text-[#ff5a6e] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >
-              {boton ?? t("see_more")}
+              {boton ? <TextoConMarcas texto={boton} /> : t("see_more")}
               <ArrowRight size={16} aria-hidden />
             </a>
           )}

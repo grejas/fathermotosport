@@ -93,7 +93,7 @@ export function ProductCard({ product }: { product: Product }) {
         </div>
 
         <div className="p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: accent }}>
+          <p translate="no" className="text-xs font-semibold uppercase tracking-wide" style={{ color: accent }}>
             {product.brand?.name ?? "—"}
           </p>
           <h3 className="mt-1 line-clamp-2 min-h-[2.5rem] text-sm font-semibold text-brand-white sm:text-base">

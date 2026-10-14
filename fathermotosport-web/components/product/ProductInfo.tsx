@@ -82,7 +82,7 @@ export function ProductInfo({
   return (
     <div className="space-y-5">
       <div>
-        <p className="text-sm font-semibold uppercase tracking-wide" style={{ color: accent }}>
+        <p translate="no" className="text-sm font-semibold uppercase tracking-wide" style={{ color: accent }}>
           {product.brand?.name}
         </p>
         <h1 className="mt-1 text-3xl font-extrabold text-brand-white">{product.name}</h1>
