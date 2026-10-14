@@ -238,19 +238,23 @@ class VariantSizeToolsTest extends TestCase
 
     public function test_size_catalog_maps_categories_and_inherits_from_parent(): void
     {
+        // Las mismas tallas que daba la lista fija por slug, ahora leídas de la categoría.
         $id = fn (string $slug) => Category::where('slug', $slug)->value('id');
+        $letras = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+        $botas = array_map('strval', range(36, 47));
 
-        $this->assertSame(SizeCatalog::LETTERS, SizeCatalog::forCategoryId($id('cascos')));
-        $this->assertSame(SizeCatalog::LETTERS, SizeCatalog::forCategoryId($id('guantes')));
-        $this->assertSame(SizeCatalog::LETTERS, SizeCatalog::forCategoryId($id('chamarras')));
-        $this->assertSame(range(36, 47), array_map('intval', SizeCatalog::forCategoryId($id('botas'))));
+        $this->assertSame($letras, SizeCatalog::forCategoryId($id('cascos')));
+        $this->assertSame($letras, SizeCatalog::forCategoryId($id('guantes')));
+        $this->assertSame($letras, SizeCatalog::forCategoryId($id('chamarras')));
+        $this->assertSame($botas, SizeCatalog::forCategoryId($id('botas')));
         $this->assertSame([], SizeCatalog::forCategoryId($id('viseras')));
         $this->assertSame([], SizeCatalog::forCategoryId($id('repuestos')));
         $this->assertSame([], SizeCatalog::forCategoryId($id('accesorios')));
         $this->assertSame([], SizeCatalog::forCategoryId(null));
+        $this->assertSame(array_merge($letras, $botas), SizeCatalog::all());
 
         $sub = Category::create(['name' => 'Botas Off-Road', 'slug' => 'botas-offroad', 'parent_id' => $id('botas')]);
-        $this->assertSame(SizeCatalog::bootSizes(), SizeCatalog::forCategoryId($sub->id));
+        $this->assertSame($botas, SizeCatalog::forCategoryId($sub->id));
     }
 }
 

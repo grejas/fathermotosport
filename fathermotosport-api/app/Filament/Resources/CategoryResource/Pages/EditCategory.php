@@ -10,6 +10,16 @@ class EditCategory extends EditRecord
 {
     protected static string $resource = CategoryResource::class;
 
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        return CategoryResource::tallasAlFormulario($data);
+    }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        return CategoryResource::tallasDelFormulario($data);
+    }
+
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');

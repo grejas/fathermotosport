@@ -21,7 +21,7 @@ class FrontendRevalidator
         $url = rtrim((string) config('app.frontend_url'), '/').'/api/revalidate';
 
         if ($secret === '') {
-            Log::warning('Revalidación de la web omitida: falta REVALIDATE_SECRET.', ['tag' => $tag]);
+            Log::error('Revalidación de la web omitida: falta REVALIDATE_SECRET.', ['tag' => $tag, 'url' => $url]);
 
             return false;
         }
@@ -35,9 +35,9 @@ class FrontendRevalidator
                 return true;
             }
 
-            Log::warning('La web rechazó la revalidación.', ['tag' => $tag, 'status' => $response->status()]);
+            Log::error('La web rechazó la revalidación.', ['tag' => $tag, 'url' => $url, 'status' => $response->status(), 'body' => mb_substr($response->body(), 0, 200)]);
         } catch (Throwable $e) {
-            Log::warning('No se pudo contactar a la web para revalidar.', ['tag' => $tag, 'error' => $e->getMessage()]);
+            Log::error('No se pudo contactar a la web para revalidar.', ['tag' => $tag, 'url' => $url, 'error' => $e->getMessage()]);
         }
 
         return false;
