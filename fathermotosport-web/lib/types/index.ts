@@ -51,11 +51,20 @@ export interface Category {
   products_count?: number;
 }
 
+/** Un elemento de la galería del producto, en el orden que se arrastra en el panel. */
 export interface ProductImage {
   id: string;
   url: string;
+  /** Sin el campo (API anterior) es una imagen. */
+  type?: "image" | "gif" | "video";
+  /** En un GIF, su primer fotograma estático (para la miniatura). */
   thumbnail_url: string | null;
+  /** Solo videos; opcional. */
+  poster_url?: string | null;
+  /** Solo videos: muestra el botón de sonido (arranca siempre en silencio). */
+  with_sound?: boolean;
   sort_order: number;
+  /** La imagen de tarjetas y carrito; ya no cambia el orden de la galería. */
   is_primary: boolean;
 }
 

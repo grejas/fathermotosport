@@ -379,6 +379,15 @@
     "see_more": "Ver mais",
     "loading": "Carregando vídeo"
   },
+  "gallery": {
+    "prev": "Anterior",
+    "next": "Seguinte",
+    "item_image": "Imagem {current} de {total}",
+    "item_gif": "GIF {current} de {total}",
+    "item_video": "Vídeo {current} de {total}",
+    "view_3d": "Ver modelo 3D",
+    "view_spin": "Ver giro 360°"
+  },
   "upsell": {
     "context": "Oferta disponível só agora, com o seu pedido",
     "title": "Complete seu equipamento",

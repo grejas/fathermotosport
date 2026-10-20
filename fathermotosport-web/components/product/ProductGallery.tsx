@@ -1,26 +1,34 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { Box, ChevronLeft, ChevronRight } from "lucide-react";
 import type { ProductImage } from "@/lib/types";
-import { cn, getImageUrl } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { MedioPrincipal, MiniaturaDeMedio, primeraImagen, useEtiquetaDeMiniatura } from "./MedioDeGaleria";
 
 // Distancia mínima de swipe (px) para contar como cambio de imagen y no un tap.
 const SWIPE_THRESHOLD = 40;
 
+/**
+ * Galería de la ficha: imágenes, GIF y videos mezclados, en el orden en que llegan de
+ * la API (el que se arrastra en el panel; un video puede ir primero).
+ */
 export function ProductGallery({ images, name }: { images: ProductImage[]; name: string }) {
-  const sorted = [...images].sort(
-    (a, b) => Number(b.is_primary) - Number(a.is_primary) || a.sort_order - b.sort_order
-  );
+  const t = useTranslations("gallery");
+  const etiquetaDeMiniatura = useEtiquetaDeMiniatura();
   const [active, setActive] = useState(0);
-  const current = sorted[active];
+  const current = images[active];
+  const respaldo = primeraImagen(images);
   const touchStartX = useRef<number | null>(null);
 
-  const goTo = (delta: number) => setActive((i) => (i + delta + sorted.length) % sorted.length);
+  const goTo = (delta: number) => setActive((i) => (i + delta + images.length) % images.length);
 
   const onTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
+    // Sobre los controles del video (barra de tiempo, botones) el deslizamiento es de
+    // ellos, no un cambio de elemento.
+    const enControl = (e.target as HTMLElement).closest("input, button");
+    touchStartX.current = enControl ? null : e.touches[0].clientX;
   };
 
   const onTouchEnd = (e: React.TouchEvent) => {
@@ -38,13 +46,13 @@ export function ProductGallery({ images, name }: { images: ProductImage[]; name:
         onTouchEnd={onTouchEnd}
       >
         {current ? (
-          <Image
-            src={getImageUrl(current.url)}
-            alt={name}
-            fill
-            sizes="(max-width:1024px) 100vw, 50vw"
-            className="object-contain transition-transform duration-500 group-hover:scale-105"
-            priority
+          <MedioPrincipal
+            key={current.id}
+            medio={current}
+            nombre={name}
+            prioridad={active === 0}
+            respaldoUrl={respaldo}
+            claseImagen="object-contain transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
           <div className="flex h-full items-center justify-center">
@@ -52,19 +60,19 @@ export function ProductGallery({ images, name }: { images: ProductImage[]; name:
           </div>
         )}
 
-        {sorted.length > 1 && (
+        {images.length > 1 && (
           <>
             <button
               onClick={() => goTo(-1)}
               className="absolute left-2 top-1/2 -translate-y-1/2 z-10 rounded-full bg-black/50 p-2 text-white backdrop-blur-sm transition hover:bg-black/70"
-              aria-label="Imagen anterior"
+              aria-label={t("prev")}
             >
               <ChevronLeft size={20} />
             </button>
             <button
               onClick={() => goTo(1)}
               className="absolute right-2 top-1/2 -translate-y-1/2 z-10 rounded-full bg-black/50 p-2 text-white backdrop-blur-sm transition hover:bg-black/70"
-              aria-label="Imagen siguiente"
+              aria-label={t("next")}
             >
               <ChevronRight size={20} />
             </button>
@@ -72,18 +80,20 @@ export function ProductGallery({ images, name }: { images: ProductImage[]; name:
         )}
       </div>
 
-      {sorted.length > 1 && (
+      {images.length > 1 && (
         <div className="flex gap-2 overflow-x-auto">
-          {sorted.map((img, i) => (
+          {images.map((img, i) => (
             <button
               key={img.id}
               onClick={() => setActive(i)}
+              aria-label={etiquetaDeMiniatura(img, i, images.length)}
+              aria-current={i === active || undefined}
               className={cn(
-                "relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 transition",
+                "relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
                 i === active ? "border-brand-red" : "border-white/10 hover:border-white/30"
               )}
             >
-              <Image src={getImageUrl(img.thumbnail_url ?? img.url)} alt="" fill className="object-cover" sizes="64px" />
+              <MiniaturaDeMedio medio={img} />
             </button>
           ))}
         </div>

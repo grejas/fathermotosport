@@ -379,6 +379,15 @@
     "see_more": "See more",
     "loading": "Loading video"
   },
+  "gallery": {
+    "prev": "Previous",
+    "next": "Next",
+    "item_image": "Image {current} of {total}",
+    "item_gif": "GIF {current} of {total}",
+    "item_video": "Video {current} of {total}",
+    "view_3d": "View 3D model",
+    "view_spin": "View 360° spin"
+  },
   "upsell": {
     "context": "Offer available only now, with your order",
     "title": "Complete your gear",

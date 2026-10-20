@@ -32,6 +32,10 @@ interface Props {
    * así nada se mueve cuando llega el video (CLS 0). El video la llena con object-cover.
    */
   proporcion?: string;
+  /** cover (banners: llena el recuadro) o contain (productos: se ve entero, sin recortar). */
+  ajuste?: "cover" | "contain";
+  /** Imagen que se muestra si el video falla y no hay poster (la galería pasa su primera foto). */
+  respaldoUrl?: string | null;
   className?: string;
 }
 
@@ -78,8 +82,11 @@ export function BannerVideo({
   controles = true,
   sizes = "(min-width: 1024px) 50vw, 100vw",
   proporcion = "aspect-video",
+  ajuste = "cover",
+  respaldoUrl,
   className,
 }: Props) {
+  const encaje = ajuste === "contain" ? "object-contain" : "object-cover";
   const t = useTranslations("banners");
   const contenedorRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -275,8 +282,13 @@ export function BannerVideo({
           fill
           sizes={sizes}
           priority={prioridad}
-          className={cn("object-cover", pantallaCompleta && "object-contain")}
+          className={cn(encaje, pantallaCompleta && "object-contain")}
         />
+      )}
+
+      {/* Sin poster y con el video roto: la imagen de respaldo, si la hay. */}
+      {!posterUrl && fallo && respaldoUrl && (
+        <Image src={respaldoUrl} alt="" aria-hidden fill sizes={sizes} className={encaje} />
       )}
 
       {montado && src && !fallo && (
@@ -294,7 +306,10 @@ export function BannerVideo({
           tabIndex={-1}
           className={cn(
             "absolute inset-0 h-full w-full",
-            pantallaCompleta ? "object-contain" : "object-cover"
+            pantallaCompleta ? "object-contain" : encaje,
+            // Con contain, un video de otra proporción que el poster dejaría ver el poster
+            // a los costados: ya con imagen, las franjas toman el fondo del recuadro.
+            ajuste === "contain" && (reproduciendo || tiempo > 0) && "bg-inherit"
           )}
           onPlay={(e) => {
             setReproduciendo(true);
