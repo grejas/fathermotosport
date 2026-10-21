@@ -8,10 +8,6 @@ import { RatingSummary } from "@/components/product/RatingSummary";
 import { ReviewCard } from "@/components/product/ReviewCard";
 import { ReviewForm } from "@/components/product/ReviewForm";
 import { Button } from "@/components/ui/Button";
-// TEMPORAL: 7 reseñas de prueba para verificar visualmente el diseño mientras
-// el sistema real está en fase de pruebas. Ver lib/data/demoReviews.ts para
-// instrucciones de cómo quitarlas.
-import { demoReviews, demoReviewsSummary } from "@/lib/data/demoReviews";
 
 const bebasNeue = Bebas_Neue({ weight: "400", subsets: ["latin"] });
 const INITIAL_VISIBLE_REVIEWS = 9;
@@ -31,11 +27,7 @@ export function ReviewsSection() {
   const { data: reviewsData } = useReviews(1);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // TEMPORAL: se anteponen las demoReviews a las reseñas reales para QA
-  // visual. Al quitarlas, dejar solo: const reviews = reviewsData?.data ?? [];
-  // y `const displaySummary = summary;` (usar `summary` directo más abajo).
-  const reviews = [...demoReviews, ...(reviewsData?.data ?? [])];
-  const displaySummary = summary && summary.total > 0 ? summary : demoReviewsSummary;
+  const reviews = reviewsData?.data ?? [];
   const hasReviews = reviews.length > 0;
   const canToggle = reviews.length > INITIAL_VISIBLE_REVIEWS;
   const visibleReviews = isExpanded ? reviews : reviews.slice(0, INITIAL_VISIBLE_REVIEWS);
@@ -59,7 +51,7 @@ export function ReviewsSection() {
 
       {hasReviews ? (
         <>
-          <RatingSummary summary={displaySummary} />
+          {summary && summary.total > 0 && <RatingSummary summary={summary} />}
           <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {visibleReviews.map((r) => (
               <ReviewCard key={r.id} review={r} />

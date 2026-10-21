@@ -104,9 +104,19 @@ export interface Review {
   is_approved: boolean;
   user?: { id: string; name: string; avatar: string | null; country?: string | null };
   product?: { id: string; name: string; slug: string };
+  /** Solo las fotos aprobadas por el admin (las pendientes no llegan a la API pública). */
+  images?: ReviewImage[];
   created_at: string;
   /** Si es true, ReviewCard nunca la pasa por translateText() — se muestra tal cual fue escrita. */
   skip_translation?: boolean;
+}
+
+export interface ReviewImage {
+  id: string;
+  url: string;
+  thumb_url: string;
+  width: number;
+  height: number;
 }
 
 export interface ReviewsSummary {

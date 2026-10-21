@@ -26,6 +26,7 @@ export function ProductInfo({
   const t = useTranslations("product");
   const locale = useLocale();
   const tWhatsapp = useTranslations("whatsapp");
+  const tReviews = useTranslations("reviews");
   const accent = getCategoryColor(product.category?.slug);
 
   const whatsappNumber = (process.env.NEXT_PUBLIC_WHATSAPP ?? "+59168736384").replace(/\D/g, "");
@@ -103,7 +104,7 @@ export function ProductInfo({
               />
             ))}
           </div>
-          <span className="text-xs text-brand-muted">{product.reviews_count ?? 0} reseñas</span>
+          <span className="text-xs text-brand-muted">{tReviews("count", { count: product.reviews_count ?? 0 })}</span>
           {inStock ? (
             <Badge variant="green">{t("in_stock")}</Badge>
           ) : (
