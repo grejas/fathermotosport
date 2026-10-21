@@ -7,7 +7,7 @@ import { Box, Heart, Plus } from "lucide-react";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { useCartStore } from "@/store/cartStore";
 import { Button } from "@/components/ui/Button";
-import { formatPrice, getCategoryColor, getImageUrl } from "@/lib/utils";
+import { finalPrice, formatPrice, getCategoryColor, getImageUrl } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 export default function FavoritesPage() {
@@ -64,7 +64,7 @@ export default function FavoritesPage() {
               <div className="p-4">
                 <p className="line-clamp-1 text-sm font-semibold text-brand-white">{product.name}</p>
                 <p className="mt-1 text-lg font-bold text-brand-white">
-                  {formatPrice(product.sale_price ?? product.price)}
+                  {formatPrice(finalPrice(product))}
                 </p>
                 <div className="mt-3 flex gap-2">
                   <Button variant="primary" size="sm" className="flex-1" icon={<Plus size={16} />} onClick={() => quickAdd(product)}>

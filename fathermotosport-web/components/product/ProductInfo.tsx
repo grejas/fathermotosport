@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Heart, Minus, Plus, Ruler, ShieldCheck, Star, Truck, MessageCircle, Award } from "lucide-react";
 import type { Product, ProductVariant } from "@/lib/types";
-import { cn, formatPrice, getCategoryColor } from "@/lib/utils";
+import { cn, finalPrice, formatDiscount, formatPrice, getCategoryColor, hasDiscount } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { SizeGuideModal, hasSizeGuide } from "@/components/product/SizeGuideModal";
@@ -24,6 +24,7 @@ export function ProductInfo({
   shippingReturns: ShippingReturnsSummary;
 }) {
   const t = useTranslations("product");
+  const locale = useLocale();
   const tWhatsapp = useTranslations("whatsapp");
   const accent = getCategoryColor(product.category?.slug);
 
@@ -113,12 +114,14 @@ export function ProductInfo({
 
       <div className="flex items-baseline gap-3">
         <span className="text-3xl font-extrabold text-brand-white">
-          {formatPrice(product.sale_price ?? product.price)}
+          {formatPrice(finalPrice(product))}
         </span>
-        {product.sale_price && (
+        {hasDiscount(product) && (
           <>
             <span className="text-lg text-brand-muted line-through">{formatPrice(product.price)}</span>
-            <Badge variant="red">-{product.discount_percent}%</Badge>
+            {product.discount_percent > 0 && (
+              <Badge variant="red">{formatDiscount(product.discount_percent, locale)}</Badge>
+            )}
           </>
         )}
       </div>

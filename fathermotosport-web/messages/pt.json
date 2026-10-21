@@ -139,7 +139,8 @@
     "decrease": "Diminuir",
     "increase": "Aumentar",
     "view_full_cart": "Ver carrinho completo",
-    "order_cancelled_notice": "Esse pedido não pode mais ser pago porque foi cancelado. Você pode montar sua compra de novo pelo catálogo; se precisar de ajuda, escreva para contacto@fathermotosport.com."
+    "order_cancelled_notice": "Esse pedido não pode mais ser pago porque foi cancelado. Você pode montar sua compra de novo pelo catálogo; se precisar de ajuda, escreva para contacto@fathermotosport.com.",
+    "prices_updated": "Atualizamos o preço de: {names}. Confira o total."
   },
   "checkout": {
     "shipping_address": "Endereço de entrega",
@@ -169,6 +170,7 @@
     "empty_cart_error": "Seu carrinho está vazio.",
     "order_created": "Pedido criado!",
     "order_error": "Não foi possível criar o pedido.",
+    "prices_changed": "Os preços mudaram. Confira o total antes de pagar.",
     "free": "Grátis",
     "shipping_calculating": "Calculando frete…",
     "shipping_weight": "Peso do pedido: {weight} kg",

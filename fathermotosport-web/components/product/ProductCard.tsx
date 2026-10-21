@@ -1,11 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/lib/i18n/navigation";
 import { Box, Plus } from "lucide-react";
 import type { Product } from "@/lib/types";
-import { cn, formatPrice, getCategoryColor, getImageUrl } from "@/lib/utils";
+import { cn, finalPrice, formatDiscount, formatPrice, getCategoryColor, getImageUrl, hasDiscount } from "@/lib/utils";
 import { useCartStore } from "@/store/cartStore";
 import { useFlashPromos } from "@/lib/hooks/useFlashPromo";
 import { flashPromoAppliesTo } from "@/lib/api/flashPromo";
@@ -14,7 +14,10 @@ import toast from "react-hot-toast";
 export function ProductCard({ product }: { product: Product }) {
   const t = useTranslations("product");
   const tFlash = useTranslations("flash_promo");
+  const locale = useLocale();
   const accent = getCategoryColor(product.category?.slug);
+  // Precio final del servidor (descuento propio o de categoría, el más bajo).
+  const conDescuento = hasDiscount(product);
   const addItem = useCartStore((s) => s.addItem);
 
   // Todas las cards comparten una sola consulta (react-query dedupe por queryKey).
@@ -66,8 +69,8 @@ export function ProductCard({ product }: { product: Product }) {
                 {t("out_of_stock")}
               </span>
             )}
-            {product.discount_percent > 0 && (
-              <span className="badge-red">-{product.discount_percent}%</span>
+            {conDescuento && product.discount_percent > 0 && (
+              <span className="badge-red">{formatDiscount(product.discount_percent, locale)}</span>
             )}
             {product.is_new && <span className="badge-gold">{t("new")}</span>}
             {!product.is_new && product.is_popular && <span className="badge-gold">{t("popular")}</span>}
@@ -103,9 +106,9 @@ export function ProductCard({ product }: { product: Product }) {
           <div className="mt-3 flex items-center justify-between">
             <div className="flex items-baseline gap-2">
               <span className="text-base font-bold text-brand-white sm:text-lg">
-                {formatPrice(product.sale_price ?? product.price)}
+                {formatPrice(finalPrice(product))}
               </span>
-              {product.sale_price && (
+              {conDescuento && (
                 <span className="text-xs text-brand-muted line-through">
                   {formatPrice(product.price)}
                 </span>

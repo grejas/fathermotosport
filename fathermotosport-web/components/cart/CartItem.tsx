@@ -51,8 +51,15 @@ export function CartItem({ item }: { item: LocalCartItem }) {
             </button>
           </div>
 
-          <span className="text-sm font-bold text-brand-white">
-            {formatPrice(item.price * item.quantity)}
+          <span className="flex flex-col items-end">
+            {item.listPrice != null && item.listPrice > item.price && (
+              <span className="text-xs text-brand-muted line-through">
+                {formatPrice(item.listPrice * item.quantity)}
+              </span>
+            )}
+            <span className="text-sm font-bold text-brand-white">
+              {formatPrice(item.price * item.quantity)}
+            </span>
           </span>
         </div>
       </div>

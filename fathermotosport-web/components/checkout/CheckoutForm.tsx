@@ -15,6 +15,7 @@ import { useAuthStore } from "@/store/authStore";
 import { createOrder, createExpressOrder } from "@/lib/api/orders";
 import { createPaypalOrder, createStripeIntent } from "@/lib/api/payments";
 import { validateCoupon } from "@/lib/api/coupons";
+import { useCartPricesOnShow, useSyncCartPrices } from "@/lib/hooks/useCartPrices";
 import { calculateShipping } from "@/lib/api/shipping";
 import {
   SHIPPING_COUNTRIES,
@@ -40,10 +41,12 @@ export function CheckoutForm() {
   const locale = useLocale();
   const router = useRouter();
   const items = useCartStore((s) => s.items);
-  const subtotal = useCartStore((s) => s.subtotal());
   const clearCart = useCartStore((s) => s.clearCart);
   const user = useAuthStore((s) => s.user);
   const isAuth = useAuthStore((s) => s.isAuth);
+  const sincronizarPrecios = useSyncCartPrices();
+  // Precios de hoy al abrir el checkout (el carrito guarda los de cuando se agregó).
+  useCartPricesOnShow();
 
   const [form, setForm] = useState({
     first_name: "",
@@ -170,7 +173,8 @@ export function CheckoutForm() {
 
   const applyCoupon = async () => {
     if (!coupon.trim()) return;
-    const res = await validateCoupon(coupon.trim(), subtotal);
+    // Del store y no del render: tras refrescar precios el subtotal ya es otro.
+    const res = await validateCoupon(coupon.trim(), useCartStore.getState().subtotal());
     if (res.valid) {
       setDiscount(res.discount);
       toast.success(tCart("coupon_applied", { amount: res.discount }));
@@ -178,6 +182,35 @@ export function CheckoutForm() {
       setDiscount(0);
       toast.error(res.message);
     }
+  };
+
+  /**
+   * Antes de crear el pedido se piden los precios de hoy. Si alguno cambió (venció un
+   * descuento, empezó otro), se frena para que el cliente vea el total nuevo antes de
+   * pagar; el cupón se recalcula sobre ese total. true = se puede seguir.
+   */
+  const preciosAlDia = async (): Promise<boolean> => {
+    if (!(await sincronizarPrecios())) return true;
+    if (discount > 0) await applyCoupon();
+    toast.error(t("prices_changed"));
+    return false;
+  };
+
+  /** Lo que el cliente está viendo, para que el servidor confirme que coincide. */
+  const subtotalMostrado = () => useCartStore.getState().subtotal().toFixed(2);
+
+  /**
+   * El servidor rechazó el pedido porque los precios cambiaron entre que se vieron y se
+   * confirmó: se refrescan y se avisa. true si era ese caso.
+   */
+  const preciosCambiaronAlPedir = async (err: unknown): Promise<boolean> => {
+    const errores = (err as { response?: { data?: { errors?: Record<string, unknown> } } }).response?.data?.errors;
+    if (!errores?.expected_subtotal) return false;
+
+    await sincronizarPrecios();
+    if (discount > 0) await applyCoupon();
+    toast.error(t("prices_changed"));
+    return true;
   };
 
   /**
@@ -200,11 +233,17 @@ export function CheckoutForm() {
 
     setLoading(true);
     try {
+      if (!(await preciosAlDia())) {
+        setLoading(false);
+        return;
+      }
+
       const { order } = await createExpressOrder({
         items: items.map((i) => ({ variant_id: i.variantId, quantity: i.quantity })),
         shipping_country_code: form.country,
         shipping_option_id: selectedOption.id,
         email: form.email.trim(),
+        expected_subtotal: subtotalMostrado(),
         locale,
       });
 
@@ -217,6 +256,10 @@ export function CheckoutForm() {
       toast.success(t("redirecting_paypal"));
       window.location.href = paypal.approval_url;
     } catch (err: unknown) {
+      if (await preciosCambiaronAlPedir(err)) {
+        setLoading(false);
+        return;
+      }
       const message =
         (err as { response?: { data?: { message?: string } } }).response?.data?.message ??
         t("order_error");
@@ -266,6 +309,7 @@ export function CheckoutForm() {
     try {
       // Si ya se creó el pedido en un intento anterior que no llegó a pagarse, se reusa:
       // volver a apretar "Confirmar" no debe dejar dos pedidos por la misma compra.
+      if (!pedidoEnCurso && !(await preciosAlDia())) return;
       const pedido = pedidoEnCurso ?? (await crearPedido()).order;
 
       if (method === "stripe") {
@@ -285,6 +329,7 @@ export function CheckoutForm() {
       toast.success(t("order_created"));
       irAExito(pedido);
     } catch (err: unknown) {
+      if (await preciosCambiaronAlPedir(err)) return;
       const message =
         (err as { response?: { data?: { message?: string } } }).response?.data?.message ??
         t("order_error");
@@ -351,6 +396,7 @@ export function CheckoutForm() {
       shipping_option_id: selectedOption?.id,
       shipping_country_code: selectedOption ? form.country : undefined,
       coupon_code: coupon.trim() || undefined,
+      expected_subtotal: subtotalMostrado(),
       locale,
     });
 

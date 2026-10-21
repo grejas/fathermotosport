@@ -7,6 +7,7 @@ import { useCartStore } from "@/store/cartStore";
 import { Drawer } from "@/components/ui/Drawer";
 import { Button } from "@/components/ui/Button";
 import { formatPrice } from "@/lib/utils";
+import { useCartPricesOnShow } from "@/lib/hooks/useCartPrices";
 import { CartItem } from "./CartItem";
 
 export function CartDrawer() {
@@ -17,6 +18,8 @@ export function CartDrawer() {
   const closeCart = useCartStore((s) => s.closeCart);
   const items = useCartStore((s) => s.items);
   const subtotal = useCartStore((s) => s.subtotal());
+  // Precios de hoy cada vez que se abre (el carrito guarda los de cuando se agregó).
+  useCartPricesOnShow(isOpen);
 
   return (
     <Drawer

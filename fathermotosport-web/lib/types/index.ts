@@ -137,7 +137,16 @@ export interface Product {
   specs: Record<string, string> | null;
   certification: string | null;
   spin_url?: string | null;
+  /**
+   * Lo que paga el cliente: el mejor entre sale_price y el descuento de su categoría,
+   * calculado en el servidor. Opcional solo por productos guardados en el navegador
+   * antes de que existiera (favoritos); usar finalPrice() de lib/utils.
+   */
+  final_price?: string;
+  /** "-X %" del precio final; el de categoría puede tener decimales (7.5). */
   discount_percent: number;
+  /** De dónde sale el descuento del precio final. */
+  discount_source?: "product" | "category" | null;
   primary_image: string | null;
   has_3d_model: boolean;
   in_stock: boolean;

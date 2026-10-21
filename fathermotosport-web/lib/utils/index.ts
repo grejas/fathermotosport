@@ -100,6 +100,29 @@ export function currentPrice(price: string, salePrice?: string | null): number {
   return parseFloat(salePrice ?? price);
 }
 
+type ConPrecio = { price: string; sale_price: string | null; final_price?: string | null };
+
+/**
+ * Lo que paga el cliente: final_price de la API (el mejor entre el descuento propio y
+ * el de su categoría, calculado en el servidor). El respaldo sale_price ?? price es para
+ * productos guardados en el navegador antes de que existiera final_price.
+ */
+export function finalPrice(product: ConPrecio): number {
+  return parseFloat(product.final_price ?? product.sale_price ?? product.price);
+}
+
+/** Si el precio final es menor al de lista (para mostrar el precio tachado). */
+export function hasDiscount(product: ConPrecio): boolean {
+  return finalPrice(product) < parseFloat(product.price);
+}
+
+/** "-15%" o "-7,5%" (decimales con la coma o el punto del idioma). */
+export function formatDiscount(percent: number, locale: string): string {
+  const locales: Record<string, string> = { es: "es-ES", pt: "pt-BR", en: "en-US" };
+  const numero = new Intl.NumberFormat(locales[locale] ?? "es-ES", { maximumFractionDigits: 2 }).format(percent);
+  return `-${numero}%`;
+}
+
 /**
  * Enmascara parcialmente un email para mostrarlo en el perfil.
  * gersonrejas@gmail.com → ger*****@gmail.com · ka@gmail.com → ***@gmail.com

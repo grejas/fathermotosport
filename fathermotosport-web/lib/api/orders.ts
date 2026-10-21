@@ -19,6 +19,11 @@ export interface CreateOrderPayload {
   shipping_option_id?: number;
   shipping_country_code?: string;
   coupon_code?: string;
+  /**
+   * Subtotal que vio el cliente (sin envío ni cupón). Si los precios cambiaron, el
+   * backend responde 422 en expected_subtotal y la web refresca antes de cobrar.
+   */
+  expected_subtotal?: string;
   notes?: string;
   /** Idioma de la tienda al comprar: el backend lo usa para escribirle al cliente. */
   locale?: string;
@@ -31,6 +36,8 @@ export interface CreateExpressOrderPayload {
   shipping_option_id: number;
   /** Adónde avisarle del pedido. PayPal informa su propio email aparte, al pagar. */
   email: string;
+  /** Igual que en el checkout normal: el subtotal que vio el cliente. */
+  expected_subtotal?: string;
   locale?: string;
 }
 

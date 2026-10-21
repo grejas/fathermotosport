@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/lib/i18n/navigation";
 import Image from "next/image";
 import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
 import { CartNotice } from "@/components/cart/CartNotice";
-import { formatPrice, getImageUrl } from "@/lib/utils";
+import { formatDiscount, formatPrice, getImageUrl } from "@/lib/utils";
+import { useCartPricesOnShow } from "@/lib/hooks/useCartPrices";
 import { useMounted } from "@/lib/hooks/useMounted";
 import { validateCoupon } from "@/lib/api/coupons";
 import toast from "react-hot-toast";
@@ -27,6 +28,9 @@ export default function CartPage() {
   const clearCart = useCartStore((s) => s.clearCart);
   const [coupon, setCoupon] = useState("");
   const [discount, setDiscount] = useState(0);
+  const locale = useLocale();
+  // Precios de hoy (pueden haber vencido o empezado descuentos desde que se agregó).
+  useCartPricesOnShow(mounted);
 
   const apply = async () => {
     if (!coupon.trim()) return;
@@ -93,7 +97,17 @@ export default function CartPage() {
                 <p className="text-sm text-brand-muted">
                   {[item.size, item.color].filter(Boolean).join(" · ")}
                 </p>
-                <p className="text-sm text-brand-muted">{formatPrice(item.price)} c/u</p>
+                <p className="text-sm text-brand-muted">
+                  {item.listPrice != null && item.listPrice > item.price && (
+                    <>
+                      <span className="line-through">{formatPrice(item.listPrice)}</span>{" "}
+                      {!!item.discountPercent && (
+                        <span className="font-semibold text-brand-red">{formatDiscount(item.discountPercent, locale)}</span>
+                      )}{" "}
+                    </>
+                  )}
+                  {formatPrice(item.price)} c/u
+                </p>
 
                 <div className="mt-auto flex items-center justify-between pt-2">
                   <div className="flex items-center rounded-lg border border-white/10">
