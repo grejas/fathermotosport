@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { SizeGuideModal, hasSizeGuide } from "@/components/product/SizeGuideModal";
 import { ShippingReturns } from "@/components/product/ShippingReturns";
+import { REVIEWS_ANCHOR, SHOW_REVIEWS_EVENT } from "@/components/product/ProductTabs";
 import type { ShippingReturnsSummary } from "@/lib/shippingReturns";
 import { sortSizes } from "@/lib/utils/sizes";
 import { useCartStore } from "@/store/cartStore";
@@ -104,7 +105,18 @@ export function ProductInfo({
               />
             ))}
           </div>
-          <span className="text-xs text-brand-muted">{tReviews("count", { count: product.reviews_count ?? 0 })}</span>
+          {/* Lleva a la pestaña de reseñas de ProductTabs (la abre y baja hasta ella). */}
+          <a
+            href={`#${REVIEWS_ANCHOR}`}
+            onClick={(e) => {
+              e.preventDefault();
+              window.history.replaceState(null, "", `#${REVIEWS_ANCHOR}`);
+              window.dispatchEvent(new Event(SHOW_REVIEWS_EVENT));
+            }}
+            className="text-xs text-brand-muted hover:text-brand-white hover:underline"
+          >
+            {tReviews("count", { count: product.reviews_count ?? 0 })}
+          </a>
           {inStock ? (
             <Badge variant="green">{t("in_stock")}</Badge>
           ) : (
