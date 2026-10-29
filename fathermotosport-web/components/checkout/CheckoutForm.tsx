@@ -23,18 +23,19 @@ import {
   shippingCountryName,
 } from "@/lib/data/shippingCountries";
 import { ENABLED_PAYMENT_METHODS } from "@/lib/data/paymentMethods";
+import { whatsappUrl } from "@/lib/api/storeSettings";
+import { useStoreSettings } from "@/components/layout/StoreSettingsProvider";
 import { validateCheckout, hasErrors, isEmail, type FieldErrors } from "@/lib/validators";
 import { cn, formatPrice } from "@/lib/utils";
 import type { Order, PaymentMethod, ShippingQuote } from "@/lib/types";
 import toast from "react-hot-toast";
-
-const WHATSAPP_URL = "https://wa.me/59168736384";
 
 /** Lo único que el checkout necesita de un pedido recién creado. */
 type PedidoCreado = Pick<Order, "id" | "order_number" | "access_token">;
 
 export function CheckoutForm() {
   const t = useTranslations("checkout");
+  const whatsappHref = whatsappUrl(useStoreSettings().whatsappDigits);
   const tAuth = useTranslations("auth");
   const tCart = useTranslations("cart");
   const tCountries = useTranslations("countries");
@@ -443,14 +444,16 @@ export function CheckoutForm() {
           {!methodEnabled && (
             <div className="mt-3 rounded-xl border border-brand-gold/30 bg-brand-gold/5 p-4">
               <p className="text-sm font-semibold text-brand-gold">{t("coming_soon_whatsapp")}</p>
-              <a
-                href={WHATSAPP_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
-              >
-                {t("write_whatsapp")}
-              </a>
+              {whatsappHref && (
+                <a
+                  href={whatsappHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
+                >
+                  {t("write_whatsapp")}
+                </a>
+              )}
             </div>
           )}
           {isPaypal && (
@@ -612,14 +615,16 @@ export function CheckoutForm() {
               <p className="text-sm font-semibold text-brand-gold">
                 {t("shipping_unavailable", { country: countryLabel })}
               </p>
-              <a
-                href={WHATSAPP_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
-              >
-                {t("write_whatsapp")}
-              </a>
+              {whatsappHref && (
+                <a
+                  href={whatsappHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
+                >
+                  {t("write_whatsapp")}
+                </a>
+              )}
             </div>
           )}
         </section>
@@ -678,14 +683,16 @@ export function CheckoutForm() {
             </>
           ) : (
             <>
-              <a
-                href={WHATSAPP_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 flex w-full items-center justify-center rounded-xl bg-[#25D366] px-4 py-3 text-sm font-semibold text-white transition hover:brightness-110"
-              >
-                {t("contact_whatsapp")}
-              </a>
+              {whatsappHref && (
+                <a
+                  href={whatsappHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 flex w-full items-center justify-center rounded-xl bg-[#25D366] px-4 py-3 text-sm font-semibold text-white transition hover:brightness-110"
+                >
+                  {t("contact_whatsapp")}
+                </a>
+              )}
               <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-brand-muted">
                 <ShieldCheck size={14} className="text-cat-boots" /> {t("payments_coming_soon")}
               </p>

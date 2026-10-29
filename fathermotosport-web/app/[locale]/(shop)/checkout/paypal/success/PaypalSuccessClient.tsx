@@ -6,10 +6,10 @@ import { useTranslations } from "next-intl";
 import { AlertTriangle, Check, MessageCircle } from "lucide-react";
 import { Link, useRouter } from "@/lib/i18n/navigation";
 import { Button } from "@/components/ui/Button";
+import { useStoreSettings } from "@/components/layout/StoreSettingsProvider";
+import { whatsappUrl } from "@/lib/api/storeSettings";
 import { Spinner } from "@/components/ui/Spinner";
 import { capturePaypalOrder } from "@/lib/api/payments";
-
-const WHATSAPP_URL = "https://wa.me/59168736384";
 
 type Estado = "capturando" | "ok" | "error";
 
@@ -19,6 +19,7 @@ type Estado = "capturando" | "ok" | "error";
  */
 export function PaypalSuccessClient() {
   const t = useTranslations("checkout");
+  const whatsappHref = whatsappUrl(useStoreSettings().whatsappDigits);
   const router = useRouter();
   const params = useSearchParams();
   const paypalOrderId = params.get("token");
@@ -92,15 +93,17 @@ export function PaypalSuccessClient() {
         </p>
       )}
       <div className="mt-2 flex flex-col gap-3 sm:flex-row">
-        <a
-          href={WHATSAPP_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110"
-        >
-          <MessageCircle size={16} />
-          {t("write_whatsapp")}
-        </a>
+        {whatsappHref && (
+          <a
+            href={whatsappHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110"
+          >
+            <MessageCircle size={16} />
+            {t("write_whatsapp")}
+          </a>
+        )}
         <Link href="/orders">
           <Button variant="glass" icon={<Check size={16} />}>
             {t("paypal_see_orders")}

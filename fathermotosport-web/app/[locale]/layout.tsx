@@ -9,7 +9,9 @@ import { Providers } from "@/components/layout/Providers";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { CartDrawer } from "@/components/cart/CartDrawer";
+import { StoreSettingsProvider } from "@/components/layout/StoreSettingsProvider";
 import { getMenuCategories } from "@/lib/api/categories";
+import { getStoreSettings } from "@/lib/api/storeSettings";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -43,18 +45,25 @@ export default async function RootLayout({
   if (!locales.includes(locale)) notFound();
 
   setRequestLocale(locale);
-  // Una lectura cacheada (tag "categories") para el navbar y el footer de todas las páginas.
-  const [messages, categories] = await Promise.all([getMessages(), getMenuCategories()]);
+  // Lecturas cacheadas (tags "categories" y "store-settings") para el navbar, el footer y
+  // los componentes de cliente que muestran el contacto.
+  const [messages, categories, storeSettings] = await Promise.all([
+    getMessages(),
+    getMenuCategories(),
+    getStoreSettings(),
+  ]);
 
   return (
     <html lang={locale} className={inter.variable}>
       <body suppressHydrationWarning className="min-h-screen bg-brand-carbon font-sans text-brand-white antialiased">
         <NextIntlClientProvider messages={messages}>
           <Providers>
-            <Navbar categories={categories} />
-            <main className="min-h-screen">{children}</main>
-            <Footer categories={categories} />
-            <CartDrawer />
+            <StoreSettingsProvider value={storeSettings}>
+              <Navbar categories={categories} />
+              <main className="min-h-screen">{children}</main>
+              <Footer categories={categories} settings={storeSettings} />
+              <CartDrawer />
+            </StoreSettingsProvider>
           </Providers>
         </NextIntlClientProvider>
       </body>

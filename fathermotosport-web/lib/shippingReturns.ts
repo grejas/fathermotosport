@@ -3,11 +3,10 @@ import "server-only";
 import { cache } from "react";
 import { getTranslations } from "next-intl/server";
 import { getShippingReturns } from "@/lib/api/shippingReturns";
-import { CONTACT_EMAIL } from "@/lib/data/contact";
+import { getStoreSettings } from "@/lib/api/storeSettings";
 import { htmlToText, sanitizePolicyHtml } from "@/lib/sanitizePolicyHtml";
 
 const DEFAULT_HOURS = 48;
-const DEFAULT_WHATSAPP = process.env.NEXT_PUBLIC_WHATSAPP ?? "+59168736384";
 
 /** Textos del acordeón de la ficha de producto (se pasan a un client component). */
 export interface ShippingReturnsSummary {
@@ -27,7 +26,8 @@ export interface ShippingReturnsContent {
     description: string;
     help: string;
   };
-  contact: { email: string; whatsappDigits: string };
+  /** whatsappDigits null = vacío en el panel: la página no muestra el botón. */
+  contact: { email: string; whatsappDigits: string | null };
 }
 
 const escapeHtml = (text: string) =>
@@ -36,13 +36,15 @@ const escapeHtml = (text: string) =>
 /**
  * Política de envío y devoluciones ya resuelta para un idioma: el valor del panel
  * si existe, o el de messages/*.json si el campo está vacío o la API no responde.
- * En ambos casos {hours} se reemplaza por el plazo del panel.
+ * En ambos casos {hours} se reemplaza por el plazo del panel. El contacto sale de
+ * "Configuración de la tienda" (getStoreSettings), el mismo origen que el footer.
  *
  * Los textos de messages se leen con t.raw porque llevan {hours} literal.
  */
 export const getShippingReturnsContent = cache(async (locale: string): Promise<ShippingReturnsContent> => {
-  const [api, tSummary, tPolicy] = await Promise.all([
+  const [api, settings, tSummary, tPolicy] = await Promise.all([
     getShippingReturns(locale),
+    getStoreSettings(),
     getTranslations({ locale, namespace: "shipping_returns" }),
     getTranslations({ locale, namespace: "returns_policy" }),
   ]);
@@ -92,9 +94,6 @@ export const getShippingReturnsContent = cache(async (locale: string): Promise<S
       description: plain.length > 160 ? `${plain.slice(0, 157).trimEnd()}…` : plain,
       help: policyRaw("help"),
     },
-    contact: {
-      email: api?.contact.email || CONTACT_EMAIL,
-      whatsappDigits: (api?.contact.whatsapp || DEFAULT_WHATSAPP).replace(/\D/g, ""),
-    },
+    contact: { email: settings.email, whatsappDigits: settings.whatsappDigits },
   };
 });

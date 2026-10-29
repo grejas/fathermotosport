@@ -139,7 +139,7 @@
     "decrease": "Decrease",
     "increase": "Increase",
     "view_full_cart": "View full cart",
-    "order_cancelled_notice": "That order can no longer be paid because it was cancelled. You can rebuild your purchase from the catalog; if you need help, write to us at contacto@fathermotosport.com.",
+    "order_cancelled_notice": "That order can no longer be paid because it was cancelled. You can rebuild your purchase from the catalog; if you need help, write to us at {email}.",
     "prices_updated": "We updated the price of: {names}. Please check the total."
   },
   "checkout": {

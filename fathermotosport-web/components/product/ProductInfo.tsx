@@ -10,7 +10,9 @@ import { Badge } from "@/components/ui/Badge";
 import { SizeGuideModal, hasSizeGuide } from "@/components/product/SizeGuideModal";
 import { ShippingReturns } from "@/components/product/ShippingReturns";
 import { REVIEWS_ANCHOR, SHOW_REVIEWS_EVENT } from "@/components/product/ProductTabs";
+import { useStoreSettings } from "@/components/layout/StoreSettingsProvider";
 import type { ShippingReturnsSummary } from "@/lib/shippingReturns";
+import { whatsappUrl } from "@/lib/api/storeSettings";
 import { sortSizes } from "@/lib/utils/sizes";
 import { useCartStore } from "@/store/cartStore";
 import { useFavoritesStore } from "@/store/favoritesStore";
@@ -30,11 +32,8 @@ export function ProductInfo({
   const tReviews = useTranslations("reviews");
   const accent = getCategoryColor(product.category?.slug);
 
-  const whatsappNumber = (process.env.NEXT_PUBLIC_WHATSAPP ?? "+59168736384").replace(/\D/g, "");
-  const whatsappMessage = encodeURIComponent(
-    tWhatsapp("product_message", { name: product.name })
-  );
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
+  const { whatsappDigits } = useStoreSettings();
+  const whatsappHref = whatsappUrl(whatsappDigits, tWhatsapp("product_message", { name: product.name }));
   const variants = useMemo(() => (product.variants ?? []).filter((v) => v.is_active), [product]);
 
   const sizes = useMemo(
@@ -217,11 +216,13 @@ export function ProductInfo({
 
       <ShippingReturns content={shippingReturns} />
 
-      <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-        <Button variant="glass" className="w-full" icon={<MessageCircle size={18} />}>
-          {t("whatsapp")}
-        </Button>
-      </a>
+      {whatsappHref && (
+        <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
+          <Button variant="glass" className="w-full" icon={<MessageCircle size={18} />}>
+            {t("whatsapp")}
+          </Button>
+        </a>
+      )}
 
       <div className="grid grid-cols-2 gap-3 border-t border-white/10 pt-5 sm:grid-cols-4">
         {[

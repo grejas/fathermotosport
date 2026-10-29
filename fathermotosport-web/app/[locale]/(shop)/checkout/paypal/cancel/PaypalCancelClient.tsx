@@ -5,8 +5,8 @@ import { useTranslations } from "next-intl";
 import { MessageCircle, XCircle } from "lucide-react";
 import { Link } from "@/lib/i18n/navigation";
 import { Button } from "@/components/ui/Button";
-
-const WHATSAPP_URL = "https://wa.me/59168736384";
+import { useStoreSettings } from "@/components/layout/StoreSettingsProvider";
+import { whatsappUrl } from "@/lib/api/storeSettings";
 
 /**
  * El cliente canceló en PayPal. El pedido ya existe como pendiente de pago:
@@ -14,6 +14,7 @@ const WHATSAPP_URL = "https://wa.me/59168736384";
  */
 export function PaypalCancelClient() {
   const t = useTranslations("checkout");
+  const whatsappHref = whatsappUrl(useStoreSettings().whatsappDigits);
   const orderId = useSearchParams().get("order");
 
   return (
@@ -34,15 +35,17 @@ export function PaypalCancelClient() {
           <Button variant="glass">{t("go_to_catalog")}</Button>
         </Link>
       </div>
-      <a
-        href={WHATSAPP_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-brand-muted transition hover:text-cat-boots"
-      >
-        <MessageCircle size={16} />
-        {t("write_whatsapp")}
-      </a>
+      {whatsappHref && (
+        <a
+          href={whatsappHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-brand-muted transition hover:text-cat-boots"
+        >
+          <MessageCircle size={16} />
+          {t("write_whatsapp")}
+        </a>
+      )}
     </div>
   );
 }

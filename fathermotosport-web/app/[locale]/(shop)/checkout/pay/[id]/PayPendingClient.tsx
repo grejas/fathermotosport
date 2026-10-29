@@ -9,6 +9,7 @@ import { Link, useRouter } from "@/lib/i18n/navigation";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { AVISO_PEDIDO_CANCELADO } from "@/components/cart/CartNotice";
+import { useStoreSettings } from "@/components/layout/StoreSettingsProvider";
 import { PaypalButton } from "@/components/checkout/PaypalButton";
 import { StripePaymentModal } from "@/components/checkout/StripePaymentModal";
 import { getOrder } from "@/lib/api/orders";
@@ -16,8 +17,6 @@ import { createPaypalOrder, createStripeIntent } from "@/lib/api/payments";
 import { ENABLED_PAYMENT_METHODS } from "@/lib/data/paymentMethods";
 import { formatPrice } from "@/lib/utils";
 import type { Order } from "@/lib/types";
-
-const CONTACTO = "contacto@fathermotosport.com";
 
 type Estado = "cargando" | "listo" | "pagado" | "no_encontrado";
 
@@ -29,6 +28,7 @@ type Estado = "cargando" | "listo" | "pagado" | "no_encontrado";
  */
 export function PayPendingClient({ id }: { id: string }) {
   const t = useTranslations("pay_pending");
+  const { email: contacto } = useStoreSettings();
   const tCheckout = useTranslations("checkout");
   const tCart = useTranslations("cart");
   const tCommon = useTranslations("common");
@@ -131,7 +131,7 @@ export function PayPendingClient({ id }: { id: string }) {
       <Aviso
         icono={<XCircle size={32} className="text-brand-red" />}
         titulo={t("not_found_title")}
-        texto={t("not_found_text", { email: CONTACTO })}
+        texto={t("not_found_text", { email: contacto })}
       >
         <Link href="/catalog">
           <Button variant="primary">{tCommon("explore_products")}</Button>
@@ -231,8 +231,8 @@ export function PayPendingClient({ id }: { id: string }) {
       <p className="mt-6 text-center text-xs text-brand-muted">
         {t.rich("contact", {
           email: () => (
-            <a href={`mailto:${CONTACTO}`} className="text-brand-red hover:brightness-125">
-              {CONTACTO}
+            <a href={`mailto:${contacto}`} className="text-brand-red hover:brightness-125">
+              {contacto}
             </a>
           ),
         })}

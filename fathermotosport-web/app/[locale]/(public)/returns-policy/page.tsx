@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { MessageCircle } from "lucide-react";
 import { ContactEmail } from "@/components/shared/ContactEmail";
 import { getShippingReturnsContent } from "@/lib/shippingReturns";
+import { whatsappUrl } from "@/lib/api/storeSettings";
 
 export async function generateMetadata({
   params: { locale },
@@ -23,9 +24,7 @@ export default async function ReturnsPolicyPage({
   const { page, contact } = await getShippingReturnsContent(locale);
   const tWhatsapp = await getTranslations({ locale, namespace: "whatsapp" });
 
-  const whatsappUrl = `https://wa.me/${contact.whatsappDigits}?text=${encodeURIComponent(
-    tWhatsapp("general_message")
-  )}`;
+  const whatsappHref = whatsappUrl(contact.whatsappDigits, tWhatsapp("general_message"));
 
   return (
     <div className="mx-auto max-w-3xl px-4 pb-16 pt-20 sm:px-6 sm:pt-24">
@@ -40,15 +39,17 @@ export default async function ReturnsPolicyPage({
       <div className="mt-8 rounded-2xl border border-white/10 bg-brand-card p-5 text-center sm:p-6">
         <p className="text-sm text-brand-muted">{page.help}</p>
         <div className="mt-4 flex flex-col items-stretch gap-3 sm:flex-row sm:justify-center">
-          <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110"
-          >
-            <MessageCircle size={16} />
-            {t("contact_whatsapp")}
-          </a>
+          {whatsappHref && (
+            <a
+              href={whatsappHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110"
+            >
+              <MessageCircle size={16} />
+              {t("contact_whatsapp")}
+            </a>
+          )}
           <ContactEmail email={contact.email} />
         </div>
       </div>
