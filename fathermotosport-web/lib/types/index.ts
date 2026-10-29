@@ -22,6 +22,15 @@ export interface User {
   last_password_change?: string | null;
   security_reminder_dismissed_at?: string | null;
   needs_security_reminder?: boolean;
+  /** Idioma en que se le escribe (es, pt, en). */
+  locale?: string | null;
+  /** birth_date = lo prueba la fecha; declared = marcó "Tengo 18 años o más". */
+  adult_confirmation?: "birth_date" | "declared" | null;
+  promo_unsubscribed?: boolean;
+  /** Le faltan teléfono o país. */
+  profile_incomplete?: boolean;
+  /** Mostrar una vez la ventana "Completa tus datos". */
+  profile_prompt_due?: boolean;
   role?: Role;
   created_at?: string;
 }

@@ -1,4 +1,5 @@
 import axios, { type AxiosInstance } from "axios";
+import { currentLocale } from "@/lib/locale";
 
 export const TOKEN_KEY = "fms_token";
 export const SESSION_KEY = "fms_session";
@@ -8,9 +9,12 @@ const apiClient: AxiosInstance = axios.create({
   headers: { Accept: "application/json", "Content-Type": "application/json" },
 });
 
-// Request: adjunta el Bearer token y el X-Session-Id desde localStorage.
+// Request: adjunta el Bearer token y el X-Session-Id desde localStorage, y el idioma
+// de la página (X-Locale) para que la API conteste sus mensajes en es, pt o en.
 apiClient.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
+    config.headers["X-Locale"] = currentLocale();
+
     const token = localStorage.getItem(TOKEN_KEY);
     if (token) config.headers.Authorization = `Bearer ${token}`;
 

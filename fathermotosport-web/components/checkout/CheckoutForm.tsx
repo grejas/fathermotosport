@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/lib/i18n/navigation";
 import { Mail, ShieldCheck, Tag, Truck } from "lucide-react";
@@ -43,6 +43,8 @@ export function CheckoutForm() {
   const router = useRouter();
   const items = useCartStore((s) => s.items);
   const clearCart = useCartStore((s) => s.clearCart);
+  const pendingCoupon = useCartStore((s) => s.pendingCoupon);
+  const setPendingCoupon = useCartStore((s) => s.setPendingCoupon);
   const user = useAuthStore((s) => s.user);
   const isAuth = useAuthStore((s) => s.isAuth);
   const sincronizarPrecios = useSyncCartPrices();
@@ -167,15 +169,28 @@ export function CheckoutForm() {
     }
   }, [user]);
 
+  // Cupón llegado por enlace (?cupon= en el carrito): se precarga y, con sesión y un
+  // método que admite cupón (no PayPal), se aplica solo una vez.
+  const cuponAutoAplicado = useRef<string | null>(null);
+  useEffect(() => {
+    if (!pendingCoupon) return;
+    setCoupon((actual) => actual || pendingCoupon);
+    if (!isAuth || isPaypal || cuponAutoAplicado.current === pendingCoupon) return;
+    cuponAutoAplicado.current = pendingCoupon;
+    void applyCoupon(pendingCoupon);
+    // applyCoupon cambia en cada render; solo importan el código, la sesión y el método.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingCoupon, isAuth, isPaypal]);
+
   const showWelcomeCoupon = useMemo(
     () => isAuth && user && !user.loyalty_discount_used,
     [isAuth, user]
   );
 
-  const applyCoupon = async () => {
-    if (!coupon.trim()) return;
+  const applyCoupon = async (codigo: string = coupon) => {
+    if (!codigo.trim()) return;
     // Del store y no del render: tras refrescar precios el subtotal ya es otro.
-    const res = await validateCoupon(coupon.trim(), useCartStore.getState().subtotal());
+    const res = await validateCoupon(codigo.trim(), useCartStore.getState().subtotal());
     if (res.valid) {
       setDiscount(res.discount);
       toast.success(tCart("coupon_applied", { amount: res.discount }));
@@ -312,6 +327,8 @@ export function CheckoutForm() {
       // volver a apretar "Confirmar" no debe dejar dos pedidos por la misma compra.
       if (!pedidoEnCurso && !(await preciosAlDia())) return;
       const pedido = pedidoEnCurso ?? (await crearPedido()).order;
+      // El cupón se consume al crear el pedido: el que llegó por enlace ya no hace falta.
+      if (!pedidoEnCurso && coupon.trim() && coupon.trim().toUpperCase() === pendingCoupon) setPendingCoupon(null);
 
       if (method === "stripe") {
         setPedidoEnCurso(pedido);
@@ -641,7 +658,7 @@ export function CheckoutForm() {
           )}
           <div className="flex gap-2">
             <Input placeholder={tCart("coupon_placeholder")} value={coupon} onChange={(e) => setCoupon(e.target.value)} />
-            <Button type="button" variant="glass" onClick={applyCoupon}>
+            <Button type="button" variant="glass" onClick={() => applyCoupon()}>
               {tCart("apply")}
             </Button>
           </div>

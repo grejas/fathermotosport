@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/lib/i18n/navigation";
 import { Lock, Mail } from "lucide-react";
 import { Input } from "@/components/ui/Input";
@@ -15,6 +15,7 @@ import toast from "react-hot-toast";
 export function LoginForm() {
   const t = useTranslations("auth");
   const tCommon = useTranslations("common");
+  const locale = useLocale();
   const router = useRouter();
   const params = useSearchParams();
   const login = useLogin();
@@ -28,7 +29,8 @@ export function LoginForm() {
     if (hasErrors(v)) return;
 
     try {
-      await login.mutateAsync(form);
+      // El idioma de la web queda como idioma del cliente (en él se le escriben los correos).
+      await login.mutateAsync({ ...form, locale });
       toast.success(t("welcome_back"));
       router.push(params.get("redirect") ?? "/profile");
     } catch (err: unknown) {

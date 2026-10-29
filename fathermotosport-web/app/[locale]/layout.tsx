@@ -9,6 +9,7 @@ import { Providers } from "@/components/layout/Providers";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { CartDrawer } from "@/components/cart/CartDrawer";
+import { ProfileCompletionModal } from "@/components/account/ProfileCompletionModal";
 import { StoreSettingsProvider } from "@/components/layout/StoreSettingsProvider";
 import { getMenuCategories } from "@/lib/api/categories";
 import { getStoreSettings } from "@/lib/api/storeSettings";
@@ -63,6 +64,8 @@ export default async function RootLayout({
               <main className="min-h-screen">{children}</main>
               <Footer categories={categories} settings={storeSettings} />
               <CartDrawer />
+              {/* Una vez tras iniciar sesión, si faltan teléfono, país o verificar el correo. */}
+              <ProfileCompletionModal />
             </StoreSettingsProvider>
           </Providers>
         </NextIntlClientProvider>

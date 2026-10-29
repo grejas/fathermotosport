@@ -4,6 +4,8 @@ import { Suspense, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import type { User } from "@/lib/types";
+import { updateLocale } from "@/lib/api/auth";
+import { APP_LOCALES, GOOGLE_LOCALE_KEY, type AppLocale } from "@/lib/locale";
 
 function GoogleCallbackInner() {
   const router = useRouter();
@@ -28,8 +30,22 @@ function GoogleCallbackInner() {
       const user = userStr ? (JSON.parse(userStr) as User) : ({} as User);
       // Persiste el token + isAuth de inmediato...
       loginUser({ user, token });
+
+      // Idioma con que salió a Google (este callback no lleva prefijo de idioma).
+      let locale: string | null = null;
+      try {
+        locale = localStorage.getItem(GOOGLE_LOCALE_KEY);
+        localStorage.removeItem(GOOGLE_LOCALE_KEY);
+      } catch {
+        /* sin almacenamiento */
+      }
+      const guardarIdioma = APP_LOCALES.includes(locale as AppLocale)
+        ? updateLocale(locale as AppLocale).catch(() => undefined)
+        : Promise.resolve();
+
       // ...y luego canonicaliza el usuario desde /auth/me (shape/rol correctos).
-      refreshUser().finally(() => router.replace("/profile"));
+      const destino = locale && locale !== "es" ? `/${locale}/profile` : "/profile";
+      guardarIdioma.then(() => refreshUser()).finally(() => router.replace(destino));
     } catch {
       router.replace("/login?error=google_auth_failed");
     }

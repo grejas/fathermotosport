@@ -3,6 +3,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/api/client";
+import { currentLocale, GOOGLE_LOCALE_KEY } from "@/lib/locale";
 
 /**
  * Botón "Continuar con Google". Pide al backend la URL de consentimiento
@@ -14,6 +15,12 @@ export function GoogleButton({ label = "Continuar con Google" }: { label?: strin
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
+      // Google vuelve a /auth/google/callback sin prefijo de idioma: se recuerda acá.
+      try {
+        localStorage.setItem(GOOGLE_LOCALE_KEY, currentLocale());
+      } catch {
+        /* sin almacenamiento: el idioma queda sin guardar, no es grave */
+      }
       const { data } = await apiClient.get<{ url: string }>("/auth/google");
       window.location.href = data.url;
     } catch {

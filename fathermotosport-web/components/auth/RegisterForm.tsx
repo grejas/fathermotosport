@@ -1,8 +1,7 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
-import { useTranslations } from "next-intl";
-import { Country } from "country-state-city";
+import { useRef, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import ReCAPTCHA from "react-google-recaptcha";
 import { Check, Eye, EyeOff, X } from "lucide-react";
 import { Link, useRouter } from "@/lib/i18n/navigation";
@@ -16,7 +15,9 @@ import {
   isStrongPassword,
   type FieldErrors,
 } from "@/lib/validators";
+import { normalizePhone, validatePersonalData } from "@/lib/personalData";
 import { GoogleButton } from "./GoogleButton";
+import { PersonalDataFields, type PersonalDataValues } from "./PersonalDataFields";
 import toast from "react-hot-toast";
 
 const PASSWORD_REQUIREMENT_LABELS = {
@@ -36,7 +37,10 @@ const empty = {
   birth_date: "",
   phone: "",
   country: "",
+  adult_confirmed: false,
 };
+
+type RegisterFields = typeof empty;
 
 function extractApiError(
   err: unknown
@@ -49,6 +53,7 @@ export function RegisterForm() {
   const t = useTranslations("auth");
   const tCommon = useTranslations("common");
   const tCheckout = useTranslations("checkout");
+  const locale = useLocale();
   const router = useRouter();
   const sendCode = useSendVerificationCode();
   const verifyAndRegister = useVerifyAndRegister();
@@ -62,16 +67,41 @@ export function RegisterForm() {
   const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false);
   const passwordRequirements = getPasswordRequirements(form.password);
   const passwordValid = isStrongPassword(form.password);
-  const countries = useMemo(
-    () => [...Country.getAllCountries()].sort((a, b) => a.name.localeCompare(b.name)),
-    []
-  );
 
-  const update = (field: keyof typeof empty, value: string) => {
+  /** Nombre, correo y contraseña (validateRegister) + teléfono, país, fecha y casilla. */
+  const validate = (data: RegisterFields): FieldErrors => ({
+    ...validateRegister({ ...data, phone: undefined, birth_date: undefined }),
+    ...validatePersonalData(data, t),
+  });
+
+  /** Mientras escribe: solo los errores de lo que ya tocó (no marca en rojo lo vacío). */
+  const liveErrors = (data: RegisterFields): FieldErrors => {
+    const v = validateRegister({ ...data, phone: undefined, birth_date: undefined });
+    const p = validatePersonalData(data, t);
+    if (data.phone.replace(/\D/g, "").length > 4) v.phone = p.phone;
+    if (data.birth_date) v.birth_date = p.birth_date;
+    return v;
+  };
+
+  const update = (field: "email" | "password" | "password_confirmation" | "first_name" | "last_name", value: string) => {
     const next = { ...form, [field]: value };
     setForm(next);
-    setErrors(validateRegister(next));
+    setErrors(liveErrors(next));
   };
+
+  const updatePersonal = (personal: PersonalDataValues) => {
+    const next = { ...form, ...personal };
+    setForm(next);
+    setErrors(liveErrors(next));
+  };
+
+  /** Lo que se manda a la API: teléfono normalizado y la casilla solo sin fecha. */
+  const personalPayload = () => ({
+    phone: normalizePhone(form.phone) ?? form.phone,
+    country: form.country,
+    birth_date: form.birth_date || undefined,
+    adult_confirmed: form.birth_date ? undefined : form.adult_confirmed,
+  });
 
   const backToForm = () => {
     setStep("form");
@@ -83,8 +113,7 @@ export function RegisterForm() {
 
   const submitForm = async (e: React.FormEvent) => {
     e.preventDefault();
-    const v = validateRegister(form);
-    if (!form.country) v.country = t("country_required_error");
+    const v = validate(form);
     setErrors(v);
     if (hasErrors(v)) return;
 
@@ -94,7 +123,7 @@ export function RegisterForm() {
     }
 
     try {
-      await sendCode.mutateAsync({ email: form.email, recaptcha_token: captchaToken });
+      await sendCode.mutateAsync({ email: form.email, recaptcha_token: captchaToken, ...personalPayload() });
       toast.success(t("code_sent"));
       setStep("code");
     } catch (err: unknown) {
@@ -123,9 +152,8 @@ export function RegisterForm() {
         code,
         first_name: form.first_name.trim(),
         last_name: form.last_name.trim(),
-        birth_date: form.birth_date || undefined,
-        phone: form.phone || undefined,
-        country: form.country,
+        ...personalPayload(),
+        locale,
         password: form.password,
         password_confirmation: form.password_confirmation,
       });
@@ -226,29 +254,8 @@ export function RegisterForm() {
           maxLength={25}
         />
       </div>
-      <div>
-        <label className="mb-1.5 block text-sm font-medium text-brand-white">{t("country")}</label>
-        <select
-          name="country"
-          value={form.country}
-          onChange={(e) => {
-            const next = { ...form, country: e.target.value };
-            setForm(next);
-            setErrors({ ...errors, country: undefined });
-          }}
-          className="input-brand"
-        >
-          <option value="" disabled>
-            {t("country_placeholder")}
-          </option>
-          {countries.map((c) => (
-            <option key={c.isoCode} value={c.isoCode}>
-              {c.flag} {c.name}
-            </option>
-          ))}
-        </select>
-        {errors.country && <p className="mt-1.5 text-xs text-brand-red">{errors.country}</p>}
-      </div>
+      {/* País y teléfono con código de país: obligatorios. */}
+      <PersonalDataFields values={form} errors={errors} onChange={updatePersonal} section="required" />
       <div>
         <Input
           label={t("password")}
@@ -311,28 +318,8 @@ export function RegisterForm() {
         <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-brand-muted">
           {t("optional_data")}
         </p>
-        <div className="grid grid-cols-2 gap-3">
-          <Input
-            label={t("birth_date")}
-            type="date"
-            name="birth_date"
-            value={form.birth_date}
-            onChange={(e) => update("birth_date", e.target.value)}
-            error={errors.birth_date}
-            hint={t("birth_date_hint")}
-            min="1926-01-01"
-            max={new Date().toISOString().slice(0, 10)}
-          />
-          <Input
-            label={tCheckout("phone")}
-            name="phone"
-            value={form.phone}
-            onChange={(e) => update("phone", e.target.value)}
-            error={errors.phone}
-            placeholder="+591 68736384 o +55 11 99999-9999"
-            maxLength={20}
-          />
-        </div>
+        {/* Fecha opcional; sin fecha, la casilla "Tengo 18 años o más" es obligatoria. */}
+        <PersonalDataFields values={form} errors={errors} onChange={updatePersonal} section="optional" />
       </div>
 
       <div className="flex justify-center">

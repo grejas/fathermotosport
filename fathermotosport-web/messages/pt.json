@@ -140,7 +140,10 @@
     "increase": "Aumentar",
     "view_full_cart": "Ver carrinho completo",
     "order_cancelled_notice": "Esse pedido não pode mais ser pago porque foi cancelado. Você pode montar sua compra de novo pelo catálogo; se precisar de ajuda, escreva para {email}.",
-    "prices_updated": "Atualizamos o preço de: {names}. Confira o total."
+    "prices_updated": "Atualizamos o preço de: {names}. Confira o total.",
+    "coupon_from_link": "Seu cupom {code} está pronto: é aplicado no carrinho e no pagamento.",
+    "coupon_login_needed": "Você tem o cupom {code}. Ele é pessoal: entre na sua conta para usá-lo.",
+    "coupon_login": "Entrar"
   },
   "checkout": {
     "shipping_address": "Endereço de entrega",
@@ -292,7 +295,15 @@
     "invalid_reset_link": "Este link de recuperação é inválido ou está incompleto. Solicite um novo.",
     "password_hint": "Mínimo 8 caracteres, com maiúscula, minúscula, número e símbolo.",
     "password_requirements_error": "A senha não cumpre os requisitos.",
-    "passwords_dont_match": "As senhas não coincidem."
+    "passwords_dont_match": "As senhas não coincidem.",
+    "phone_hint": "Com o código do país, por exemplo +55 11 99999 8888.",
+    "phone_required_error": "O telefone é obrigatório.",
+    "phone_invalid_error": "Informe o telefone com o código do país, por exemplo +55 11 99999 8888 (8 a 15 dígitos).",
+    "birth_future_error": "A data de nascimento não pode ser futura.",
+    "birth_invalid_error": "Informe uma data de nascimento válida, entre 1926 e hoje.",
+    "underage_error": "Você precisa ter 18 anos ou mais para criar uma conta.",
+    "adult_label": "Tenho 18 anos ou mais",
+    "adult_required_error": "Confirme que você tem 18 anos ou mais."
   },
   "favorites": {
     "my_favorites": "Meus favoritos",
@@ -512,5 +523,35 @@
     "contact_whatsapp": "WhatsApp",
     "copy_email": "Copiar endereço",
     "copied": "Copiado"
+  },
+  "profile_completion": {
+    "title": "Complete seus dados",
+    "description": "Faltam alguns dados da sua conta. Você pode completá-los agora ou depois; pode continuar comprando normalmente.",
+    "save": "Salvar dados",
+    "saved": "Dados salvos.",
+    "save_error": "Não conseguimos salvar seus dados. Verifique os campos.",
+    "verify_title": "Verifique seu e-mail",
+    "verify_description": "Enviaremos um código de 6 dígitos para {email} para confirmar que é seu.",
+    "send_code": "Enviar código",
+    "resend_code": "Reenviar código",
+    "code_sent": "Enviamos o código. Verifique seu e-mail.",
+    "code_error": "Não conseguimos enviar o código. Tente novamente.",
+    "verify": "Verificar e-mail",
+    "verified": "E-mail verificado.",
+    "later": "Agora não"
+  },
+  "unsubscribe": {
+    "title": "Deixar de receber promoções",
+    "question": "Deseja deixar de receber e-mails de promoções da FatherMotoSport em {email}?",
+    "transactional_note": "Você continuará recebendo os e-mails dos seus pedidos e pagamentos.",
+    "confirm": "Sim, cancelar o recebimento",
+    "done_title": "Pronto, você cancelou o recebimento",
+    "done_text": "Não enviaremos mais promoções. Os e-mails dos seus pedidos e pagamentos continuarão chegando.",
+    "invalid_title": "Link inválido",
+    "invalid_text": "Este link de cancelamento não é válido. Use o link do rodapé de um dos nossos e-mails.",
+    "error_title": "Não conseguimos cancelar o recebimento",
+    "error_text": "Ocorreu um erro. Tente novamente em alguns minutos.",
+    "retry": "Tentar novamente",
+    "back_home": "Voltar para a loja"
   }
 }

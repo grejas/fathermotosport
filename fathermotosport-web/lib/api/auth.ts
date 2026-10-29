@@ -4,21 +4,30 @@ import type { AuthResponse, User } from "@/lib/types";
 export interface LoginPayload {
   email: string;
   password: string;
+  /** Idioma de la web: queda como idioma del cliente. */
+  locale?: string;
 }
 
-export interface SendVerificationCodePayload {
+/** Teléfono (+59176543210), país ISO, fecha opcional y, sin fecha, la casilla de 18 años. */
+export interface PersonalDataPayload {
+  phone: string;
+  country: string;
+  birth_date?: string;
+  adult_confirmed?: boolean;
+}
+
+/** El paso 1 manda también los datos personales, para avisar antes de enviar el código. */
+export interface SendVerificationCodePayload extends Partial<PersonalDataPayload> {
   email: string;
   recaptcha_token: string;
 }
 
-export interface VerifyAndRegisterPayload {
+export interface VerifyAndRegisterPayload extends PersonalDataPayload {
   email: string;
   code: string;
   first_name: string;
   last_name: string;
-  phone?: string;
-  birth_date?: string;
-  country: string;
+  locale?: string;
   password: string;
   password_confirmation: string;
 }
@@ -72,6 +81,33 @@ export async function logout(): Promise<void> {
 export async function getMe(): Promise<User> {
   const { data } = await apiClient.get<{ data: User }>("/auth/me");
   return data.data;
+}
+
+/** Ventana "Completa tus datos" (clientes antiguos o de Google). */
+export async function completeProfile(payload: PersonalDataPayload): Promise<{ message: string; user: User }> {
+  const { data } = await apiClient.post<{ message: string; user: User }>("/user/complete-profile", payload);
+  return data;
+}
+
+/** Cerró la ventana sin completar: no se vuelve a mostrar. */
+export async function dismissProfilePrompt(): Promise<{ user: User }> {
+  const { data } = await apiClient.post<{ user: User }>("/user/profile-prompt/dismiss");
+  return data;
+}
+
+export async function updateLocale(locale: string): Promise<void> {
+  await apiClient.put("/user/locale", { locale });
+}
+
+/** Código de 6 dígitos al correo de la cuenta, para verificarlo. */
+export async function sendEmailCode(): Promise<{ message: string }> {
+  const { data } = await apiClient.post<{ message: string }>("/user/email/send-code");
+  return data;
+}
+
+export async function verifyEmailCode(code: string): Promise<{ message: string; user: User }> {
+  const { data } = await apiClient.post<{ message: string; user: User }>("/user/email/verify", { code });
+  return data;
 }
 
 export async function forgotPassword(email: string): Promise<{ message: string }> {

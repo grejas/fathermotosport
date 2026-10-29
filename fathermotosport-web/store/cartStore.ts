@@ -49,6 +49,12 @@ interface CartState {
   hasItem: (variantId: string) => boolean;
   /** Aplica los precios de hoy del servidor. Devuelve los nombres cuyo precio cambió. */
   applyPrices: (prices: CartPrice[]) => string[];
+  /**
+   * Cupón que llegó por enlace (?cupon= en el carrito, por ejemplo desde un correo). Se
+   * guarda hasta usarlo: si es personal, se aplica al iniciar sesión con su cuenta.
+   */
+  pendingCoupon: string | null;
+  setPendingCoupon: (code: string | null) => void;
 }
 
 /** Genera (o recupera) un session id persistente para el carrito guest. */
@@ -68,6 +74,8 @@ export const useCartStore = create<CartState>()(
       items: [],
       sessionId: "",
       isOpen: false,
+      pendingCoupon: null,
+      setPendingCoupon: (code) => set({ pendingCoupon: code?.trim().toUpperCase() || null }),
 
       addItem: (product, variant, quantity = 1) => {
         const variantId = variant.id;
@@ -165,7 +173,7 @@ export const useCartStore = create<CartState>()(
     {
       name: "fms-cart",
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ items: state.items, sessionId: state.sessionId }),
+      partialize: (state) => ({ items: state.items, sessionId: state.sessionId, pendingCoupon: state.pendingCoupon }),
       onRehydrateStorage: () => (state) => {
         if (state) state.sessionId = ensureSessionId();
       },

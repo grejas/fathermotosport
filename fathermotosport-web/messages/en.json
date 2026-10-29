@@ -140,7 +140,10 @@
     "increase": "Increase",
     "view_full_cart": "View full cart",
     "order_cancelled_notice": "That order can no longer be paid because it was cancelled. You can rebuild your purchase from the catalog; if you need help, write to us at {email}.",
-    "prices_updated": "We updated the price of: {names}. Please check the total."
+    "prices_updated": "We updated the price of: {names}. Please check the total.",
+    "coupon_from_link": "Your coupon {code} is ready: it applies in the cart and at checkout.",
+    "coupon_login_needed": "You have the coupon {code}. It is personal: log in to your account to use it.",
+    "coupon_login": "Log in"
   },
   "checkout": {
     "shipping_address": "Shipping address",
@@ -292,7 +295,15 @@
     "invalid_reset_link": "This reset link is invalid or missing data. Request a new one.",
     "password_hint": "At least 8 characters, with uppercase, lowercase, number and symbol.",
     "password_requirements_error": "The password does not meet the requirements.",
-    "passwords_dont_match": "The passwords do not match."
+    "passwords_dont_match": "The passwords do not match.",
+    "phone_hint": "Include the country code, for example +1 305 555 0123.",
+    "phone_required_error": "Phone number is required.",
+    "phone_invalid_error": "Enter your phone number with the country code, for example +1 305 555 0123 (8 to 15 digits).",
+    "birth_future_error": "Date of birth cannot be in the future.",
+    "birth_invalid_error": "Enter a valid date of birth, between 1926 and today.",
+    "underage_error": "You must be 18 or older to create an account.",
+    "adult_label": "I am 18 or older",
+    "adult_required_error": "Confirm that you are 18 or older."
   },
   "favorites": {
     "my_favorites": "My favorites",
@@ -512,5 +523,35 @@
     "contact_whatsapp": "WhatsApp",
     "copy_email": "Copy address",
     "copied": "Copied"
+  },
+  "profile_completion": {
+    "title": "Complete your details",
+    "description": "Some details of your account are missing. You can complete them now or later; you can keep shopping either way.",
+    "save": "Save details",
+    "saved": "Details saved.",
+    "save_error": "We couldn't save your details. Check the fields.",
+    "verify_title": "Verify your email",
+    "verify_description": "We'll send a 6-digit code to {email} to confirm it's yours.",
+    "send_code": "Send code",
+    "resend_code": "Resend code",
+    "code_sent": "We sent the code. Check your email.",
+    "code_error": "We couldn't send the code. Try again.",
+    "verify": "Verify email",
+    "verified": "Email verified.",
+    "later": "Not now"
+  },
+  "unsubscribe": {
+    "title": "Stop receiving promotions",
+    "question": "Do you want to stop receiving FatherMotoSport promotional emails at {email}?",
+    "transactional_note": "You'll keep receiving emails about your orders and payments.",
+    "confirm": "Yes, unsubscribe me",
+    "done_title": "Done, you've unsubscribed",
+    "done_text": "We won't send you promotions anymore. Emails about your orders and payments will keep arriving.",
+    "invalid_title": "Invalid link",
+    "invalid_text": "This unsubscribe link is not valid. Use the link at the bottom of one of our emails.",
+    "error_title": "We couldn't unsubscribe you",
+    "error_text": "Something went wrong. Try again in a few minutes.",
+    "retry": "Try again",
+    "back_home": "Back to the store"
   }
 }

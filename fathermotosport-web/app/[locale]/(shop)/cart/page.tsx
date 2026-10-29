@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/lib/i18n/navigation";
 import Image from "next/image";
@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
 import { CartNotice } from "@/components/cart/CartNotice";
+import { CouponFromLink } from "@/components/cart/CouponFromLink";
+import { useAuthStore } from "@/store/authStore";
 import { formatDiscount, formatPrice, getImageUrl } from "@/lib/utils";
 import { useCartPricesOnShow } from "@/lib/hooks/useCartPrices";
 import { useMounted } from "@/lib/hooks/useMounted";
@@ -29,12 +31,15 @@ export default function CartPage() {
   const [coupon, setCoupon] = useState("");
   const [discount, setDiscount] = useState(0);
   const locale = useLocale();
+  const isAuth = useAuthStore((s) => s.isAuth);
+  const pendingCoupon = useCartStore((s) => s.pendingCoupon);
+  const autoAplicado = useRef<string | null>(null);
   // Precios de hoy (pueden haber vencido o empezado descuentos desde que se agregó).
   useCartPricesOnShow(mounted);
 
-  const apply = async () => {
-    if (!coupon.trim()) return;
-    const res = await validateCoupon(coupon.trim(), subtotal);
+  const apply = async (codigo: string = coupon) => {
+    if (!codigo.trim()) return;
+    const res = await validateCoupon(codigo.trim(), subtotal);
     if (res.valid) {
       setDiscount(res.discount);
       toast.success(t("coupon_applied", { amount: res.discount }));
@@ -43,6 +48,17 @@ export default function CartPage() {
       toast.error(res.message);
     }
   };
+
+  // Cupón llegado por enlace: con sesión se aplica solo, una vez por código.
+  useEffect(() => {
+    if (!mounted || !pendingCoupon) return;
+    setCoupon((actual) => actual || pendingCoupon);
+    if (!isAuth || !items.length || autoAplicado.current === pendingCoupon) return;
+    autoAplicado.current = pendingCoupon;
+    void apply(pendingCoupon);
+    // apply cambia en cada render; solo importan el código, la sesión y el carrito.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, pendingCoupon, isAuth, items.length]);
 
   // Hasta el montaje el store persistido aún no está disponible en el cliente;
   // evitamos renderizar contenido divergente respecto al servidor.
@@ -57,9 +73,10 @@ export default function CartPage() {
   if (!items.length) {
     return (
       <div className="flex min-h-[70vh] flex-col items-center justify-center gap-4 px-4 pt-20 text-center">
-        {/* Suspense: CartNotice lee ?aviso= con useSearchParams. */}
+        {/* Suspense: CartNotice y CouponFromLink leen ?aviso= y ?cupon= con useSearchParams. */}
         <Suspense fallback={null}>
           <CartNotice />
+          <CouponFromLink />
         </Suspense>
         <ShoppingBag size={56} className="text-brand-muted opacity-40" />
         <h1 className="text-2xl font-bold text-brand-white">{t("empty_title")}</h1>
@@ -76,6 +93,7 @@ export default function CartPage() {
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-24 sm:px-6">
       <Suspense fallback={null}>
         <CartNotice />
+        <CouponFromLink />
       </Suspense>
       <h1 className="mb-8 text-3xl font-extrabold text-brand-white">{t("my_cart")}</h1>
 
@@ -158,7 +176,7 @@ export default function CartPage() {
 
             <div className="mb-4 flex gap-2">
               <Input placeholder={t("coupon_placeholder")} value={coupon} onChange={(e) => setCoupon(e.target.value)} />
-              <Button variant="glass" onClick={apply}>
+              <Button variant="glass" onClick={() => apply()}>
                 {t("apply")}
               </Button>
             </div>
