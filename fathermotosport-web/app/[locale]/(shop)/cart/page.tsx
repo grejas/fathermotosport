@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
 import { CartNotice } from "@/components/cart/CartNotice";
 import { CouponFromLink } from "@/components/cart/CouponFromLink";
+import { ShippingEstimator } from "@/components/cart/ShippingEstimator";
 import { useAuthStore } from "@/store/authStore";
 import { formatDiscount, formatPrice, getImageUrl } from "@/lib/utils";
 import { useCartPricesOnShow } from "@/lib/hooks/useCartPrices";
@@ -30,6 +31,8 @@ export default function CartPage() {
   const clearCart = useCartStore((s) => s.clearCart);
   const [coupon, setCoupon] = useState("");
   const [discount, setDiscount] = useState(0);
+  // Envío más barato del país elegido en el estimador; solo informativo (el total no lo suma).
+  const [cheapestShipping, setCheapestShipping] = useState<number | null>(null);
   const locale = useLocale();
   const isAuth = useAuthStore((s) => s.isAuth);
   const pendingCoupon = useCartStore((s) => s.pendingCoupon);
@@ -181,6 +184,10 @@ export default function CartPage() {
               </Button>
             </div>
 
+            <div className="mb-4">
+              <ShippingEstimator onCheapestChange={setCheapestShipping} />
+            </div>
+
             <div className="space-y-2 border-t border-white/10 pt-4 text-sm">
               <div className="flex justify-between text-brand-muted">
                 <span>{t("subtotal")}</span>
@@ -194,12 +201,21 @@ export default function CartPage() {
               )}
               <div className="flex justify-between text-brand-muted">
                 <span>{t("shipping")}</span>
-                <span className="font-semibold text-cat-boots">{t("shipping_free")}</span>
+                {cheapestShipping === null ? (
+                  <span className="text-right text-xs">{t("shipping_at_checkout")}</span>
+                ) : cheapestShipping === 0 ? (
+                  <span className="font-semibold text-cat-boots">{tCheckout("free")}</span>
+                ) : (
+                  <span className="text-brand-white">
+                    {t("shipping_from", { price: formatPrice(cheapestShipping) })}
+                  </span>
+                )}
               </div>
               <div className="flex justify-between border-t border-white/10 pt-2 text-base font-bold text-brand-white">
                 <span>{t("total")}</span>
                 <span>{formatPrice(total)}</span>
               </div>
+              <p className="text-xs text-brand-muted">{t("shipping_added_note")}</p>
             </div>
 
             <Link href="/checkout" className="mt-5 block">
