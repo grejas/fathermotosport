@@ -10,6 +10,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { ProfileCompletionModal } from "@/components/account/ProfileCompletionModal";
+import { AssistantWidget } from "@/components/assistant/AssistantWidget";
 import { StoreSettingsProvider } from "@/components/layout/StoreSettingsProvider";
 import { getMenuCategories } from "@/lib/api/categories";
 import { getStoreSettings } from "@/lib/api/storeSettings";
@@ -66,6 +67,8 @@ export default async function RootLayout({
               <CartDrawer />
               {/* Una vez tras iniciar sesión, si faltan teléfono, país o verificar el correo. */}
               <ProfileCompletionModal />
+              {/* Asistente de compras: se abre cuando el cliente lo pide. */}
+              <AssistantWidget />
             </StoreSettingsProvider>
           </Providers>
         </NextIntlClientProvider>
