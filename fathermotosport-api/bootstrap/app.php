@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\CheckRole;
 use App\Http\Middleware\CompressResponse;
+use App\Http\Middleware\IdiomaDeLaPeticion;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
@@ -36,6 +37,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // rompería los POST de Livewire del login de Filament.
         $middleware->api(append: [
             CompressResponse::class,
+            // Idioma de los mensajes según la cabecera X-Locale de la web.
+            IdiomaDeLaPeticion::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -20,7 +20,7 @@ class ProductController extends Controller
         $products = Product::query()
             ->active()
             ->with(['brand', 'category', 'images', 'variants'])
-            ->withCount('reviews')
+            ->withCount(['reviews' => fn ($q) => $q->approved()])
             ->filter($request->only(['category', 'brand', 'min_price', 'max_price', 'search', 'is_new', 'is_popular', 'is_featured']))
             ->tap(fn ($q) => $this->applySort($q, $request->input('sort')))
             ->paginate($perPage)
@@ -45,7 +45,7 @@ class ProductController extends Controller
                 'variants',
                 'model3d',
                 'visorColors',
-                'reviews' => fn ($q) => $q->approved()->with('user')->latest(),
+                'reviews' => fn ($q) => $q->approved()->with(['user', 'approvedImages'])->latest(),
             ])
             ->withCount(['reviews' => fn ($q) => $q->approved()])
             ->withAvg(['reviews as reviews_avg_rating' => fn ($q) => $q->approved()], 'rating')

@@ -9,9 +9,11 @@ use App\Http\Resources\AddressResource;
 use App\Http\Resources\OrderResource;
 use App\Http\Resources\ProductResource;
 use App\Http\Resources\UserResource;
-use App\Models\Address;
+use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\Product;
+use App\Services\CouponService;
+use App\Support\Paises;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -35,7 +37,19 @@ class UserController extends Controller
     public function updateProfile(UpdateProfileRequest $request): UserResource
     {
         $user = $request->user();
-        $user->update($request->validated());
+        $datos = $request->validated();
+
+        // Teléfono guardado siempre en formato internacional (+59176543210).
+        if (! empty($datos['phone'])) {
+            $datos['phone'] = Paises::telefonoInternacional($datos['phone']);
+        }
+        // Una fecha de nacimiento nueva prueba la mayoría de edad (la regla ya la exige).
+        if (! empty($datos['birth_date'])) {
+            $datos['adult_confirmation'] = 'birth_date';
+            $datos['adult_confirmed_at'] = now();
+        }
+
+        $user->update($datos);
 
         return new UserResource($user->load('role'));
     }
@@ -131,9 +145,9 @@ class UserController extends Controller
         $user = $request->user();
 
         // El cupón de bienvenida es fixed de $5 generado al registrarse y vinculado al usuario.
-        $coupon = \App\Models\Coupon::where('user_id', $user->id)
+        $coupon = Coupon::where('user_id', $user->id)
             ->where('type', 'fixed')
-            ->where('value', \App\Services\CouponService::WELCOME_AMOUNT)
+            ->where('value', CouponService::WELCOME_AMOUNT)
             ->latest()
             ->first();
 

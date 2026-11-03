@@ -31,8 +31,11 @@ class ProductResource extends JsonResource
             'certification' => $this->certification,
             'spin_url' => $this->spin_url,
 
-            // Campos calculados
-            'discount_percent' => $this->discount_percent,
+            // Campos calculados. final_price es lo que se cobra: el mejor entre el precio
+            // propio (sale_price) y el descuento de categoría, sin sumarse (PrecioFinal).
+            // discount_percent es el "-X %" de ese precio y discount_source su origen
+            // ("product", "category" o null). price y sale_price siguen tal cual.
+            ...$this->resource->precioFinal(),
             'primary_image' => $this->primary_image,
             'has_3d_model' => $this->has_3d_model,
             'in_stock' => $this->resolveInStock(),
@@ -51,9 +54,11 @@ class ProductResource extends JsonResource
                 'slug' => $this->category->slug,
                 'icon' => $this->category->icon,
             ]),
+            // En el orden que se arrastra en el panel: un video puede ir primero. La
+            // principal ya no se adelanta (es solo la imagen de tarjetas y carrito).
             'images' => ProductImageResource::collection(
                 $this->whenLoaded('images', fn () => $this->images
-                    ->sortBy([['is_primary', 'desc'], ['sort_order', 'asc']])
+                    ->sortBy([['sort_order', 'asc'], ['id', 'asc']])
                     ->values())
             ),
             'variants' => ProductVariantResource::collection(

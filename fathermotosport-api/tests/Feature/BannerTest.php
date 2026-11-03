@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Resources\BannerResource;
 use App\Filament\Resources\BannerResource\Pages\CreateBanner;
 use App\Filament\Resources\BannerResource\Pages\EditBanner;
 use App\Filament\Resources\BannerResource\Pages\ListBanners;
@@ -20,7 +21,7 @@ use Tests\Unit\VideoInicioRapidoTest;
  * Banners con imagen o video subido desde el panel.
  *
  * Lo que importa: que los banners de imagen de siempre no cambien, que entre cualquier
- * video (con o sin poster) dentro de los límites (tipo real y 150 MB), que la API dé URLs
+ * video (con o sin poster) dentro de los límites (tipo real y 300 MB), que la API dé URLs
  * listas para un <video>, y que no queden archivos huérfanos en el disco.
  */
 class BannerTest extends TestCase
@@ -162,9 +163,12 @@ class BannerTest extends TestCase
         Storage::disk('public')->assertExists($banner->video_mobile_path);
     }
 
-    public function test_a_video_of_exactly_150_mb_is_accepted(): void
+    public function test_a_video_of_exactly_300_mb_is_accepted(): void
     {
-        $this->crearVideo(['video_path' => [$this->video('largo.mp4', 153600)]])->assertHasNoFormErrors();
+        $this->crearVideo(['video_path' => [$this->video('largo.mp4', 307200)]])->assertHasNoFormErrors();
+        $this->crearVideo(['title' => 'Móvil al límite', 'video_mobile_path' => [$this->video('largo-movil.mp4', 307200)]])->assertHasNoFormErrors();
+
+        $this->assertSame(2, Banner::count());
     }
 
     /**
@@ -216,25 +220,27 @@ class BannerTest extends TestCase
     }
 
     /**
-     * Primera barrera: la subida temporal de Livewire corta en 150 MB (el navegador
+     * Primera barrera: la subida temporal de Livewire corta en 300 MB (el navegador
      * ve el error antes de terminar de subir).
      */
-    public function test_the_livewire_upload_limit_is_150_mb(): void
+    public function test_the_livewire_upload_limit_is_300_mb(): void
     {
-        $this->assertContains('max:153600', config('livewire.temporary_file_upload.rules'));
+        $this->assertContains('max:307200', config('livewire.temporary_file_upload.rules'));
+        $this->assertSame(307200, BannerResource::MAX_VIDEO_KB);
+        $this->assertGreaterThanOrEqual(40, config('livewire.temporary_file_upload.max_upload_time'));
     }
 
     /**
      * Segunda barrera: aunque la subida temporal aceptara más (otra configuración o
      * una petición armada a mano), el formulario rechaza el archivo al guardar.
      */
-    public function test_a_video_over_150_mb_is_rejected_when_saving(): void
+    public function test_a_video_over_300_mb_is_rejected_when_saving(): void
     {
-        config(['livewire.temporary_file_upload.rules' => ['required', 'file', 'max:307200']]);
+        config(['livewire.temporary_file_upload.rules' => ['required', 'file', 'max:614400']]);
 
-        $this->crearVideo(['video_path' => [$this->video('enorme.mp4', 153601)]])
+        $this->crearVideo(['video_path' => [$this->video('enorme.mp4', 307201)]])
             ->assertHasFormErrors(['video_path']);
-        $this->crearVideo(['video_mobile_path' => [$this->video('enorme-movil.mp4', 153601)]])
+        $this->crearVideo(['video_mobile_path' => [$this->video('enorme-movil.mp4', 307201)]])
             ->assertHasFormErrors(['video_mobile_path']);
 
         $this->assertSame(0, Banner::count());

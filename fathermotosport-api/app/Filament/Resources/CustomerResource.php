@@ -8,12 +8,14 @@ use App\Models\Order;
 use App\Models\User;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Log;
 
 class CustomerResource extends Resource
 {
@@ -54,6 +56,12 @@ class CustomerResource extends Resource
                         ->orderBy('first_name', $direction)
                         ->orderBy('last_name', $direction)),
                 Tables\Columns\TextColumn::make('email')->label('Email')->searchable()->sortable()->copyable(),
+                // Solo con el correo verificado recibe promociones.
+                Tables\Columns\IconColumn::make('email_verified_at')
+                    ->label('Verificado')
+                    ->getStateUsing(fn (User $r) => $r->email_verified_at !== null)
+                    ->boolean()
+                    ->tooltip(fn (User $r) => $r->email_verified_at ? self::origenVerificacion($r) : 'Correo sin verificar: no recibe promociones'),
                 Tables\Columns\TextColumn::make('phone')->label('Teléfono')->placeholder('—'),
                 Tables\Columns\TextColumn::make('country')->label('País')->placeholder('—')->sortable(),
                 Tables\Columns\TextColumn::make('orders_count')
@@ -69,7 +77,7 @@ class CustomerResource extends Resource
                     )),
                 Tables\Columns\TextColumn::make('total_spent')
                     ->label('Total gastado')
-                    ->getStateUsing(fn (User $r) => '$' . number_format($r->orders()->where('payment_status', 'paid')->sum('total'), 2)),
+                    ->getStateUsing(fn (User $r) => '$'.number_format($r->orders()->where('payment_status', 'paid')->sum('total'), 2)),
                 Tables\Columns\TextColumn::make('status')
                     ->label('Estado')
                     ->badge()
@@ -88,6 +96,9 @@ class CustomerResource extends Resource
                 Tables\Filters\SelectFilter::make('status')->label('Estado')->options([
                     'active' => 'Activo', 'inactive' => 'Inactivo', 'banned' => 'Bloqueado',
                 ]),
+                Tables\Filters\TernaryFilter::make('email_verified_at')
+                    ->label('Correo verificado')
+                    ->nullable(),
             ], layout: FiltersLayout::AboveContentCollapsible)
             ->filtersFormColumns(3)
             ->filtersTriggerAction(fn (Tables\Actions\Action $action) => FiltroDeOrden::botonPanel($action))
@@ -103,6 +114,20 @@ class CustomerResource extends Resource
                     ->action(fn (User $r) => $r->update([
                         'status' => $r->status === 'active' ? 'inactive' : 'active',
                     ])),
+                Tables\Actions\Action::make('marcar_verificado')
+                    ->label('Marcar correo como verificado')
+                    ->icon('heroicon-o-check-badge')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Marcar el correo como verificado')
+                    ->modalDescription(fn (User $r) => "Hazlo solo si confirmaste por otro medio que {$r->email} existe y es de este cliente. Desde ahora podrá recibir promociones. Queda registrado quién lo marcó y cuándo.")
+                    ->modalSubmitActionLabel('Sí, está verificado')
+                    ->visible(fn (User $r) => $r->email_verified_at === null && (bool) auth()->user()?->isAdmin()) // solo Admin
+                    ->action(function (User $r) {
+                        $r->marcarCorreoVerificado('admin', auth()->user());
+                        Log::info('Correo de cliente marcado como verificado a mano.', ['user_id' => $r->id, 'admin_id' => auth()->id()]);
+                        Notification::make()->title('Correo marcado como verificado')->success()->send();
+                    }),
             ])
             ->defaultSort('created_at', 'desc');
     }
@@ -118,6 +143,20 @@ class CustomerResource extends Resource
                     Infolists\Components\TextEntry::make('phone')->label('Teléfono')->placeholder('—'),
                     Infolists\Components\TextEntry::make('status')->label('Estado')->badge(),
                     Infolists\Components\TextEntry::make('created_at')->label('Registro')->date(),
+                ]),
+            Infolists\Components\Section::make('Correo y promociones')
+                ->columns(2)
+                ->schema([
+                    Infolists\Components\TextEntry::make('verificacion')
+                        ->label('Correo')
+                        ->getStateUsing(fn (User $r) => $r->email_verified_at ? 'Verificado: '.self::origenVerificacion($r) : 'Sin verificar')
+                        ->badge()
+                        ->color(fn (User $r) => $r->email_verified_at ? 'success' : 'warning'),
+                    Infolists\Components\TextEntry::make('promociones')
+                        ->label('Promociones')
+                        ->getStateUsing(fn (User $r) => $r->motivoSinPromociones() === null ? 'Las recibe' : 'No las recibe ('.$r->motivoSinPromociones().')'),
+                    Infolists\Components\TextEntry::make('locale')->label('Idioma')->placeholder('—'),
+                    Infolists\Components\TextEntry::make('country')->label('País')->placeholder('—'),
                 ]),
             Infolists\Components\Section::make('Cupón de bienvenida')
                 ->schema([
@@ -135,9 +174,25 @@ class CustomerResource extends Resource
                         ->getStateUsing(fn (User $r) => $r->orders()->count()),
                     Infolists\Components\TextEntry::make('total_historico')
                         ->label('Total gastado (pagado)')
-                        ->getStateUsing(fn (User $r) => '$' . number_format($r->orders()->where('payment_status', 'paid')->sum('total'), 2)),
+                        ->getStateUsing(fn (User $r) => '$'.number_format($r->orders()->where('payment_status', 'paid')->sum('total'), 2)),
                 ]),
         ]);
+    }
+
+    /** "por código, 12/08/2026" o "a mano por Ana Pérez, 03/11/2026". */
+    private static function origenVerificacion(User $r): string
+    {
+        $fecha = $r->email_verified_at?->timezone(config('marketing.timezone'))->format('d/m/Y');
+        $via = match ($r->email_verified_via) {
+            'code' => 'por código',
+            'google' => 'con Google',
+            'paypal' => 'por PayPal',
+            'password_reset' => 'con el enlace de contraseña',
+            'admin' => 'a mano por '.(User::withTrashed()->find($r->email_verified_by)?->full_name ?: 'un administrador'),
+            default => 'antes de registrar el origen',
+        };
+
+        return "{$via}, {$fecha}";
     }
 
     public static function canAccess(): bool

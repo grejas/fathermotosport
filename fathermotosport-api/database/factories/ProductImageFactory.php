@@ -26,4 +26,15 @@ class ProductImageFactory extends Factory
             'is_primary' => false,
         ];
     }
+
+    /** Un video de la galería (el tipo lo deduce el modelo de la extensión). */
+    public function video(?string $poster = null): static
+    {
+        return $this->state(fn () => ['url' => 'products/videos/demo.mp4', 'poster_url' => $poster]);
+    }
+
+    public function gif(): static
+    {
+        return $this->state(fn () => ['url' => 'products/demo.gif']);
+    }
 }

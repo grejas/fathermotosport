@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasUuid;
+use App\Services\PrecioFinal;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -57,6 +58,18 @@ class Product extends Model
         'discount_percent',
         'has_3d_model',
     ];
+
+    protected static function booted(): void
+    {
+        // La base borra la galería en cascada, sin pasar por el modelo: se borra antes
+        // elemento por elemento para que se vayan también sus archivos del disco. Con la
+        // papelera (soft delete) no: el producto se puede restaurar con sus fotos.
+        // Lo mismo con las reseñas, que se llevan las fotos de sus clientes.
+        static::forceDeleting(function (Product $product) {
+            $product->images()->get()->each->delete();
+            $product->reviews()->get()->each->delete();
+        });
+    }
 
     // Relaciones
     public function brand(): BelongsTo
@@ -144,22 +157,54 @@ class Product extends Model
     }
 
     // Accessors
-    public function getDiscountPercentAttribute(): int
+    /**
+     * El "-X %" del precio final: el del precio propio (entero) o el de la categoría
+     * (puede tener decimales, ej. 7,5). Ver PrecioFinal.
+     */
+    public function getDiscountPercentAttribute(): int|float
     {
-        if (! $this->sale_price || $this->price <= 0 || $this->sale_price >= $this->price) {
-            return 0;
-        }
-
-        return (int) round((($this->price - $this->sale_price) / $this->price) * 100);
+        return $this->precioFinal()['discount_percent'];
     }
 
+    /** Lo que paga el cliente, ya con el mejor descuento (propio o de categoría). */
+    public function getFinalPriceAttribute(): string
+    {
+        return $this->precioFinal()['final_price'];
+    }
+
+    /** "product", "category" o null: de dónde sale el descuento del precio final. */
+    public function getDiscountSourceAttribute(): ?string
+    {
+        return $this->precioFinal()['discount_source'];
+    }
+
+    /** @return array{final_price: string, discount_percent: int|float, discount_source: ?string} */
+    public function precioFinal(): array
+    {
+        return app(PrecioFinal::class)->de($this);
+    }
+
+    /**
+     * La imagen del producto en tarjetas, carrito, pedidos, upsell y correos: nunca un
+     * video. En orden: la imagen marcada "Principal"; si no hay, la primera imagen de la
+     * galería; si solo hay GIF, el primer fotograma del primero (o el GIF, si no se pudo
+     * sacar); si solo hay videos, el primer poster. Si no hay nada de eso, null.
+     */
     public function getPrimaryImageAttribute(): ?string
     {
-        $primary = $this->images->firstWhere('is_primary', true)
-            ?? $this->images->sortBy('sort_order')->first();
+        $galeria = $this->images->sortBy([['sort_order', 'asc'], ['id', 'asc']])->values();
+        $imagenes = $galeria->filter(fn (ProductImage $m) => $m->esImagen());
+
+        $ruta = ($imagenes->firstWhere('is_primary', true) ?? $imagenes->first())?->url;
+
+        if (! $ruta && $gif = $galeria->first(fn (ProductImage $m) => $m->esGif())) {
+            $ruta = $gif->thumbnail_url ?: $gif->url;
+        }
+
+        $ruta ??= $galeria->first(fn (ProductImage $m) => $m->esVideo() && filled($m->poster_url))?->poster_url;
 
         // La columna guarda ruta relativa; se devuelve URL pública absoluta.
-        return ProductImage::publicUrl($primary?->url);
+        return ProductImage::publicUrl($ruta);
     }
 
     public function getHas3dModelAttribute(): bool
@@ -171,7 +216,7 @@ class Product extends Model
 
     public function getCurrentPriceAttribute(): string
     {
-        return $this->sale_price ?? $this->price;
+        return $this->final_price;
     }
 
     /**

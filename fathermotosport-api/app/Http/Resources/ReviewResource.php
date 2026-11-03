@@ -2,6 +2,8 @@
 
 namespace App\Http\Resources;
 
+use App\Models\ReviewImage;
+use App\Support\UrlPublica;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -26,6 +28,14 @@ class ReviewResource extends JsonResource
                 'name' => $this->product->name,
                 'slug' => $this->product->slug,
             ]),
+            // Solo las aprobadas (relación approvedImages); las pendientes no tienen URL pública.
+            'images' => $this->whenLoaded('approvedImages', fn () => $this->approvedImages->map(fn (ReviewImage $foto) => [
+                'id' => $foto->id,
+                'url' => UrlPublica::deStorage($foto->path),
+                'thumb_url' => UrlPublica::deStorage($foto->thumb_path),
+                'width' => $foto->width,
+                'height' => $foto->height,
+            ])->values()),
             'created_at' => $this->created_at,
         ];
     }

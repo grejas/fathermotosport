@@ -9,9 +9,7 @@ use Illuminate\Http\Request;
 
 class CouponController extends Controller
 {
-    public function __construct(private CouponService $coupons)
-    {
-    }
+    public function __construct(private CouponService $coupons) {}
 
     /**
      * Verifica si un cupón es válido para el monto dado.
@@ -23,7 +21,8 @@ class CouponController extends Controller
             'amount' => ['required', 'numeric', 'min:0'],
         ]);
 
-        $result = $this->coupons->validateCoupon($data['code'], (float) $data['amount']);
+        // Ruta pública: si viene el token, el cliente puede usar sus cupones personales.
+        $result = $this->coupons->validateCoupon($data['code'], (float) $data['amount'], auth('sanctum')->user());
 
         return response()->json([
             'valid' => $result['valid'],

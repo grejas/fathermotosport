@@ -128,9 +128,9 @@ class CategoryRevalidationTest extends TestCase
         $cascos->update(['is_active' => false]);
 
         $this->assertFalse($cascos->fresh()->is_active);
-        Log::shouldHaveReceived('error')->withArgs(fn ($mensaje, $contexto) => $mensaje === 'No se pudo contactar a la web para revalidar.'
-            && $contexto['tag'] === 'categories'
-            && str_contains($contexto['error'], 'timed out'));
+        // Solo tag, URL y estado: el mensaje de la excepción no se registra (puede llevar la cabecera).
+        Log::shouldHaveReceived('error')->withArgs(fn ($mensaje, $contexto) => str_starts_with($mensaje, 'No se pudo contactar a la web para revalidar')
+            && $contexto === ['tag' => 'categories', 'url' => self::URL, 'status' => null]);
     }
 
     public function test_missing_secret_logs_an_error_without_calling_the_website(): void

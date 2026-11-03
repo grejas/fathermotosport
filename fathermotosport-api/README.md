@@ -9,15 +9,15 @@
 
 ## Desarrollo local: subir videos grandes (banners)
 
-El panel acepta videos de hasta 150 MB (`config/livewire.php` y `BannerResource`). En local,
+El panel acepta videos de hasta 300 MB (`config/livewire.php` y `BannerResource`). En local,
 lo que corta antes son los límites de PHP del servidor de desarrollo. Hay dos formas:
 
 **A. Una vez, en el php.ini de CLI** (en XAMPP: `C:\xampp\php\php.ini`; `php --ini` dice cuál es):
 
 ```ini
-upload_max_filesize = 160M
-post_max_size = 170M
-max_input_time = 900
+upload_max_filesize = 310M
+post_max_size = 320M
+max_input_time = 2700
 memory_limit = 512M
 ```
 
@@ -29,7 +29,7 @@ límites viejos.
 
 ```powershell
 cd public
-php -d upload_max_filesize=160M -d post_max_size=170M -d max_input_time=900 -d max_execution_time=300 -d memory_limit=512M -S 127.0.0.1:8000 ../vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php
+php -d upload_max_filesize=310M -d post_max_size=320M -d max_input_time=2700 -d max_execution_time=300 -d memory_limit=512M -S 127.0.0.1:8000 ../vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php
 ```
 
 Tiene que correrse desde `public` (el `server.php` de Laravel usa la carpeta actual como raíz).

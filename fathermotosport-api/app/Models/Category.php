@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use App\Services\FrontendRevalidator;
+use App\Services\PrecioFinal;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Category extends Model
@@ -47,13 +50,37 @@ class Category extends Model
         'sort_order',
         'size_type',
         'size_options',
+        'discount_percent',
+        'discount_active',
+        'discount_starts_at',
+        'discount_ends_at',
+        'notify_customers',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'sort_order' => 'integer',
         'size_options' => 'array',
+        'discount_percent' => 'decimal:2',
+        'discount_active' => 'boolean',
+        'discount_starts_at' => 'datetime',
+        'discount_ends_at' => 'datetime',
+        'notify_customers' => 'boolean',
     ];
+
+    /** Rango del porcentaje de descuento de categoría (con decimales, ej. 7,5). */
+    public const DESCUENTO_MIN = 0.5;
+
+    public const DESCUENTO_MAX = 90;
+
+    /** Estados del descuento, para el panel. */
+    public const DESCUENTO_APAGADO = 'apagado';
+
+    public const DESCUENTO_PROGRAMADO = 'programado';
+
+    public const DESCUENTO_VIGENTE = 'vigente';
+
+    public const DESCUENTO_VENCIDO = 'vencido';
 
     protected $attributes = [
         'size_type' => self::SIZE_INHERIT,
@@ -71,6 +98,11 @@ class Category extends Model
         static::created(fn () => app(FrontendRevalidator::class)->revalidate(self::REVALIDATE_TAG));
         static::updated(fn () => app(FrontendRevalidator::class)->revalidate(self::REVALIDATE_TAG));
         static::deleted(fn () => app(FrontendRevalidator::class)->revalidate(self::REVALIDATE_TAG));
+
+        // Los precios se calculan con las categorías leídas una vez por petición: si se
+        // guarda una categoría, lo que se calcule después en la misma petición la relee.
+        static::saved(fn () => PrecioFinal::olvidar());
+        static::deleted(fn () => PrecioFinal::olvidar());
     }
 
     public function parent(): BelongsTo
@@ -86,6 +118,61 @@ class Category extends Model
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);
+    }
+
+    /** Productos que no reciben el descuento de esta categoría (conservan solo el propio). */
+    public function productosExcluidos(): BelongsToMany
+    {
+        return $this->belongsToMany(Product::class, 'category_discount_exclusions');
+    }
+
+    /**
+     * Si el descuento de la categoría aplica en este momento: interruptor encendido,
+     * porcentaje cargado y $ahora dentro de [inicio, fin] (cada fecha es opcional).
+     * Se evalúa en cada consulta: al pasar el fin deja de aplicar aunque la tarea
+     * programada todavía no haya apagado el interruptor.
+     */
+    public function descuentoVigente(?CarbonInterface $ahora = null): bool
+    {
+        return $this->estadoDelDescuento($ahora) === self::DESCUENTO_VIGENTE;
+    }
+
+    public function estadoDelDescuento(?CarbonInterface $ahora = null): string
+    {
+        $ahora ??= now();
+
+        if (! $this->discount_active || (float) $this->discount_percent <= 0) {
+            return self::DESCUENTO_APAGADO;
+        }
+
+        if ($this->discount_ends_at && $ahora->greaterThan($this->discount_ends_at)) {
+            return self::DESCUENTO_VENCIDO;
+        }
+
+        if ($this->discount_starts_at && $ahora->lessThan($this->discount_starts_at)) {
+            return self::DESCUENTO_PROGRAMADO;
+        }
+
+        return self::DESCUENTO_VIGENTE;
+    }
+
+    /**
+     * Ids de la categoría y de todas sus subcategorías. Pocos niveles en la práctica; el
+     * límite evita un bucle infinito si alguien armara un ciclo de padres en el panel.
+     *
+     * @return array<int, int>
+     */
+    public static function idsConDescendientes(int $categoryId): array
+    {
+        $ids = [$categoryId];
+        $nivel = [$categoryId];
+
+        for ($i = 0; $i < 10 && $nivel; $i++) {
+            $nivel = self::whereIn('parent_id', $nivel)->whereNotIn('id', $ids)->pluck('id')->all();
+            $ids = array_merge($ids, $nivel);
+        }
+
+        return $ids;
     }
 
     public function scopeActive(Builder $query): Builder

@@ -99,14 +99,13 @@ class UpsellRule extends Model
     }
 
     /**
-     * Precio del que parte el descuento: el vigente del producto (su oferta si la tiene).
-     * Misma regla que OrderService::resolveUnitPrice, para no cobrar dos criterios.
+     * Precio del que parte el descuento: el precio final del producto (su oferta propia o
+     * el descuento de su categoría, el que deje menos; ver PrecioFinal). Misma regla que
+     * OrderService::resolveUnitPrice, para no cobrar dos criterios.
      */
     public function precioBase(): float
     {
-        $product = $this->offerProduct;
-
-        return (float) ($product->sale_price ?? $product->price);
+        return (float) $this->offerProduct->final_price;
     }
 
     /** "Casco AGV" o "Categoría Cascos", para el panel. */

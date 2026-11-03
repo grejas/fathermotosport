@@ -3,11 +3,9 @@
 namespace App\Models;
 
 use App\Services\FrontendRevalidator;
-use App\Support\VideoInicioRapido;
+use App\Support\ArchivoPublico;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * Banner del sitio: una imagen o un video subido desde el panel, con título, texto y
@@ -122,28 +120,7 @@ class Banner extends Model
      */
     public static function prepararVideo(?string $ruta): bool
     {
-        $ruta = trim((string) $ruta);
-        if ($ruta === '' || preg_match('#^[a-z][a-z0-9+.-]*:#i', $ruta)) {
-            return false;
-        }
-
-        try {
-            $disco = Storage::disk('public');
-            if (! $disco->exists($ruta)) {
-                return false;
-            }
-
-            $cambiado = VideoInicioRapido::aplicar($disco->path($ruta));
-            if ($cambiado) {
-                Log::info('Video de banner reordenado para inicio rápido (moov al principio).', ['ruta' => $ruta]);
-            }
-
-            return $cambiado;
-        } catch (\Throwable $e) {
-            Log::warning('No se pudo preparar el video del banner para inicio rápido.', ['ruta' => $ruta, 'error' => $e->getMessage()]);
-
-            return false;
-        }
+        return ArchivoPublico::prepararVideo($ruta, 'banner');
     }
 
     /**
@@ -152,23 +129,13 @@ class Banner extends Model
      */
     private static function borrarArchivo(?string $ruta, mixed $exceptoId): void
     {
-        $ruta = trim((string) $ruta);
-
-        if ($ruta === '' || preg_match('#^[a-z][a-z0-9+.-]*:#i', $ruta)) {
-            return;
-        }
-
-        $enUso = self::query()
+        ArchivoPublico::borrarSiNoSeUsa($ruta, fn (string $ruta): bool => self::query()
             ->whereKeyNot($exceptoId)
             ->where(function (Builder $q) use ($ruta) {
                 foreach (self::ARCHIVOS as $columna) {
                     $q->orWhere($columna, $ruta);
                 }
             })
-            ->exists();
-
-        if (! $enUso) {
-            Storage::disk('public')->delete($ruta);
-        }
+            ->exists());
     }
 }

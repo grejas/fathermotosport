@@ -8,6 +8,7 @@ use App\Models\OrderItem;
 use App\Models\ProductVariant;
 use App\Models\ShippingOption;
 use App\Models\User;
+use App\Support\Paises;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -16,8 +17,8 @@ class OrderService
     public function __construct(
         private CouponService $coupons,
         private ShippingWeightService $weights,
-    ) {
-    }
+        private PrecioFinal $precios,
+    ) {}
 
     /**
      * Crea un pedido completo de forma transaccional:
@@ -38,6 +39,9 @@ class OrderService
 
             $subtotal = 0;
             $lines = [];
+            // Todas las categorías y exclusiones frescas: nada de lo leído antes en la
+            // petición decide el precio que se cobra.
+            PrecioFinal::olvidar();
 
             // 2. Validar stock y armar las líneas del pedido.
             foreach ($data['items'] as $line) {
@@ -71,6 +75,18 @@ class OrderService
                 ];
             }
 
+            // 2b. Lo que vio el cliente tiene que ser lo que se cobra. Si la web manda el
+            // subtotal que mostró y los precios cambiaron (venció un descuento, se editó
+            // un precio), se rechaza para que la web refresque y muestre el total nuevo
+            // antes de pagar. Sin el campo (PayPal Express, una web vieja) sigue como antes:
+            // igual se cobra el precio recalculado acá.
+            if (isset($data['expected_subtotal'])
+                && abs(round($subtotal, 2) - round((float) $data['expected_subtotal'], 2)) >= 0.005) {
+                throw ValidationException::withMessages([
+                    'expected_subtotal' => ['Los precios cambiaron. Revisa el total antes de pagar.'],
+                ]);
+            }
+
             // 3. Crear la dirección del pedido.
             $address = Address::create(array_merge($data['address'], [
                 'user_id' => $user?->id,
@@ -80,7 +96,7 @@ class OrderService
             $discount = 0;
             $validCoupon = null;
             if (! empty($data['coupon_code'])) {
-                $validation = $this->coupons->validateCoupon($data['coupon_code'], $subtotal);
+                $validation = $this->coupons->validateCoupon($data['coupon_code'], $subtotal, $user, bloquear: true);
                 if (! $validation['valid']) {
                     throw ValidationException::withMessages([
                         'coupon_code' => [$validation['message']],
@@ -148,6 +164,12 @@ class OrderService
                 $this->coupons->applyCoupon($data['coupon_code'], $order->id, $subtotal, $user);
             }
 
+            // 8. A la cuenta le faltaban teléfono o país (antigua o de Google): se toman
+            // de la dirección de envío, sin preguntar nada más.
+            if ($user && $user->perfilIncompleto()) {
+                $this->completarPerfilDesdeDireccion($user, $address, $data['shipping_country_code'] ?? null);
+            }
+
             return $order->load(['items.variant.product', 'address']);
         });
     }
@@ -160,6 +182,24 @@ class OrderService
      *
      * @throws ValidationException
      */
+    /** Solo llena lo que falta; un teléfono o país que no se reconocen se dejan vacíos. */
+    private function completarPerfilDesdeDireccion(User $user, Address $address, ?string $codigoPais): void
+    {
+        $iso = Paises::iso($codigoPais) ?? Paises::iso($address->country);
+        $cambios = [];
+
+        if (blank($user->country) && $iso) {
+            $cambios['country'] = $iso;
+        }
+        if (blank($user->phone) && ($telefono = Paises::telefonoDesdeDireccion($address->phone, $iso))) {
+            $cambios['phone'] = $telefono;
+        }
+
+        if ($cambios !== []) {
+            $user->forceFill($cambios)->save();
+        }
+    }
+
     private function resolveShippingOption(array $data, array $lines): ?ShippingOption
     {
         if (empty($data['shipping_option_id'])) {
@@ -191,13 +231,12 @@ class OrderService
     }
 
     /**
-     * Precio unitario: siempre el precio vigente del producto. El precio no varía por
-     * talla; product_variants.price queda en la BD sin uso y se ignora.
+     * Precio unitario: siempre el precio final del producto en este momento (el mejor
+     * entre su precio propio y el descuento de su categoría, ver PrecioFinal). El precio
+     * no varía por talla; product_variants.price queda en la BD sin uso y se ignora.
      */
     private function resolveUnitPrice(ProductVariant $variant): float
     {
-        $product = $variant->product;
-
-        return (float) ($product->sale_price ?? $product->price);
+        return $this->precios->precio($variant->product);
     }
 }

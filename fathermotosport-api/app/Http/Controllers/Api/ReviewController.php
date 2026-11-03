@@ -6,9 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\ReviewResource;
 use App\Models\Product;
 use App\Models\Review;
+use App\Models\ReviewImage;
+use App\Support\FotoDeResena;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 
 class ReviewController extends Controller
 {
@@ -22,7 +25,7 @@ class ReviewController extends Controller
 
         $reviews = Review::query()
             ->approved()
-            ->with(['user:id,first_name,last_name,country', 'product:id,name,slug'])
+            ->with(['user:id,first_name,last_name,country', 'product:id,name,slug', 'approvedImages'])
             ->latest()
             ->paginate($perPage)
             ->withQueryString();
@@ -60,6 +63,7 @@ class ReviewController extends Controller
     /**
      * Crea la reseña del usuario autenticado para el producto. Queda pendiente
      * de aprobación (is_approved = false) hasta que el admin la revise en el panel.
+     * Acepta hasta 3 fotos (photos[], multipart), que también quedan pendientes.
      */
     public function store(Request $request, Product $product): JsonResponse
     {
@@ -67,6 +71,7 @@ class ReviewController extends Controller
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
             'title' => ['nullable', 'string', 'max:255'],
             'comment' => ['nullable', 'string', 'max:2000'],
+            ...FotoDeResena::reglas(),
         ]);
 
         $user = $request->user();
@@ -88,14 +93,33 @@ class ReviewController extends Controller
             ], 422);
         }
 
-        $review = Review::create([
-            'user_id' => $user->id,
-            'product_id' => $product->id,
-            'rating' => $data['rating'],
-            'title' => $data['title'] ?? null,
-            'comment' => $data['comment'] ?? null,
-            'is_approved' => false,
-        ]);
+        // Reseña y fotos juntas o nada: si una foto falla, no queda la reseña a medias
+        // ni archivos sueltos en el disco. Las fotos quedan pendientes (disco privado).
+        $guardadas = [];
+        try {
+            $review = DB::transaction(function () use ($request, $user, $product, $data, &$guardadas) {
+                $review = Review::create([
+                    'user_id' => $user->id,
+                    'product_id' => $product->id,
+                    'rating' => $data['rating'],
+                    'title' => $data['title'] ?? null,
+                    'comment' => $data['comment'] ?? null,
+                    'is_approved' => false,
+                ]);
+
+                foreach (array_values($request->file('photos', [])) as $orden => $archivo) {
+                    $foto = FotoDeResena::guardarPendiente($archivo, "photos.{$orden}");
+                    $guardadas[] = $foto;
+                    $review->images()->create([...$foto, 'sort_order' => $orden, 'status' => ReviewImage::PENDIENTE]);
+                }
+
+                return $review;
+            });
+        } catch (\Throwable $e) {
+            FotoDeResena::borrarPendientes($guardadas);
+
+            throw $e;
+        }
 
         return (new ReviewResource($review->load('user')))
             ->response()

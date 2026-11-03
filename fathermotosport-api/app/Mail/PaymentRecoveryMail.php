@@ -26,8 +26,6 @@ class PaymentRecoveryMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public const CONTACTO = 'contacto@fathermotosport.com';
-
     public function __construct(public Order $order)
     {
         $this->locale($order->idioma());
@@ -60,7 +58,7 @@ class PaymentRecoveryMail extends Mailable
                 'nombre' => $this->nombre(),
                 'urlPago' => $this->order->urlParaPagar(),
                 'urlTienda' => rtrim((string) config('app.frontend_url'), '/'),
-                'contacto' => self::CONTACTO,
+                'contacto' => PieDeCorreo::contacto()['email'],
                 'emailLocale' => $idioma,
                 'nombreTienda' => PieDeCorreo::TIENDA,
             ],

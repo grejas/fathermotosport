@@ -100,7 +100,10 @@ class RegisterFromOrderTest extends TestCase
             ->assertJsonStructure(['token', 'welcome_coupon' => ['code', 'value'], 'linked_orders']);
 
         $user = User::where('email', 'ana.perez@example.com')->firstOrFail();
-        $this->assertSame('76543210', $user->phone);
+        // El teléfono local de la dirección queda con el prefijo del país, y el país del
+        // pedido ("Bolivia") como código ISO.
+        $this->assertSame('+59176543210', $user->phone);
+        $this->assertSame('BO', $user->country);
         $this->assertNotNull($user->email_verified_at, 'el email lo verificó PayPal');
         $this->assertSame($user->id, $order->fresh()->user_id);
 

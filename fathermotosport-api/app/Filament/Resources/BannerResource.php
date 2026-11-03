@@ -27,8 +27,8 @@ class BannerResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Banners';
 
-    /** Tope de cada video, en KB (150 MB). Lo mismo valida Livewire al subir (config/livewire.php). */
-    public const MAX_VIDEO_KB = 153600;
+    /** Tope de cada video, en KB (300 MB). Lo mismo valida Livewire al subir (config/livewire.php). */
+    public const MAX_VIDEO_KB = 307200;
 
     /**
      * Cualquier video (mp4, webm, mov, m4v, avi, mkv, ogv, wmv...). El servidor lo valida
@@ -105,9 +105,9 @@ class BannerResource extends Resource
                                 ->columnSpanFull(),
                             self::campoDeVideo('video_path', 'Video')
                                 ->required($esVideo)
-                                ->helperText('Obligatorio si el tipo es video. MP4 H.264, 720p o 1080p, sin límite de duración; para 2-3 minutos apunta a menos de 60 MB. Hasta 150 MB.'),
+                                ->helperText('Obligatorio si el tipo es video. MP4 H.264, 720p o 1080p, sin límite de duración; para 2-3 minutos apunta a menos de 60 MB. Hasta 300 MB.'),
                             self::campoDeVideo('video_mobile_path', 'Video móvil (opcional)')
-                                ->helperText('Opcional, para pantallas pequeñas: una versión más liviana o vertical. Si no lo subes, se usa el video principal. Hasta 150 MB.'),
+                                ->helperText('Opcional, para pantallas pequeñas: una versión más liviana o vertical. Si no lo subes, se usa el video principal. Hasta 300 MB.'),
                             Forms\Components\FileUpload::make('poster_path')
                                 ->label('Poster (opcional)')
                                 ->image()
@@ -143,7 +143,7 @@ class BannerResource extends Resource
 
     /**
      * Subida de un video. Sin previsualización ni lectura del archivo al editar: con
-     * un video de 150 MB, FilePond lo descargaría entero solo para mostrarlo.
+     * un video de 300 MB, FilePond lo descargaría entero solo para mostrarlo.
      */
     private static function campoDeVideo(string $campo, string $label): Forms\Components\FileUpload
     {

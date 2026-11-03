@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\CategoryResource\Pages;
 use App\Models\Category;
+use App\Models\Product;
 use App\Support\SizeCatalog;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -12,6 +13,8 @@ use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 class CategoryResource extends Resource
@@ -67,7 +70,135 @@ class CategoryResource extends Resource
                 ->numeric()
                 ->default(0),
             static::seccionDeTallas(),
+            static::seccionDeDescuento(),
         ])->columns(2);
+    }
+
+    /**
+     * Descuento de categoría: un porcentaje sobre el precio de lista de todos sus
+     * productos (y los de sus subcategorías), salvo los excluidos. Se calcula en vivo
+     * (PrecioFinal): no cambia los precios guardados ni el descuento propio de cada
+     * producto, y si choca con él gana el que deja el precio más bajo.
+     */
+    protected static function seccionDeDescuento(): Forms\Components\Section
+    {
+        return Forms\Components\Section::make('Descuento de categoría')
+            ->description('Un porcentaje de descuento para todos los productos de esta categoría y de sus subcategorías. No cambia los precios guardados: para quitarlo, apaga el interruptor. Si un producto ya tiene su propio descuento, se aplica solo el que deje el precio más bajo (no se suman). Las horas son de Bolivia (UTC-4).')
+            ->columns(2)
+            ->columnSpanFull()
+            ->collapsible()
+            ->schema([
+                Forms\Components\TextInput::make('discount_percent')
+                    ->label('Porcentaje')
+                    ->numeric()
+                    ->inputMode('decimal')
+                    ->step('0.01')
+                    ->minValue(Category::DESCUENTO_MIN)
+                    ->maxValue(Category::DESCUENTO_MAX)
+                    ->rule('decimal:0,2')
+                    ->suffix('%')
+                    ->helperText('De 0,5 % a 90 %, con hasta dos decimales (por ejemplo 7,5).')
+                    ->required(fn (Get $get): bool => (bool) $get('discount_active'))
+                    ->live(onBlur: true),
+                Forms\Components\Toggle::make('discount_active')
+                    ->label('Descuento activo')
+                    ->helperText('Al pasar la fecha de fin se apaga solo. Sin fechas, queda activo hasta que lo apagues.')
+                    ->default(false)
+                    ->inline(false)
+                    ->live(),
+                Forms\Components\DateTimePicker::make('discount_starts_at')
+                    ->label('Inicio (opcional)')
+                    ->seconds(false)
+                    ->native(false)
+                    ->timezone(FlashPromoResource::TIMEZONE)
+                    ->displayFormat('d/m/Y H:i')
+                    ->live(onBlur: true),
+                Forms\Components\DateTimePicker::make('discount_ends_at')
+                    ->label('Fin (opcional)')
+                    ->seconds(false)
+                    ->native(false)
+                    ->timezone(FlashPromoResource::TIMEZONE)
+                    ->displayFormat('d/m/Y H:i')
+                    ->rule(fn (Get $get) => function (string $attribute, mixed $value, \Closure $fail) use ($get) {
+                        $inicio = $get('discount_starts_at');
+                        $fin = $get('discount_ends_at');
+                        if (filled($fin) && filled($inicio) && strtotime((string) $fin) <= strtotime((string) $inicio)) {
+                            $fail('El fin tiene que ser posterior al inicio.');
+                        }
+                    })
+                    ->live(onBlur: true),
+                Forms\Components\Select::make('productosExcluidos')
+                    ->label('Productos excluidos')
+                    ->helperText('No reciben el descuento de esta categoría; conservan solo su propio descuento, si lo tienen.')
+                    ->relationship(
+                        'productosExcluidos',
+                        'name',
+                        modifyQueryUsing: fn (Builder $query, ?Category $record) => $query
+                            ->whereIn('products.category_id', $record ? Category::idsConDescendientes($record->id) : [])
+                            ->orderBy('products.name'),
+                    )
+                    ->getOptionLabelFromRecordUsing(fn (Product $product): string => "{$product->name} ({$product->sku})")
+                    ->multiple()
+                    ->searchable(['name', 'sku'])
+                    ->preload()
+                    ->visibleOn('edit')
+                    ->columnSpanFull(),
+                Forms\Components\Toggle::make('notify_customers')
+                    ->label('Avisar a los clientes por correo')
+                    ->helperText('Encenderlo no envía nada: habilita el botón "Avisar por correo" arriba de esta página, con vista previa, prueba y confirmación. Cada descuento se avisa una sola vez.')
+                    ->default(false)
+                    ->inline(false)
+                    ->visibleOn('edit')
+                    ->columnSpanFull(),
+                Forms\Components\Placeholder::make('descuento_resumen')
+                    ->label('Cómo queda')
+                    ->content(fn (Get $get, ?Category $record): string => static::resumenDeDescuento($get, $record))
+                    ->columnSpanFull(),
+            ]);
+    }
+
+    /** Estado y un ejemplo con precio 100, para la vista previa del formulario. */
+    protected static function resumenDeDescuento(Get $get, ?Category $record): string
+    {
+        $porcentaje = (float) $get('discount_percent');
+
+        $vista = new Category([
+            'discount_percent' => $porcentaje,
+            'discount_active' => (bool) $get('discount_active'),
+            'discount_starts_at' => filled($get('discount_starts_at'))
+                ? Carbon::parse($get('discount_starts_at'), FlashPromoResource::TIMEZONE) : null,
+            'discount_ends_at' => filled($get('discount_ends_at'))
+                ? Carbon::parse($get('discount_ends_at'), FlashPromoResource::TIMEZONE) : null,
+        ]);
+
+        $estado = match ($vista->estadoDelDescuento()) {
+            Category::DESCUENTO_APAGADO => 'Apagado: no se aplica.',
+            Category::DESCUENTO_PROGRAMADO => 'Programado: empieza el '.$vista->discount_starts_at->timezone(FlashPromoResource::TIMEZONE)->format('d/m/Y H:i').'.',
+            Category::DESCUENTO_VENCIDO => 'Vencido: la fecha de fin ya pasó, no se aplica.',
+            default => 'Vigente ahora'.($vista->discount_ends_at ? ', hasta el '.$vista->discount_ends_at->timezone(FlashPromoResource::TIMEZONE)->format('d/m/Y H:i') : ', sin fecha de fin').'.',
+        };
+
+        if ($porcentaje <= 0) {
+            return $estado;
+        }
+
+        $ejemplo = number_format(round(100 * (1 - $porcentaje / 100), 2), 2, ',', '.');
+        $excluidos = $record ? count((array) $get('productosExcluidos')) : 0;
+
+        return $estado.' Ejemplo: un producto de $100,00 queda en $'.$ejemplo.'.'
+            .($excluidos ? " Excluidos: {$excluidos}." : '');
+    }
+
+    /** "-15 % vigente", "-7,5 % programado"…, para la tabla. */
+    public static function describirDescuento(Category $category): ?string
+    {
+        if ($category->discount_percent === null || (float) $category->discount_percent <= 0) {
+            return null;
+        }
+
+        $porcentaje = rtrim(rtrim(number_format((float) $category->discount_percent, 2, ',', ''), '0'), ',');
+
+        return "-{$porcentaje} % ".$category->estadoDelDescuento();
     }
 
     /**
@@ -289,6 +420,17 @@ class CategoryResource extends Resource
                     ->formatStateUsing(fn (Category $record) => static::describirTipo($record))
                     ->badge()
                     ->color(fn (Category $record) => $record->size_type === Category::SIZE_INHERIT ? 'gray' : 'info'),
+                Tables\Columns\TextColumn::make('discount_percent')
+                    ->label('Descuento')
+                    ->formatStateUsing(fn (Category $record) => static::describirDescuento($record))
+                    ->placeholder('—')
+                    ->badge()
+                    ->color(fn (Category $record) => match ($record->estadoDelDescuento()) {
+                        Category::DESCUENTO_VIGENTE => 'success',
+                        Category::DESCUENTO_PROGRAMADO => 'info',
+                        Category::DESCUENTO_VENCIDO => 'warning',
+                        default => 'gray',
+                    }),
                 Tables\Columns\TextColumn::make('products_count')
                     ->label('Productos')
                     ->counts('products')

@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Cart\AddCartItemRequest;
 use App\Http\Requests\Cart\UpdateCartItemRequest;
 use App\Http\Resources\CartResource;
-use App\Models\CartItem;
 use App\Models\ProductVariant;
 use App\Services\CartService;
 use Illuminate\Http\JsonResponse;
@@ -15,9 +14,7 @@ use Illuminate\Validation\ValidationException;
 
 class CartController extends Controller
 {
-    public function __construct(private CartService $carts)
-    {
-    }
+    public function __construct(private CartService $carts) {}
 
     /**
      * Carrito vigente (por user_id o session_id).
@@ -25,6 +22,41 @@ class CartController extends Controller
     public function show(Request $request): CartResource
     {
         return new CartResource($this->carts->resolveCart($request));
+    }
+
+    /**
+     * Precio final de hoy de cada variante del carrito de la web (que guarda el precio al
+     * agregar). La web lo llama al abrir el carrito y el checkout, y antes de crear el
+     * pedido: si algo cambió, actualiza el precio y avisa al cliente. Usa la misma regla
+     * que el pedido (PrecioFinal), así lo mostrado es lo que se cobra.
+     */
+    public function prices(Request $request): JsonResponse
+    {
+        $datos = $request->validate([
+            'variant_ids' => ['required', 'array', 'min:1', 'max:50'],
+            'variant_ids.*' => ['required', 'uuid'],
+        ]);
+
+        $variantes = ProductVariant::with('product')
+            ->whereIn('id', array_unique($datos['variant_ids']))
+            ->get()
+            ->keyBy('id');
+
+        $precios = collect(array_values(array_unique($datos['variant_ids'])))->map(function (string $id) use ($variantes) {
+            $variante = $variantes->get($id);
+            $producto = $variante?->product;
+            $disponible = $variante && $variante->is_active && $producto?->is_active;
+
+            return [
+                'variant_id' => $id,
+                'available' => (bool) $disponible,
+                'stock' => $disponible ? (int) $variante->stock : 0,
+                'price' => $disponible ? $producto->price : null,
+                ...($disponible ? $producto->precioFinal() : ['final_price' => null, 'discount_percent' => 0, 'discount_source' => null]),
+            ];
+        });
+
+        return response()->json(['data' => $precios->values()]);
     }
 
     /**
@@ -52,7 +84,7 @@ class CartController extends Controller
         }
 
         // El precio es del producto (no varía por talla).
-        $price = $variant->product->sale_price ?? $variant->product->price;
+        $price = $variant->product->final_price;
 
         if ($existing) {
             $existing->update(['quantity' => $desiredQty, 'price' => $price]);

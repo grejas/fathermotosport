@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BajaController;
 use App\Http\Controllers\Api\BannerController;
 use App\Http\Controllers\Api\BrandController;
 use App\Http\Controllers\Api\CartController;
@@ -13,11 +14,13 @@ use App\Http\Controllers\Api\CouponController;
 use App\Http\Controllers\Api\FlashPromoController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\PerfilPendienteController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\ShippingController;
 use App\Http\Controllers\Api\ShippingReturnsController;
+use App\Http\Controllers\Api\StoreSettingsController;
 use App\Http\Controllers\Api\UpsellController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VisorColorController;
@@ -58,6 +61,16 @@ Route::prefix('v1')->group(function () {
     // Textos de envío y devoluciones editables desde el panel (?locale=es|pt|en)
     Route::get('/store/shipping-returns', [ShippingReturnsController::class, 'show']);
 
+    // Contacto y redes de "Configuración de la tienda" (lista cerrada, sin credenciales)
+    Route::get('/store/settings', [StoreSettingsController::class, 'show']);
+
+    // Baja de promociones por enlace firmado: GET consulta, POST da de baja (botón de la
+    // web y List-Unsubscribe-Post de un clic).
+    Route::middleware('throttle:20,1')->group(function () {
+        Route::get('/promos/unsubscribe', [BajaController::class, 'estado']);
+        Route::post('/promos/unsubscribe', [BajaController::class, 'confirmar']);
+    });
+
     // Blog (artículos publicados)
     Route::get('/posts', [PostController::class, 'index']);
     Route::get('/posts/{slug}', [PostController::class, 'show']);
@@ -86,6 +99,8 @@ Route::prefix('v1')->group(function () {
 
     // Carrito (guest por session_id)
     Route::get('/cart', [CartController::class, 'show']);
+    // Precio final de hoy de las variantes del carrito de la web (no usa sesión).
+    Route::post('/cart/prices', [CartController::class, 'prices'])->middleware('throttle:60,1');
     Route::post('/cart/items', [CartController::class, 'addItem']);
     Route::put('/cart/items/{id}', [CartController::class, 'updateItem']);
     Route::delete('/cart/items/{id}', [CartController::class, 'removeItem']);
@@ -168,11 +183,22 @@ Route::prefix('v1')->group(function () {
         Route::put('/user/email', [UserController::class, 'changeEmail']);
         Route::post('/user/dismiss-security-reminder', [UserController::class, 'dismissSecurityReminder']);
 
+        // "Completa tus datos" (una vez, sin bloquear compras) y verificación del correo
+        // de cuentas existentes. Los códigos: 5 por minuto y por usuario.
+        Route::post('/user/complete-profile', [PerfilPendienteController::class, 'completar']);
+        Route::post('/user/profile-prompt/dismiss', [PerfilPendienteController::class, 'cerrarVentana']);
+        Route::put('/user/locale', [PerfilPendienteController::class, 'idioma']);
+        Route::middleware('throttle:5,1')->group(function () {
+            Route::post('/user/email/send-code', [PerfilPendienteController::class, 'enviarCodigo']);
+            Route::post('/user/email/verify', [PerfilPendienteController::class, 'verificarCodigo']);
+        });
+
         // Carrito autenticado
         Route::post('/cart/merge', [CartController::class, 'merge']);
 
-        // Reseñas
-        Route::post('/products/{product:slug}/reviews', [ReviewController::class, 'store']);
+        // Reseñas (con fotos: 5 envíos por minuto y por usuario)
+        Route::post('/products/{product:slug}/reviews', [ReviewController::class, 'store'])
+            ->middleware('throttle:5,1');
 
         /*
         |----------------------------------------------------------------------

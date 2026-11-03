@@ -30,6 +30,8 @@ class StoreExpressOrderRequest extends FormRequest
             // Adónde avisarle del pedido. Obligatorio aunque PayPal informe otro al
             // pagar: sin él, un Express abandonado no tendría a quién escribirle.
             'email' => ['required', 'email', 'max:255'],
+            // Subtotal que vio el cliente; si los precios cambiaron se rechaza (ver OrderService).
+            'expected_subtotal' => ['nullable', 'numeric', 'min:0'],
             'locale' => ['nullable', 'string', 'max:5'],
         ];
     }

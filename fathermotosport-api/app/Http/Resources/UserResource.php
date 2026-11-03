@@ -25,6 +25,13 @@ class UserResource extends JsonResource
             'last_password_change' => $this->last_password_change,
             'security_reminder_dismissed_at' => $this->security_reminder_dismissed_at,
             'needs_security_reminder' => $this->needsSecurityReminder(),
+            // Solo para el propio cliente (/auth/me) y el panel: nunca en una API pública.
+            'locale' => $this->locale,
+            'adult_confirmation' => $this->adult_confirmation,
+            'promo_unsubscribed' => $this->promo_unsubscribed_at !== null,
+            'profile_incomplete' => $this->perfilIncompleto(),
+            // Ventana "Completa tus datos": se muestra una sola vez.
+            'profile_prompt_due' => $this->debeVerVentanaDePerfil(),
             'role' => $this->whenLoaded('role', fn () => [
                 'id' => $this->role->id,
                 'name' => $this->role->name,

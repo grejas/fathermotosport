@@ -16,6 +16,8 @@ class LoginRequest extends FormRequest
         return [
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
+            // Idioma de la web al iniciar sesión: se guarda como idioma del cliente.
+            'locale' => ['nullable', 'string', 'in:es,pt,en'],
         ];
     }
 }

@@ -19,8 +19,7 @@ class OrderController extends Controller
     public function __construct(
         private OrderService $orders,
         private EmailService $emails,
-    ) {
-    }
+    ) {}
 
     /**
      * Crea un pedido completo (guest checkout permitido).
@@ -65,6 +64,7 @@ class OrderController extends Controller
             'shipping_option_id' => $datos['shipping_option_id'],
             'shipping_country_code' => $datos['shipping_country_code'],
             'locale' => $datos['locale'] ?? null,
+            'expected_subtotal' => $datos['expected_subtotal'] ?? null,
             // El que escribió el cliente: para avisarle. El de PayPal llega al volver
             // y va a guest_email, verificado (ver completarPedidoConDatosDePaypal).
             'notification_email' => $datos['email'],

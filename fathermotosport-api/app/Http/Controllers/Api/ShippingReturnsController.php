@@ -15,8 +15,8 @@ class ShippingReturnsController extends Controller
      * Textos de envío y devoluciones para ?locale=es|pt|en (otro valor => es).
      *
      * Los textos vacíos llegan como null: la web usa sus textos por defecto. El
-     * contacto sale de store_config, exponiendo solo email y whatsapp (nunca
-     * payment_keys); se lee sin caché para no tener que invalidarlo desde otra página.
+     * contacto son el email y el whatsapp (solo dígitos) de StoreConfig::datosPublicos(),
+     * la misma lista cerrada de GET /store/settings.
      */
     public function show(Request $request): JsonResponse
     {
@@ -29,7 +29,7 @@ class ShippingReturnsController extends Controller
             fn () => ShippingReturnsSetting::current() ?? new ShippingReturnsSetting
         );
 
-        $config = StoreConfig::current();
+        $publico = StoreConfig::datosPublicos();
 
         return response()->json([
             'success' => true,
@@ -37,8 +37,8 @@ class ShippingReturnsController extends Controller
                 'locale' => $locale,
                 ...$setting->toPublicArray($locale),
                 'contact' => [
-                    'email' => $config?->email ?: null,
-                    'whatsapp' => $config?->whatsapp ?: null,
+                    'email' => $publico['email'],
+                    'whatsapp' => $publico['whatsapp'],
                 ],
             ],
         ]);

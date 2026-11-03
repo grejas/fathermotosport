@@ -154,24 +154,20 @@ class ShippingReturnsTest extends TestCase
         $this->assertSanitized($this->getJson(self::URL.'?locale=es')->json('data.texts.page_body'));
     }
 
-    public function test_expone_el_contacto_pero_nunca_las_credenciales_de_pago(): void
+    public function test_expone_solo_el_correo_y_el_whatsapp_de_contacto(): void
     {
-        StoreConfig::current()->update([
-            'payment_keys' => [
-                'stripe' => ['public_key' => 'pk_test_PUBLICA', 'secret_key' => 'sk_test_SECRETA', 'webhook_secret' => 'whsec_SECRETO'],
-                'paypal' => ['mode' => 'live', 'client_id' => 'pp_ID', 'secret' => 'pp_SECRETO'],
-            ],
-        ]);
+        Http::fake();
+        StoreConfig::current()->update(['phone' => '+591 700-99999', 'facebook' => 'https://facebook.com/nueva']);
 
         $response = $this->getJson(self::URL.'?locale=es')
             ->assertOk()
             ->assertJsonPath('data.contact.email', 'contacto@fathermotosport.com')
-            ->assertJsonPath('data.contact.whatsapp', '+59168736384');
+            ->assertJsonPath('data.contact.whatsapp', '59168736384');
 
         $this->assertSame(['email', 'whatsapp'], array_keys($response->json('data.contact')));
 
         $body = $response->getContent();
-        foreach (['payment_keys', 'sk_test_SECRETA', 'whsec_SECRETO', 'pp_SECRETO', 'pk_test_PUBLICA', 'pp_ID'] as $leak) {
+        foreach (['payment_keys', '700-99999', 'facebook.com/nueva'] as $leak) {
             $this->assertStringNotContainsString($leak, $body);
         }
     }

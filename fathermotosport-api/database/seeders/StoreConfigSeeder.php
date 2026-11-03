@@ -23,11 +23,6 @@ class StoreConfigSeeder extends Seeder
                 'instagram' => 'https://instagram.com/fathermotosport',
                 'youtube' => 'https://youtube.com/@fathermotosport',
                 'maintenance_mode' => false,
-                'payment_keys' => [
-                    'paypal' => ['mode' => 'sandbox', 'client_id' => '', 'secret' => ''],
-                    'stripe' => ['public_key' => '', 'secret_key' => ''],
-                    'mercadopago' => ['public_key' => '', 'access_token' => ''],
-                ],
             ]
         );
     }

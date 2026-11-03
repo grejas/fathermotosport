@@ -3,6 +3,8 @@
   // $emailLocale salen en español, exactamente como antes.
   $idiomaCorreo = \App\Support\PieDeCorreo::idioma($emailLocale ?? null);
   $pie = \App\Support\PieDeCorreo::textos($idiomaCorreo);
+  // WhatsApp de "Configuración de la tienda"; sin número, el enlace no aparece.
+  $whatsappPie = \App\Support\PieDeCorreo::whatsappUrl();
 @endphp
 <!DOCTYPE html>
 <html lang="{{ $idiomaCorreo }}">
@@ -82,8 +84,9 @@
       </div>
       <div class="footer-links">
         <a href="{{ config('app.frontend_url') }}" class="footer-link">{{ $pie['tienda'] }}</a>
-        <a href="https://wa.me/59168736384" class="footer-link">WhatsApp</a>
-        <a href="{{ config('app.frontend_url') }}/unsubscribe" class="footer-link">{{ $pie['baja'] }}</a>
+        @if ($whatsappPie)
+        <a href="{{ $whatsappPie }}" class="footer-link">WhatsApp</a>
+        @endif
       </div>
     </div>
   </div>

@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\IdiomaDeLaPeticion;
 use App\Http\Requests\Auth\ForgotPasswordRequest;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\RegisterFromOrderRequest;
 use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Http\Requests\Auth\SendVerificationCodeRequest;
 use App\Http\Requests\Auth\VerifyAndRegisterRequest;
-use App\Http\Requests\Auth\RegisterFromOrderRequest;
+use App\Http\Requests\Concerns\DatosPersonales;
 use App\Http\Resources\UserResource;
 use App\Models\Coupon;
 use App\Models\EmailVerificationCode;
@@ -17,6 +19,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\CouponService;
 use App\Services\EmailService;
+use App\Support\Paises;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -34,8 +37,7 @@ class AuthController extends Controller
     public function __construct(
         private CouponService $coupons,
         private EmailService $emails,
-    ) {
-    }
+    ) {}
 
     /**
      * Paso 1 del registro: verifica el reCAPTCHA y envía un código de 6 dígitos
@@ -100,14 +102,14 @@ class AuthController extends Controller
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
             'email' => $request->email,
-            'phone' => $request->phone,
-            'birth_date' => $request->birth_date,
-            'country' => $request->country,
+            ...DatosPersonales::paraGuardar($request->validated()),
+            'locale' => $this->idioma($request),
             'password' => Hash::make($request->password),
             'status' => 'active',
             'email_verified_at' => now(),
             'last_password_change' => now(),
         ]);
+        $user->forceFill(['email_verified_via' => 'code'])->save();
 
         // Descuento de $5 automático al registrarse → cupón único.
         $coupon = $this->coupons->generateWelcomeCoupon($user->id);
@@ -139,11 +141,12 @@ class AuthController extends Controller
             $user->forceFill([
                 'first_name' => $request->first_name,
                 'last_name' => $request->last_name,
-                'phone' => $request->phone,
-                'birth_date' => $request->birth_date,
-                'country' => $request->country,
+                ...DatosPersonales::paraGuardar($request->validated()),
+                'locale' => $this->idioma($request),
                 'password' => Hash::make($request->password),
                 'email_verified_at' => now(),
+                'email_verified_via' => 'code',
+                'email_verified_by' => null,
                 'last_password_change' => now(),
             ])->save();
 
@@ -227,22 +230,33 @@ class AuthController extends Controller
 
         [$nombre, $apellido] = $this->partirNombre($order->address?->full_name);
 
-        $user = DB::transaction(function () use ($order, $email, $nombre, $apellido, $request) {
+        // El pedido guarda el país como nombre ("Bolivia", "Estados Unidos", "Brazil") y la
+        // cuenta lo guarda como código ISO de 2 letras: con MySQL estricto, el nombre hacía
+        // fallar el alta. Si no se reconoce, la cuenta queda sin país (se le pide después).
+        $pais = Paises::iso($order->country);
+        $porPaypal = $order->email_verificado_por === 'paypal';
+
+        $user = DB::transaction(function () use ($order, $email, $nombre, $apellido, $request, $pais, $porPaypal) {
             $user = User::create([
                 'role_id' => Role::where('slug', 'cliente')->firstOrFail()->id,
                 'first_name' => $nombre,
                 'last_name' => $apellido,
                 'email' => $email,
-                'phone' => $order->address?->phone,
-                'country' => $order->country,
+                'phone' => Paises::telefonoDesdeDireccion($order->address?->phone, $pais),
+                'country' => $pais,
+                'locale' => in_array($order->locale, IdiomaDeLaPeticion::IDIOMAS, true) ? $order->locale : $this->idioma($request),
                 'password' => Hash::make($request->password),
                 'status' => 'active',
                 // Si el email lo informó PayPal al pagar, quien compró controla esa
                 // casilla. Si lo escribió a mano en el checkout (pago con tarjeta),
                 // no hay nada que lo pruebe: la cuenta queda sin verificar.
-                'email_verified_at' => $order->email_verificado_por === 'paypal' ? now() : null,
+                'email_verified_at' => $porPaypal ? now() : null,
                 'last_password_change' => now(),
             ]);
+
+            if ($porPaypal) {
+                $user->forceFill(['email_verified_via' => 'paypal'])->save();
+            }
 
             $order->update(['user_id' => $user->id]);
 
@@ -271,6 +285,14 @@ class AuthController extends Controller
             'linked_orders' => Order::where('user_id', $user->id)->count(),
             'token' => $user->createToken('auth')->plainTextToken,
         ], 201);
+    }
+
+    /** Idioma enviado por la web (campo locale o cabecera X-Locale); null si no llegó. */
+    private function idioma(Request $request): ?string
+    {
+        $locale = $request->input('locale');
+
+        return in_array($locale, IdiomaDeLaPeticion::IDIOMAS, true) ? $locale : IdiomaDeLaPeticion::desde($request);
     }
 
     /** "Ana María Pérez" → ["Ana", "María Pérez"]. */
@@ -316,6 +338,11 @@ class AuthController extends Controller
             throw ValidationException::withMessages([
                 'email' => ['Tu cuenta no está activa.'],
             ]);
+        }
+
+        // Idioma de la web con que inicia sesión: es el idioma en que se le escribe.
+        if ($request->filled('locale') && $user->locale !== $request->locale) {
+            $user->forceFill(['locale' => $request->locale])->save();
         }
 
         $token = $user->createToken('auth')->plainTextToken;
@@ -371,6 +398,7 @@ class AuthController extends Controller
                     // Usar el enlace del correo prueba que controla la casilla. Es la
                     // salida para quien encuentra una cuenta sin verificar con su email.
                     'email_verified_at' => $user->email_verified_at ?? now(),
+                    'email_verified_via' => $user->email_verified_at ? $user->email_verified_via : 'password_reset',
                 ])->save();
 
                 // Las sesiones abiertas con la contraseña anterior dejan de valer.
@@ -440,6 +468,7 @@ class AuthController extends Controller
                 'status' => 'active',
                 'last_password_change' => now(),
             ]);
+            $user->forceFill(['email_verified_via' => 'google'])->save();
 
             // Mismo beneficio que el registro normal: cupón de $5 + email.
             $coupon = $this->coupons->generateWelcomeCoupon($user->id);
@@ -453,6 +482,8 @@ class AuthController extends Controller
             DB::transaction(function () use ($user) {
                 $user->forceFill([
                     'email_verified_at' => now(),
+                    'email_verified_via' => 'google',
+                    'email_verified_by' => null,
                     'password' => Hash::make(Str::random(32)),
                     'last_password_change' => now(),
                 ])->save();

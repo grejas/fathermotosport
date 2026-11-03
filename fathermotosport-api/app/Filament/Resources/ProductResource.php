@@ -6,8 +6,10 @@ use App\Filament\Resources\ProductResource\Pages;
 use App\Filament\Support\FiltroDeOrden;
 use App\Models\Brand;
 use App\Models\Product;
+use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use App\Support\SizeCatalog;
+use Closure;
 use Filament\Forms;
 use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Form;
@@ -19,7 +21,9 @@ use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class ProductResource extends Resource
 {
@@ -38,6 +42,22 @@ class ProductResource extends Resource
     protected static ?string $pluralModelLabel = 'Productos';
 
     protected static ?int $navigationSort = 1;
+
+    /** La galería acepta imágenes (GIF incluido) y cualquier video. */
+    public const TIPOS_DE_GALERIA = ['image/*', 'video/*', 'application/mp4'];
+
+    /**
+     * Para el chequeo previo del navegador: algunos no informan el tipo de estos
+     * formatos y FilePond los rechazaría antes de subirlos (igual que en banners).
+     */
+    private const MIME_POR_EXTENSION = [
+        'mkv' => 'video/x-matroska',
+        'ogv' => 'video/ogg',
+        'm4v' => 'video/x-m4v',
+        'wmv' => 'video/x-ms-wmv',
+        'avi' => 'video/x-msvideo',
+        'mov' => 'video/quicktime',
+    ];
 
     public static function form(Form $form): Form
     {
@@ -155,43 +175,64 @@ class ProductResource extends Resource
                         ->columnSpanFull(),
                 ]),
 
-            Forms\Components\Section::make('Imágenes')
+            Forms\Components\Section::make('Imágenes y videos')
+                ->description('Arrastra los elementos para ordenarlos: el primero es el que se ve al abrir el producto, y puede ser un video.')
                 ->schema([
                     Forms\Components\Repeater::make('images')
                         ->relationship('images')
                         ->label('Galería')
                         ->schema([
                             Forms\Components\FileUpload::make('url')
-                                ->label('Imagen')
-                                ->image()
+                                ->label('Imagen, GIF o video')
+                                ->acceptedFileTypes(self::TIPOS_DE_GALERIA)
+                                ->mimeTypeMap(self::MIME_POR_EXTENSION)
+                                ->rule(static fn (): Closure => self::reglaDePesoDeGaleria())
+                                ->helperText('MP4 H.264 recomendado. Si no se reproduce, conviértelo a MP4 con HandBrake. Los GIF pesan mucho: mejor MP4. Videos y GIF: hasta 50 MB.')
                                 ->disk('public')
                                 ->directory('products')
                                 ->visibility('public')
                                 ->imagePreviewHeight('120')
                                 ->required()
+                                // Con el archivo elegido se muestran los campos de su tipo.
+                                ->live()
                                 // Nombre único por archivo (uniqid + nombre original) para
                                 // descartar colisiones de nombre entre filas del Repeater.
-                                ->saveUploadedFileUsing(function ($file) {
+                                // Los videos van a su propia carpeta.
+                                ->saveUploadedFileUsing(function (TemporaryUploadedFile $file) {
+                                    $carpeta = self::tipoDelArchivoSubido($file) === ProductImage::VIDEO ? 'products/videos' : 'products';
                                     $filename = uniqid().'_'.$file->getClientOriginalName();
-                                    $file->storeAs('products', $filename, 'public');
+                                    $file->storeAs($carpeta, $filename, 'public');
 
-                                    return 'products/'.$filename;
+                                    return $carpeta.'/'.$filename;
                                 }),
+                            Forms\Components\FileUpload::make('poster_url')
+                                ->label('Poster del video (opcional)')
+                                ->helperText('La imagen que se ve antes de que arranque el video. Sin poster se ve el primer fotograma.')
+                                ->image()
+                                ->disk('public')
+                                ->directory('products/posters')
+                                ->visibility('public')
+                                ->imagePreviewHeight('120')
+                                ->visible(fn (Get $get): bool => self::tipoDelEstado($get('url')) === ProductImage::VIDEO),
+                            Forms\Components\Toggle::make('with_sound')
+                                ->label('Permitir sonido')
+                                ->helperText('El video arranca siempre en silencio; con esto aparece el botón para activar el sonido.')
+                                ->visible(fn (Get $get): bool => self::tipoDelEstado($get('url')) === ProductImage::VIDEO),
                             Forms\Components\Toggle::make('is_primary')
                                 ->label('Principal')
-                                ->helperText('Marca solo una como principal.'),
-                            Forms\Components\TextInput::make('sort_order')
-                                ->label('Orden')
-                                ->numeric()
-                                ->default(0),
+                                ->helperText('La imagen de las tarjetas, el carrito y los correos. Marca solo una. Si no marcas ninguna, se usa la primera imagen.')
+                                ->visible(fn (Get $get): bool => in_array(self::tipoDelEstado($get('url')), [null, ProductImage::IMAGEN], true)),
                         ])
-                        ->columns(3)
+                        ->columns(2)
+                        ->itemLabel(fn (array $state): string => self::etiquetaDeElemento($state))
+                        ->rule(static fn (): Closure => self::reglaDeUnaPrincipal())
                         ->orderColumn('sort_order')
                         ->defaultItems(0)
                         ->maxItems(10)
-                        ->addActionLabel('+ Agregar imagen')
+                        ->addActionLabel('+ Agregar imagen, GIF o video')
                         ->reorderable()
                         ->reorderableWithButtons()
+                        ->extraItemActions([self::accionPonerAlPrincipio()])
                         ->collapsible(),
                 ]),
 
@@ -371,6 +412,100 @@ class ProductResource extends Resource
         }
 
         return $opciones;
+    }
+
+    /** image, gif o video de un archivo recién subido (por su tipo y, si no alcanza, su nombre). */
+    private static function tipoDelArchivoSubido(TemporaryUploadedFile $file): string
+    {
+        return ProductImage::tipoPorMime(rescue(fn () => $file->getMimeType(), null, false))
+            ?? ProductImage::tipoPorExtension($file->getClientOriginalName());
+    }
+
+    /**
+     * El tipo del elemento según el estado del campo de archivo (un archivo recién subido
+     * o la ruta ya guardada). Null mientras no haya archivo.
+     */
+    public static function tipoDelEstado(mixed $estado): ?string
+    {
+        $archivo = is_array($estado) ? Arr::first($estado) : $estado;
+
+        return match (true) {
+            $archivo instanceof TemporaryUploadedFile => self::tipoDelArchivoSubido($archivo),
+            is_string($archivo) && trim($archivo) !== '' => ProductImage::tipoPorExtension($archivo),
+            default => null,
+        };
+    }
+
+    /** El título de cada elemento plegado: su tipo, y si es la principal. */
+    private static function etiquetaDeElemento(array $state): string
+    {
+        $tipo = self::tipoDelEstado($state['url'] ?? null);
+
+        return match ($tipo) {
+            ProductImage::VIDEO => 'Video',
+            ProductImage::GIF => 'GIF',
+            ProductImage::IMAGEN => ($state['is_primary'] ?? false) ? 'Imagen (principal)' : 'Imagen',
+            default => 'Nuevo elemento',
+        };
+    }
+
+    /**
+     * Videos y GIF: hasta ProductImage::MAX_VIDEO_GIF_KB. Las imágenes no tienen tope
+     * propio (manda el de Livewire). Se valida cada archivo recién subido.
+     */
+    private static function reglaDePesoDeGaleria(): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail): void {
+            if (! $value instanceof TemporaryUploadedFile) {
+                return;
+            }
+
+            $tipo = self::tipoDelArchivoSubido($value);
+            if ($tipo !== ProductImage::IMAGEN && $value->getSize() > ProductImage::MAX_VIDEO_GIF_KB * 1024) {
+                $fail('Los videos y GIF pueden pesar hasta '.intdiv(ProductImage::MAX_VIDEO_GIF_KB, 1024).' MB.');
+            }
+        };
+    }
+
+    /** Como máximo una imagen marcada "Principal" (en un video o GIF el toggle no aplica). */
+    private static function reglaDeUnaPrincipal(): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail): void {
+            $principales = collect(is_array($value) ? $value : [])
+                ->filter(fn ($item) => is_array($item)
+                    && ($item['is_primary'] ?? false)
+                    && in_array(self::tipoDelEstado($item['url'] ?? null), [null, ProductImage::IMAGEN], true))
+                ->count();
+
+            if ($principales > 1) {
+                $fail('Marca como "Principal" una sola imagen.');
+            }
+        };
+    }
+
+    /**
+     * "Poner al principio" en cada fila: la mueve a la primera posición sin pasar por
+     * las flechas. Solo cambia el orden del formulario; al guardar, orderColumn
+     * renumera sort_order. No toca "Principal".
+     */
+    private static function accionPonerAlPrincipio(): Action
+    {
+        return Action::make('ponerAlPrincipio')
+            ->label('Poner al principio')
+            ->icon('heroicon-m-chevron-double-up')
+            ->link()
+            ->disabled(fn (array $arguments, Forms\Components\Repeater $component): bool => array_key_first($component->getState() ?? []) === ($arguments['item'] ?? null))
+            ->action(function (array $arguments, Forms\Components\Repeater $component): void {
+                $items = $component->getState() ?? [];
+                $uuid = $arguments['item'] ?? null;
+
+                if (! is_string($uuid) || ! array_key_exists($uuid, $items)) {
+                    return;
+                }
+
+                $component->state([$uuid => $items[$uuid]] + $items);
+                $component->callAfterStateUpdated();
+            });
     }
 
     /**

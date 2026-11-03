@@ -7,7 +7,6 @@ use App\Models\Order;
 use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
-use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
@@ -74,6 +73,8 @@ class ReclaimUnverifiedAccountTest extends TestCase
             'first_name' => 'Duenio',
             'last_name' => 'Real',
             'country' => 'BO',
+            'phone' => '+591 76543210',
+            'adult_confirmed' => true,
             'password' => self::CLAVE_NUEVA,
             'password_confirmation' => self::CLAVE_NUEVA,
         ]);

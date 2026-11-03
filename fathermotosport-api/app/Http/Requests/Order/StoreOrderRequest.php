@@ -39,6 +39,9 @@ class StoreOrderRequest extends FormRequest
             'shipping_country_code' => ['required_with:shipping_option_id', 'nullable', 'string', 'size:2'],
             'payment_method' => ['required', 'in:paypal,stripe,mercadopago'],
             'coupon_code' => ['nullable', 'string', 'max:50'],
+            // Subtotal que vio el cliente (sin envío ni cupón). Si no coincide con el
+            // recalculado, OrderService rechaza el pedido para que la web lo refresque.
+            'expected_subtotal' => ['nullable', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string', 'max:1000'],
             // Idioma de la tienda al comprar. No se rechaza uno desconocido (un idioma no
             // vale perder una venta): OrderService lo descarta y queda el de respaldo.

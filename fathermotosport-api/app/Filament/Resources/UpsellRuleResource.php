@@ -225,7 +225,7 @@ class UpsellRuleResource extends Resource
 
         return self::lineas($productos->map(function (Product $product) use ($datos, $porcentaje) {
             $propio = (int) ($datos['descuentos'][$product->id] ?? $porcentaje);
-            $base = (float) ($product->sale_price ?? $product->price);
+            $base = (float) $product->final_price;
             $final = round($base * (1 - $propio / 100), 2);
 
             return sprintf(
