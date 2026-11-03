@@ -1,5 +1,9 @@
 name: Deploy API (Hostinger)
 
+# ATENCIÓN: antes del primer despliegue real, sincronizar este repositorio con lo que está en
+# producción. El API en vivo ya tiene funciones que este código no (p. ej. el descuento por
+# categoría y final_price); copiar el repo encima las pisaría. Empezar siempre con dry_run.
+#
 # Despliegue MANUAL del backend Laravel. Solo se ejecuta cuando alguien pulsa
 # "Run workflow" en la pestaña Actions; nunca por un push.
 #
