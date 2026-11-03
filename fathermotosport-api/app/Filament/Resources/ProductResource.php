@@ -7,17 +7,20 @@ use App\Filament\Support\FiltroDeOrden;
 use App\Models\Brand;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Services\ProductPricingService;
 use App\Support\SizeCatalog;
 use Filament\Forms;
 use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Str;
 
@@ -416,6 +419,12 @@ class ProductResource extends Resource
                     ->label('Precio')
                     ->money('USD')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('sale_price')
+                    ->label('Oferta')
+                    ->money('USD')
+                    ->placeholder('—')
+                    ->color('danger')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('variants_sum_stock')
                     ->label('Stock')
                     ->sum('variants', 'stock')
@@ -475,6 +484,40 @@ class ProductResource extends Resource
             ->persistFiltersInSession()
             ->actions([
                 Tables\Actions\EditAction::make(),
+                // Cambio rápido de precio y oferta sin abrir el producto completo.
+                Tables\Actions\Action::make('precio_rapido')
+                    ->label('Precio')
+                    ->icon('heroicon-o-currency-dollar')
+                    ->modalHeading(fn (Product $record) => 'Precio de '.$record->name)
+                    ->modalSubmitActionLabel('Guardar precio')
+                    ->fillForm(fn (Product $record): array => [
+                        'price' => $record->price,
+                        'sale_price' => $record->sale_price,
+                    ])
+                    ->form([
+                        Forms\Components\TextInput::make('price')
+                            ->label('Precio')
+                            ->numeric()
+                            ->prefix('$')
+                            ->minValue(0.01)
+                            ->required(),
+                        Forms\Components\TextInput::make('sale_price')
+                            ->label('Precio de oferta')
+                            ->numeric()
+                            ->prefix('$')
+                            ->minValue(0.01)
+                            ->lt('price')
+                            ->helperText('Déjalo vacío para quitar la oferta.'),
+                    ])
+                    ->action(function (Product $record, array $data): void {
+                        app(ProductPricingService::class)->setPrices(
+                            $record,
+                            (float) $data['price'],
+                            filled($data['sale_price'] ?? null) ? (float) $data['sale_price'] : null,
+                        );
+
+                        Notification::make()->title('Precio actualizado')->success()->send();
+                    }),
                 Tables\Actions\ReplicateAction::make()
                     ->label('Duplicar')
                     ->excludeAttributes(['slug', 'sku'])
@@ -499,6 +542,55 @@ class ProductResource extends Resource
                         ->label('Marcar destacado')
                         ->icon('heroicon-o-star')
                         ->action(fn ($records) => $records->each->update(['is_featured' => true])),
+                    // Precios y promociones en lote: todo pasa por ProductPricingService.
+                    Tables\Actions\BulkAction::make('ajustar_precio')
+                        ->label('Subir o bajar precio %')
+                        ->icon('heroicon-o-arrows-up-down')
+                        ->modalDescription('Un valor positivo sube el precio; uno negativo lo baja. Si la oferta queda igual o más alta que el nuevo precio, se quita.')
+                        ->form([
+                            Forms\Components\TextInput::make('percent')
+                                ->label('Porcentaje')
+                                ->numeric()
+                                ->suffix('%')
+                                ->minValue(-99)
+                                ->maxValue(500)
+                                ->required(),
+                        ])
+                        ->action(function (Collection $records, array $data): void {
+                            $count = app(ProductPricingService::class)->adjustPrice($records, (float) $data['percent']);
+
+                            Notification::make()->title("Precio actualizado en {$count} productos")->success()->send();
+                        })
+                        ->deselectRecordsAfterCompletion(),
+                    Tables\Actions\BulkAction::make('aplicar_descuento')
+                        ->label('Poner en oferta %')
+                        ->icon('heroicon-o-tag')
+                        ->modalDescription('El precio de oferta será el precio menos este descuento.')
+                        ->form([
+                            Forms\Components\TextInput::make('percent')
+                                ->label('Descuento')
+                                ->numeric()
+                                ->suffix('%')
+                                ->minValue(1)
+                                ->maxValue(ProductPricingService::MAX_DISCOUNT_PERCENT)
+                                ->required(),
+                        ])
+                        ->action(function (Collection $records, array $data): void {
+                            $count = app(ProductPricingService::class)->applyDiscount($records, (float) $data['percent']);
+
+                            Notification::make()->title("{$count} productos en oferta")->success()->send();
+                        })
+                        ->deselectRecordsAfterCompletion(),
+                    Tables\Actions\BulkAction::make('quitar_oferta')
+                        ->label('Quitar oferta')
+                        ->icon('heroicon-o-x-mark')
+                        ->requiresConfirmation()
+                        ->action(function (Collection $records): void {
+                            $count = app(ProductPricingService::class)->clearSale($records);
+
+                            Notification::make()->title("Oferta quitada en {$count} productos")->success()->send();
+                        })
+                        ->deselectRecordsAfterCompletion(),
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
