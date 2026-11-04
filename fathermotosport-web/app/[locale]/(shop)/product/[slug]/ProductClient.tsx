@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Eye } from "lucide-react";
 import { useRouter } from "@/lib/i18n/navigation";
@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { Button } from "@/components/ui/Button";
 import { VisorColorsModal } from "@/components/3d/VisorColorsModal";
 import { translateText } from "@/lib/utils/translate";
+import { variantImage } from "@/lib/utils/variantImage";
 import type { ShippingReturnsSummary } from "@/lib/shippingReturns";
 
 export function ProductClient({
@@ -30,6 +31,8 @@ export function ProductClient({
   const router = useRouter();
   const { data: product, isLoading, isError } = useProduct(slug);
   const [showVisorModal, setShowVisorModal] = useState(false);
+  const [option, setOption] = useState<string | null>(null);
+  const handleOptionChange = useCallback((o: string | null) => setOption(o), []);
 
   // Si el usuario llegó navegando desde el catálogo, router.back() lo devuelve
   // exactamente a esa página conservando filtros/orden/página (estado local
@@ -118,7 +121,11 @@ export function ProductClient({
               showVisorColors={isHelmet}
             />
           ) : (
-            <ProductGallery images={product.images ?? []} name={displayProduct.name} />
+            <ProductGallery
+              images={product.images ?? []}
+              name={displayProduct.name}
+              focusImageId={variantImage(product.images, option)?.id}
+            />
           )}
           {isHelmet && (
             <Button
@@ -132,7 +139,7 @@ export function ProductClient({
             </Button>
           )}
         </div>
-        <ProductInfo product={displayProduct} shippingReturns={shippingReturns} />
+        <ProductInfo product={displayProduct} shippingReturns={shippingReturns} onOptionChange={handleOptionChange} />
       </div>
 
       <ProductTabs product={displayProduct} />
