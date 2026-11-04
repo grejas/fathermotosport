@@ -34,16 +34,3 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-## Asistente de compras (chat)
-
-Widget flotante (`components/assistant/AssistantWidget.tsx`) que se abre cuando el cliente lo pide.
-El endpoint `POST /api/assistant` responde solo con datos reales de la API pública (precio final,
-stock por talla, envío, políticas, formas de pago habilitadas). Nada de eso se inventa.
-
-- **Con IA:** define `ANTHROPIC_API_KEY` en Vercel (Environment Variables, solo servidor).
-  Opcionales: `ASSISTANT_MODEL` (por defecto `claude-haiku-5-5`) y `API_URL`.
-- **Sin clave, o si la IA falla:** responde en modo guiado (palabras clave + catálogo real).
-- WhatsApp siempre visible, con el resumen de la conversación (número del panel de la tienda).
-- Límite básico por IP en memoria; para un límite global usar Vercel WAF o Upstash.
-- Eventos (`dataLayer`): `assistant_open`, `assistant_message`, `assistant_product_click`, `assistant_whatsapp_click`.
