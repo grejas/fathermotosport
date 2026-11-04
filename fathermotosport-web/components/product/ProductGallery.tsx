@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Box, ChevronLeft, ChevronRight } from "lucide-react";
 import type { ProductImage } from "@/lib/types";
@@ -14,10 +14,25 @@ const SWIPE_THRESHOLD = 40;
  * Galería de la ficha: imágenes, GIF y videos mezclados, en el orden en que llegan de
  * la API (el que se arrastra en el panel; un video puede ir primero).
  */
-export function ProductGallery({ images, name }: { images: ProductImage[]; name: string }) {
+export function ProductGallery({
+  images,
+  name,
+  focusImageId,
+}: {
+  images: ProductImage[];
+  name: string;
+  /** Si cambia (el cliente elige otra opción), la galería salta a esa foto. */
+  focusImageId?: string | null;
+}) {
   const t = useTranslations("gallery");
   const etiquetaDeMiniatura = useEtiquetaDeMiniatura();
   const [active, setActive] = useState(0);
+  // Al elegir una opción con foto propia (p. ej. color verde), se muestra esa foto.
+  useEffect(() => {
+    if (!focusImageId) return;
+    const i = images.findIndex((img) => img.id === focusImageId);
+    if (i >= 0) setActive(i);
+  }, [focusImageId, images]);
   const current = images[active];
   const respaldo = primeraImagen(images);
   const touchStartX = useRef<number | null>(null);

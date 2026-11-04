@@ -37,7 +37,8 @@ interface CartState {
   items: LocalCartItem[];
   sessionId: string;
   isOpen: boolean;
-  addItem: (product: Product, variant: ProductVariant, quantity?: number) => void;
+  /** `image`: foto de la opción elegida (si no, la principal del producto). */
+  addItem: (product: Product, variant: ProductVariant, quantity?: number, image?: string | null) => void;
   removeItem: (variantId: string) => void;
   updateQuantity: (variantId: string, quantity: number) => void;
   clearCart: () => void;
@@ -77,7 +78,7 @@ export const useCartStore = create<CartState>()(
       pendingCoupon: null,
       setPendingCoupon: (code) => set({ pendingCoupon: code?.trim().toUpperCase() || null }),
 
-      addItem: (product, variant, quantity = 1) => {
+      addItem: (product, variant, quantity = 1, image) => {
         const variantId = variant.id;
         // El precio es del producto (no varía por talla): el final, con el mejor descuento.
         const price = finalPrice(product);
@@ -94,6 +95,7 @@ export const useCartStore = create<CartState>()(
                     price,
                     listPrice,
                     discountPercent: product.discount_percent,
+                    image: image ?? i.image,
                   }
                 : i
             ),
@@ -107,7 +109,7 @@ export const useCartStore = create<CartState>()(
                 productId: product.id,
                 name: product.name,
                 slug: product.slug,
-                image: product.primary_image,
+                image: image ?? product.primary_image,
                 // El color es del producto, no algo que el cliente elige.
                 color: product.color ?? null,
                 size: variant.size,

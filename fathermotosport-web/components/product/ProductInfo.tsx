@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Heart, Minus, Plus, Ruler, ShieldCheck, Star, Truck, MessageCircle, Award } from "lucide-react";
 import type { Product, ProductVariant } from "@/lib/types";
@@ -14,6 +14,7 @@ import { useStoreSettings } from "@/components/layout/StoreSettingsProvider";
 import type { ShippingReturnsSummary } from "@/lib/shippingReturns";
 import { whatsappUrl } from "@/lib/api/storeSettings";
 import { sortSizes } from "@/lib/utils/sizes";
+import { variantImage } from "@/lib/utils/variantImage";
 import { useCartStore } from "@/store/cartStore";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { useAuthStore } from "@/store/authStore";
@@ -22,9 +23,12 @@ import toast from "react-hot-toast";
 export function ProductInfo({
   product,
   shippingReturns,
+  onOptionChange,
 }: {
   product: Product;
   shippingReturns: ShippingReturnsSummary;
+  /** Avisa a la galería qué opción (talla/color/modelo) está elegida para mostrar su foto. */
+  onOptionChange?: (option: string | null) => void;
 }) {
   const t = useTranslations("product");
   const locale = useLocale();
@@ -54,6 +58,10 @@ export function ProductInfo({
       ? variants.find((v) => v.size === size)
       : variants.find((v) => v.stock > 0) ?? variants[0];
 
+  useEffect(() => {
+    onOptionChange?.(selectedVariant?.size ?? null);
+  }, [selectedVariant?.size, onOptionChange]);
+
   const selectSize = (s: string) => {
     setSize(s);
     setQty(1);
@@ -77,7 +85,8 @@ export function ProductInfo({
       toast.error(t("no_stock"));
       return;
     }
-    addItem(product, selectedVariant, qty);
+    // La foto de la opción elegida es la que viaja al carrito y al checkout.
+    addItem(product, selectedVariant, qty, variantImage(product.images, selectedVariant.size)?.url);
     toast.success(`${product.name} agregado al carrito`);
   };
 
