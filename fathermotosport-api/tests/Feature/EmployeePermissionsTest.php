@@ -12,6 +12,8 @@ use App\Filament\Resources\ProductResource;
 use App\Mail\WelcomeEmployeeMail;
 use App\Models\Role;
 use App\Models\User;
+use Database\Seeders\RoleSeeder;
+use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
@@ -24,7 +26,7 @@ class EmployeePermissionsTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(\Database\Seeders\RoleSeeder::class);
+        $this->seed(RoleSeeder::class);
     }
 
     private function make(string $slug, string $email): User
@@ -48,10 +50,12 @@ class EmployeePermissionsTest extends TestCase
         $this->assertTrue(CouponResource::canAccess());
         $this->assertTrue(BannerResource::canAccess());
         $this->assertTrue(CustomerResource::canAccess());
-        $this->assertTrue(StoreSettingsPage::canAccess());
 
         // NO puede gestionar el equipo (crear/editar empleados)
         $this->assertFalse(EmployeeResource::canAccess());
+
+        // NO puede entrar a Configuración de la tienda: solo Administrador (4d6de74).
+        $this->assertFalse(StoreSettingsPage::canAccess());
     }
 
     public function test_admin_puede_acceder_al_equipo(): void
@@ -60,13 +64,14 @@ class EmployeePermissionsTest extends TestCase
 
         $this->assertTrue(EmployeeResource::canAccess());
         $this->assertTrue(ProductResource::canAccess());
+        $this->assertTrue(StoreSettingsPage::canAccess());
     }
 
     public function test_cliente_no_puede_acceder_al_panel(): void
     {
         $cliente = $this->make('cliente', 'cliente@test.com');
 
-        $this->assertFalse($cliente->canAccessPanel(\Filament\Facades\Filament::getPanel('admin')));
+        $this->assertFalse($cliente->canAccessPanel(Filament::getPanel('admin')));
         $this->assertFalse($cliente->isStaff());
     }
 
@@ -74,7 +79,7 @@ class EmployeePermissionsTest extends TestCase
     {
         $empleado = $this->make('empleado', 'emp2@test.com');
 
-        $this->assertTrue($empleado->canAccessPanel(\Filament\Facades\Filament::getPanel('admin')));
+        $this->assertTrue($empleado->canAccessPanel(Filament::getPanel('admin')));
         $this->assertTrue($empleado->isStaff());
     }
 
@@ -110,7 +115,7 @@ class EmployeePermissionsTest extends TestCase
                 'first_name' => 'Juan',
                 'last_name' => 'Empleado',
                 'email' => 'empleado@fathermotosport.com',
-                'phone' => '700',
+                'phone' => '+591 71234567',
                 'password' => 'Empleado123!',
                 'is_active' => true,
             ])
@@ -126,5 +131,27 @@ class EmployeePermissionsTest extends TestCase
 
         Mail::assertSent(WelcomeEmployeeMail::class, fn ($mail) => $mail->employee->id === $emp->id
             && $mail->temporaryPassword === 'Empleado123!');
+    }
+
+    public function test_crear_empleado_rechaza_telefono_que_no_es_de_bolivia_ni_brasil(): void
+    {
+        Mail::fake();
+        $admin = $this->make('administrador', 'boss3@test.com');
+
+        Livewire::actingAs($admin)
+            ->test(CreateEmployee::class)
+            ->fillForm([
+                'first_name' => 'Juan',
+                'last_name' => 'Empleado',
+                'email' => 'empleado@fathermotosport.com',
+                'phone' => '700',
+                'password' => 'Empleado123!',
+                'is_active' => true,
+            ])
+            ->call('create')
+            ->assertHasFormErrors(['phone' => 'regex']);
+
+        $this->assertNull(User::where('email', 'empleado@fathermotosport.com')->first());
+        Mail::assertNothingSent();
     }
 }
