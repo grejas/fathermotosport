@@ -120,16 +120,31 @@ export function Footer({ categories, settings }: { categories: MenuCategory[]; s
         </div>
       </div>
 
-      <div className="flex flex-col items-center gap-2 border-t border-white/10 py-5 text-center text-xs text-brand-muted sm:flex-row sm:justify-center sm:gap-3">
-        <span>
-          © {new Date().getFullYear()} <span translate="no">FatherMotoSport</span>. {t("copyright")}
-        </span>
-        <span aria-hidden className="hidden sm:inline">
-          ·
-        </span>
-        <Link href="/returns-policy" className="transition hover:text-brand-red">
-          {t("returns_policy")}
-        </Link>
+      <div className="border-t border-white/10 px-4 py-5 text-center text-xs text-brand-muted">
+        <div className="flex flex-col items-center gap-2 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-3">
+          <span>
+            © {new Date().getFullYear()} <span translate="no">FatherMotoSport</span>. {t("copyright")}
+          </span>
+          <span aria-hidden className="hidden sm:inline">
+            ·
+          </span>
+          <Link href="/returns-policy" className="transition hover:text-brand-red">
+            {t("returns_policy")}
+          </Link>
+          <span aria-hidden className="hidden sm:inline">
+            ·
+          </span>
+          <Link href="/terms" className="transition hover:text-brand-red">
+            {t("terms")}
+          </Link>
+          <span aria-hidden className="hidden sm:inline">
+            ·
+          </span>
+          <Link href="/privacy" className="transition hover:text-brand-red">
+            {t("privacy")}
+          </Link>
+        </div>
+        <p className="mt-2">{t("operated_by")}</p>
       </div>
     </footer>
   );

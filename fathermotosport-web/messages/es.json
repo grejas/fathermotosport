@@ -108,7 +108,10 @@
     "payments": "Pagos",
     "contact": "Contacto",
     "copyright": "Todos los derechos reservados.",
-    "returns_policy": "Política de Envío y Devoluciones"
+    "returns_policy": "Política de Envío y Devoluciones",
+    "terms": "Términos y Condiciones",
+    "privacy": "Política de Privacidad",
+    "operated_by": "FatherMotoSport es operado por FATHERSON IMP LLC · 30 N Gould St Ste R, Sheridan, WY 82801, USA · contacto@fathermotosport.com"
   },
   "whatsapp": {
     "product_message": "Hola! Estoy interesado en el producto: *{name}*. ¿Podrían darme más información sobre precio, disponibilidad y envío? Gracias!",
