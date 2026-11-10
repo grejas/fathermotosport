@@ -82,6 +82,22 @@
     "payment_desc": "Aceptamos PayPal, Stripe y MercadoPago con encriptación SSL.",
     "view_payment_methods": "Ver métodos de pago"
   },
+  "promo_1111": {
+    "aria": "Promoción 11.11 Liquidación",
+    "eyebrow": "Día de las ofertas · 11.11",
+    "title": "Liquidación",
+    "off": "10% OFF",
+    "subtitle": "en guantes, chaquetas, botas y riñoneras seleccionadas. Equípate para la pista al mejor precio.",
+    "ends_in": "La oferta termina en",
+    "shop": "Ver ofertas",
+    "fine_print": "Precios en USD · Válido hasta el 11/11 a las 23:59 (hora de Bolivia).",
+    "tiles": {
+      "gloves": "Guantes",
+      "jackets": "Chaquetas",
+      "boots": "Botas",
+      "waist": "Riñoneras"
+    }
+  },
   "flash_promo": {
     "badge": "Promoción Flash",
     "ends_in": "Termina en:",
