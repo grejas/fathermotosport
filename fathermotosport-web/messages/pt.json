@@ -82,6 +82,22 @@
     "payment_desc": "Aceitamos PayPal, Stripe e MercadoPago com criptografia SSL.",
     "view_payment_methods": "Ver métodos de pagamento"
   },
+  "promo_1111": {
+    "aria": "Promoção 11.11 Liquidação",
+    "eyebrow": "Dia das ofertas · 11.11",
+    "title": "Liquidação",
+    "off": "10% OFF",
+    "subtitle": "em luvas, jaquetas, botas e pochetes selecionados. Equipe-se para a pista pelo melhor preço.",
+    "ends_in": "A oferta termina em",
+    "shop": "Ver ofertas",
+    "fine_print": "Preços em USD · Válido até 11/11 às 23:59 (horário da Bolívia).",
+    "tiles": {
+      "gloves": "Luvas",
+      "jackets": "Jaquetas",
+      "boots": "Botas",
+      "waist": "Pochetes"
+    }
+  },
   "flash_promo": {
     "badge": "Promoção Flash",
     "ends_in": "Termina em:",

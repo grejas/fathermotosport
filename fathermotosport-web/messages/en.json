@@ -82,6 +82,22 @@
     "payment_desc": "We accept PayPal, Stripe and MercadoPago with SSL encryption.",
     "view_payment_methods": "View payment methods"
   },
+  "promo_1111": {
+    "aria": "11.11 Clearance promotion",
+    "eyebrow": "Singles' Day deals · 11.11",
+    "title": "Clearance",
+    "off": "10% OFF",
+    "subtitle": "on selected gloves, jackets, boots and waist bags. Gear up for the track at the best price.",
+    "ends_in": "Offer ends in",
+    "shop": "Shop deals",
+    "fine_print": "Prices in USD · Valid until 11/11 at 11:59 PM (Bolivia time).",
+    "tiles": {
+      "gloves": "Gloves",
+      "jackets": "Jackets",
+      "boots": "Boots",
+      "waist": "Waist bags"
+    }
+  },
   "flash_promo": {
     "badge": "Flash Promo",
     "ends_in": "Ends in:",
