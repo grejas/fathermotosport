@@ -19,6 +19,7 @@ class CartItemResource extends JsonResource
                 'id' => $this->variant->id,
                 'sku' => $this->variant->sku,
                 'size' => $this->variant->size,
+                'color' => $this->variant->color,
                 'stock' => $this->variant->stock,
                 'in_stock' => $this->variant->stock > 0,
                 'product' => $this->when(

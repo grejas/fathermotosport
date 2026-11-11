@@ -182,6 +182,16 @@ class ProductResource extends Resource
                         ->relationship('images')
                         ->label('Galería')
                         ->schema([
+                            // Solo aparece cuando el producto tiene colores en sus variantes: la
+                            // foto o el video se muestra únicamente al elegir ese color.
+                            Forms\Components\Select::make('color')
+                                ->label('Color de esta foto')
+                                ->helperText('Vacío = se muestra con todos los colores.')
+                                ->options(fn (Get $get): array => self::coloresDeVariantes($get('../../variants')))
+                                ->placeholder('Todos los colores')
+                                ->native(false)
+                                ->visible(fn (Get $get): bool => self::coloresDeVariantes($get('../../variants')) !== [])
+                                ->columnSpanFull(),
                             Forms\Components\FileUpload::make('url')
                                 ->label('Imagen, GIF o video')
                                 ->acceptedFileTypes(self::TIPOS_DE_GALERIA)
@@ -228,7 +238,7 @@ class ProductResource extends Resource
                         ->rule(static fn (): Closure => self::reglaDeUnaPrincipal())
                         ->orderColumn('sort_order')
                         ->defaultItems(0)
-                        ->maxItems(10)
+                        ->maxItems(20)
                         ->addActionLabel('+ Agregar imagen, GIF o video')
                         ->reorderable()
                         ->reorderableWithButtons()
@@ -299,6 +309,15 @@ class ProductResource extends Resource
                         ->relationship('variants')
                         ->label('Variantes del producto')
                         ->schema([
+                            // Solo para productos con varios colores elegibles (guantes en rojo y en
+                            // negro en el mismo enlace): se escribe el mismo nombre en todas las
+                            // tallas de ese color. En el resto de productos se deja vacío.
+                            Forms\Components\TextInput::make('color')
+                                ->label('Color (opcional)')
+                                ->placeholder('Ej. Rojo / Blanco / Negro')
+                                ->maxLength(40)
+                                ->datalist(fn (Get $get): array => array_values(self::coloresDeVariantes($get('../../variants'))))
+                                ->helperText('Solo si el producto se vende en varios colores.'),
                             // Las opciones salen de SizeCatalog según la categoría del producto.
                             // Si la categoría no usa talla, el campo se oculta (size = NULL),
                             // salvo que la variante ya tenga una talla guardada.
@@ -308,7 +327,6 @@ class ProductResource extends Resource
                                 ->visible(fn (Get $get, ?string $state) => filled($state)
                                     || SizeCatalog::forCategoryId($get('../../category_id')) !== [])
                                 ->required(fn (Get $get) => SizeCatalog::forCategoryId($get('../../category_id')) !== [])
-                                ->distinct()
                                 ->placeholder('Elegí una talla'),
                             Forms\Components\TextInput::make('stock')
                                 ->label('Stock')
@@ -322,12 +340,13 @@ class ProductResource extends Resource
                                 ->default(true)
                                 ->inline(false),
                         ])
-                        ->columns(3)
+                        ->columns(4)
                         ->defaultItems(1)
                         ->addActionLabel('+ Agregar talla')
                         ->reorderable(false)
+                        ->rule(static fn (): Closure => self::reglaDeVarianteUnica())
                         ->mutateRelationshipDataBeforeCreateUsing(function (array $data, Get $get): array {
-                            $data['sku'] = static::skuVarianteUnico($get('sku'), $data['size'] ?? null);
+                            $data['sku'] = static::skuVarianteUnico($get('sku'), $data['size'] ?? null, null, $data['color'] ?? null);
 
                             return $data;
                         })
@@ -336,9 +355,10 @@ class ProductResource extends Resource
                             // vigente {SKU_PRODUCTO}-{TALLA} se regenera (cambie o no la talla,
                             // y también si cambió el SKU del producto).
                             $size = array_key_exists('size', $data) ? $data['size'] : $record->size;
+                            $color = array_key_exists('color', $data) ? $data['color'] : $record->color;
 
-                            if (filled($get('sku')) && ! ProductVariant::skuMatchesPattern($record->sku, $get('sku'), $size)) {
-                                $data['sku'] = static::skuVarianteUnico($get('sku'), $size, $record->id);
+                            if (filled($get('sku')) && ! ProductVariant::skuMatchesPattern($record->sku, $get('sku'), $size, $color)) {
+                                $data['sku'] = static::skuVarianteUnico($get('sku'), $size, $record->id, $color);
                             }
 
                             return $data;
@@ -374,20 +394,20 @@ class ProductResource extends Resource
      * Genera el SKU de una variante: {SKU_PRODUCTO}-{TALLA} (o solo {SKU_PRODUCTO}
      * si no hay talla). Si falta el SKU del producto usa un fallback aleatorio.
      */
-    protected static function generarSkuVariante(?string $productSku, ?string $size): string
+    protected static function generarSkuVariante(?string $productSku, ?string $size, ?string $color = null): string
     {
         $base = filled($productSku) ? $productSku : ('VAR-'.Str::upper(Str::random(6)));
 
-        return ProductVariant::skuFor($base, $size);
+        return ProductVariant::skuFor($base, $size, $color);
     }
 
     /**
      * SKU de variante que no choca con otro de product_variants (agrega -2, -3…).
      * $ignoreId excluye a la propia variante al regenerar el SKU de una existente.
      */
-    protected static function skuVarianteUnico(?string $productSku, ?string $size, ?string $ignoreId = null): string
+    protected static function skuVarianteUnico(?string $productSku, ?string $size, ?string $ignoreId = null, ?string $color = null): string
     {
-        $base = static::generarSkuVariante($productSku, $size);
+        $base = static::generarSkuVariante($productSku, $size, $color);
         $sku = $base;
         $n = 2;
 
@@ -468,6 +488,42 @@ class ProductResource extends Resource
     }
 
     /** Como máximo una imagen marcada "Principal" (en un video o GIF el toggle no aplica). */
+    /** Colores distintos que hay en las filas de variantes del formulario: [nombre => nombre]. */
+    private static function coloresDeVariantes(mixed $variantes): array
+    {
+        $colores = collect(is_array($variantes) ? $variantes : [])
+            ->map(fn ($fila) => is_array($fila) ? trim((string) ($fila['color'] ?? '')) : '')
+            ->filter()
+            ->unique()
+            ->values();
+
+        return $colores->combine($colores)->all();
+    }
+
+    /**
+     * Dos filas no pueden repetir talla dentro del mismo color. Si el producto tiene colores,
+     * todas las filas deben tener uno (si no, el selector de la web no sabría dónde ponerla).
+     */
+    private static function reglaDeVarianteUnica(): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail): void {
+            $filas = collect(is_array($value) ? $value : [])->filter(fn ($fila) => is_array($fila));
+            $conColor = $filas->filter(fn ($fila) => filled(trim((string) ($fila['color'] ?? ''))));
+
+            if ($conColor->isNotEmpty() && $conColor->count() !== $filas->count()) {
+                $fail('Si el producto tiene colores, todas las variantes deben tener color.');
+
+                return;
+            }
+
+            $claves = $filas->map(fn ($fila) => mb_strtolower(trim((string) ($fila['color'] ?? ''))).'|'.($fila['size'] ?? ''));
+
+            if ($claves->count() !== $claves->unique()->count()) {
+                $fail('Hay dos variantes con el mismo color y la misma talla.');
+            }
+        };
+    }
+
     private static function reglaDeUnaPrincipal(): Closure
     {
         return function (string $attribute, mixed $value, Closure $fail): void {

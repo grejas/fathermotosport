@@ -15,6 +15,7 @@ import type { ShippingReturnsSummary } from "@/lib/shippingReturns";
 import { whatsappUrl } from "@/lib/api/storeSettings";
 import { sortSizes } from "@/lib/utils/sizes";
 import { variantImage } from "@/lib/utils/variantImage";
+import { colorCover, variantColors } from "@/lib/utils/colors";
 import { useCartStore } from "@/store/cartStore";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { useAuthStore } from "@/store/authStore";
@@ -25,11 +26,14 @@ export function ProductInfo({
   product,
   shippingReturns,
   onOptionChange,
+  onColorChange,
 }: {
   product: Product;
   shippingReturns: ShippingReturnsSummary;
   /** Avisa a la galería qué opción (talla/color/modelo) está elegida para mostrar su foto. */
   onOptionChange?: (option: string | null) => void;
+  /** Avisa a la página qué color está elegido (productos con varios colores) para filtrar la galería. */
+  onColorChange?: (color: string | null) => void;
 }) {
   const t = useTranslations("product");
   const locale = useLocale();
@@ -41,23 +45,34 @@ export function ProductInfo({
   const whatsappHref = whatsappUrl(whatsappDigits, tWhatsapp("product_message", { name: product.name }));
   const variants = useMemo(() => (product.variants ?? []).filter((v) => v.is_active), [product]);
 
+  // Colores elegibles: solo si el producto tiene 2 o más (si no, el color es informativo).
+  const colors = useMemo(() => variantColors(variants), [variants]);
+  const [color, setColor] = useState<string | null>(
+    () => colors.find((c) => variants.some((v) => v.color === c && v.stock > 0)) ?? colors[0] ?? null
+  );
+  // Las tallas y el stock son los del color elegido.
+  const colorVariants = useMemo(
+    () => (colors.length > 0 ? variants.filter((v) => v.color === color) : variants),
+    [variants, colors, color]
+  );
+
   const sizes = useMemo(
-    () => sortSizes([...new Set(variants.map((v) => v.size).filter((s): s is string => !!s))]),
-    [variants]
+    () => sortSizes([...new Set(colorVariants.map((v) => v.size).filter((s): s is string => !!s))]),
+    [colorVariants]
   );
   // Selección inicial: la primera talla (en orden) que tenga stock.
   const [size, setSize] = useState<string | null>(
-    () => sizes.find((s) => variants.some((v) => v.size === s && v.stock > 0)) ?? sizes[0] ?? null
+    () => sizes.find((s) => colorVariants.some((v) => v.size === s && v.stock > 0)) ?? sizes[0] ?? null
   );
   const [qty, setQty] = useState(1);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
 
-  // El color es del producto, así que la variante depende solo de la talla.
+  // La variante depende del color (si hay varios) y de la talla.
   // Productos sin talla (ej. viseras): la primera variante con stock.
   const selectedVariant: ProductVariant | undefined =
     sizes.length > 0
-      ? variants.find((v) => v.size === size)
-      : variants.find((v) => v.stock > 0) ?? variants[0];
+      ? colorVariants.find((v) => v.size === size)
+      : colorVariants.find((v) => v.stock > 0) ?? colorVariants[0];
 
   // Una vista de ficha por producto (no por cada cambio de talla).
   useEffect(() => {
@@ -68,6 +83,21 @@ export function ProductInfo({
   useEffect(() => {
     onOptionChange?.(selectedVariant?.size ?? null);
   }, [selectedVariant?.size, onOptionChange]);
+
+  useEffect(() => {
+    onColorChange?.(color);
+  }, [color, onColorChange]);
+
+  const selectColor = (c: string) => {
+    setColor(c);
+    setQty(1);
+    // Se conserva la talla si el otro color la tiene con stock; si no, la primera disponible.
+    const delColor = variants.filter((v) => v.color === c);
+    if (!delColor.some((v) => v.size === size && v.stock > 0)) {
+      const orden = sortSizes([...new Set(delColor.map((v) => v.size).filter((x): x is string => !!x))]);
+      setSize(orden.find((x) => delColor.some((v) => v.size === x && v.stock > 0)) ?? orden[0] ?? null);
+    }
+  };
 
   const selectSize = (s: string) => {
     setSize(s);
@@ -81,7 +111,7 @@ export function ProductInfo({
 
   // Stock a mostrar: si hay variante seleccionada, su stock; si no, el total
   // de todas las variantes activas (variants ya viene filtrado por is_active).
-  const totalStock = variants.reduce((sum, v) => sum + v.stock, 0);
+  const totalStock = colorVariants.reduce((sum, v) => sum + v.stock, 0);
   const displayStock = selectedVariant ? selectedVariant.stock : totalStock;
   const inStock = displayStock > 0;
   const canAdd = !!selectedVariant && selectedVariant.stock > 0;
@@ -93,7 +123,12 @@ export function ProductInfo({
       return;
     }
     // La foto de la opción elegida es la que viaja al carrito y al checkout.
-    addItem(product, selectedVariant, qty, variantImage(product.images, selectedVariant.size)?.url);
+    addItem(
+      product,
+      selectedVariant,
+      qty,
+      (colorCover(product.images, selectedVariant.color) ?? variantImage(product.images, selectedVariant.size))?.url
+    );
     trackAddToCart(product, qty);
     toast.success(`${product.name} agregado al carrito`);
   };
@@ -105,9 +140,9 @@ export function ProductInfo({
           {product.brand?.name}
         </p>
         <h1 className="mt-1 text-3xl font-extrabold text-brand-white">{product.name}</h1>
-        {product.color && (
+        {(color ?? product.color) && (
           <p className="mt-1 text-sm text-brand-muted">
-            {t("color")}: <span className="text-brand-white">{product.color}</span>
+            {t("color")}: <span className="text-brand-white">{color ?? product.color}</span>
           </p>
         )}
 
@@ -155,12 +190,45 @@ export function ProductInfo({
         )}
       </div>
 
+      {colors.length > 0 && (
+        <div>
+          <p className="mb-2 text-sm font-semibold text-brand-white">{t("color")}</p>
+          <div className="flex flex-wrap gap-2">
+            {colors.map((c) => {
+              const disabled = !variants.some((x) => x.color === c && x.stock > 0);
+              const thumb = colorCover(product.images, c);
+              return (
+                <button
+                  key={c}
+                  onClick={() => selectColor(c)}
+                  disabled={disabled}
+                  aria-pressed={color === c}
+                  className={cn(
+                    "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition",
+                    color === c
+                      ? "border-brand-red bg-brand-red/10 text-brand-white"
+                      : "border-white/10 text-brand-muted hover:border-white/30",
+                    disabled && "cursor-not-allowed opacity-40 line-through"
+                  )}
+                >
+                  {thumb && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={thumb.url} alt="" className="h-8 w-8 rounded bg-white object-contain" />
+                  )}
+                  {c}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {sizes.length > 0 && (
         <div>
           <p className="mb-2 text-sm font-semibold text-brand-white">{t("size")}</p>
           <div className="flex flex-wrap gap-2">
             {sizes.map((s) => {
-              const disabled = !variants.some((x) => x.size === s && x.stock > 0);
+              const disabled = !colorVariants.some((x) => x.size === s && x.stock > 0);
               return (
                 <button
                   key={s}

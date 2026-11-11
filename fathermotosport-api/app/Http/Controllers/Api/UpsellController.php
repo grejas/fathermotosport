@@ -53,6 +53,7 @@ class UpsellController extends Controller
                     ->map(fn (ProductVariant $v) => [
                         'id' => $v->id,
                         'size' => $v->size,
+                        'color' => $v->color,
                         'stock' => $v->stock,
                     ])->values(),
             ],

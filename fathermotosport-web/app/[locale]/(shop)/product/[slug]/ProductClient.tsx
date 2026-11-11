@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Eye } from "lucide-react";
 import { useRouter } from "@/lib/i18n/navigation";
@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/Button";
 import { VisorColorsModal } from "@/components/3d/VisorColorsModal";
 import { translateText } from "@/lib/utils/translate";
 import { variantImage } from "@/lib/utils/variantImage";
+import { mediaForColor } from "@/lib/utils/colors";
 import type { ShippingReturnsSummary } from "@/lib/shippingReturns";
 
 export function ProductClient({
@@ -33,6 +34,10 @@ export function ProductClient({
   const [showVisorModal, setShowVisorModal] = useState(false);
   const [option, setOption] = useState<string | null>(null);
   const handleOptionChange = useCallback((o: string | null) => setOption(o), []);
+  // Color elegido (solo productos con varios colores): la galería muestra solo sus fotos.
+  const [color, setColor] = useState<string | null>(null);
+  const handleColorChange = useCallback((c: string | null) => setColor(c), []);
+  const galleryImages = useMemo(() => mediaForColor(product?.images, color), [product?.images, color]);
 
   // Si el usuario llegó navegando desde el catálogo, router.back() lo devuelve
   // exactamente a esa página conservando filtros/orden/página (estado local
@@ -122,7 +127,7 @@ export function ProductClient({
             />
           ) : (
             <ProductGallery
-              images={product.images ?? []}
+              images={galleryImages}
               name={displayProduct.name}
               focusImageId={variantImage(product.images, option)?.id}
             />
@@ -139,7 +144,7 @@ export function ProductClient({
             </Button>
           )}
         </div>
-        <ProductInfo product={displayProduct} shippingReturns={shippingReturns} onOptionChange={handleOptionChange} />
+        <ProductInfo product={displayProduct} shippingReturns={shippingReturns} onOptionChange={handleOptionChange} onColorChange={handleColorChange} />
       </div>
 
       <ProductTabs product={displayProduct} />

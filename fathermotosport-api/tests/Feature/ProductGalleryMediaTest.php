@@ -364,7 +364,7 @@ class ProductGalleryMediaTest extends TestCase
             ->assertFormComponentActionVisible('images', 'moveDown', arguments: ['item' => $fila]);
 
         $repeater = $livewire->instance()->form->getComponent('data.images');
-        $this->assertSame(10, $repeater->getMaxItems());
+        $this->assertSame(20, $repeater->getMaxItems());
         $this->assertTrue($repeater->isReorderableWithButtons());
         $this->assertTrue($repeater->isReorderableWithDragAndDrop());
     }

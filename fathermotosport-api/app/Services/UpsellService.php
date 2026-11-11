@@ -268,7 +268,7 @@ class UpsellService
                     'unit_price' => $linea['precio'],
                     'subtotal' => $linea['subtotal'],
                     'size' => $variant->size,
-                    'color' => $variant->product->color,
+                    'color' => $variant->color ?: $variant->product->color,
                 ]);
             }
 
