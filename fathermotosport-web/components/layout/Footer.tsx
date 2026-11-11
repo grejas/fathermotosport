@@ -1,6 +1,7 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/lib/i18n/navigation";
 import { MessageCircle } from "lucide-react";
+import { TrackedWhatsappLink } from "@/components/analytics/TrackedWhatsappLink";
 import { categoryHref, categoryLabel, type MenuCategory } from "@/lib/api/categories";
 import { safeSocialUrl, whatsappUrl, type SocialNetwork, type StoreSettings } from "@/lib/api/storeSettings";
 
@@ -90,14 +91,13 @@ export function Footer({ categories, settings }: { categories: MenuCategory[]; s
         <div>
           <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-brand-white">{t("contact")}</h4>
           {whatsappHref && (
-            <a
+            <TrackedWhatsappLink
               href={whatsappHref}
-              target="_blank"
-              rel="noopener noreferrer"
+              origen="footer"
               className="inline-flex items-center gap-2 text-sm text-brand-muted transition hover:text-cat-boots"
             >
               <MessageCircle size={16} /> WhatsApp +{whatsappDigits}
-            </a>
+            </TrackedWhatsappLink>
           )}
           {socialLinks.length > 0 && (
             <div className="mt-4 flex gap-3">

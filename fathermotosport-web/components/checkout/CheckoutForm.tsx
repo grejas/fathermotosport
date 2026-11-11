@@ -29,6 +29,12 @@ import { validateCheckout, hasErrors, isEmail, type FieldErrors } from "@/lib/va
 import { cn, formatPrice } from "@/lib/utils";
 import type { Order, PaymentMethod, ShippingQuote } from "@/lib/types";
 import toast from "react-hot-toast";
+import {
+  identifyCustomer,
+  trackAddPaymentInfo,
+  trackInitiateCheckout,
+  trackWhatsappClick,
+} from "@/lib/analytics/events";
 
 /** Lo único que el checkout necesita de un pedido recién creado. */
 type PedidoCreado = Pick<Order, "id" | "order_number" | "access_token">;
@@ -50,6 +56,14 @@ export function CheckoutForm() {
   const sincronizarPrecios = useSyncCartPrices();
   // Precios de hoy al abrir el checkout (el carrito guarda los de cuando se agregó).
   useCartPricesOnShow();
+
+  // Inicio de checkout: una sola vez por visita a la página, con el carrito que trae.
+  const checkoutRegistrado = useRef(false);
+  useEffect(() => {
+    if (checkoutRegistrado.current || !items.length) return;
+    checkoutRegistrado.current = true;
+    trackInitiateCheckout(items);
+  }, [items]);
 
   const [form, setForm] = useState({
     first_name: "",
@@ -292,6 +306,10 @@ export function CheckoutForm() {
       return;
     }
 
+    // Eligió método y confirmó. El email y el teléfono viajan solo como hash.
+    identifyCustomer(isAuth ? user?.email : form.email, form.phone);
+    trackAddPaymentInfo(items, method);
+
     if (isPaypal) {
       await pagarConPaypal();
       return;
@@ -464,6 +482,7 @@ export function CheckoutForm() {
               {whatsappHref && (
                 <a
                   href={whatsappHref}
+                  onClick={() => trackWhatsappClick("checkout")}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
@@ -635,6 +654,7 @@ export function CheckoutForm() {
               {whatsappHref && (
                 <a
                   href={whatsappHref}
+                  onClick={() => trackWhatsappClick("checkout")}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
@@ -703,6 +723,7 @@ export function CheckoutForm() {
               {whatsappHref && (
                 <a
                   href={whatsappHref}
+                  onClick={() => trackWhatsappClick("checkout")}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-4 flex w-full items-center justify-center rounded-xl bg-[#25D366] px-4 py-3 text-sm font-semibold text-white transition hover:brightness-110"

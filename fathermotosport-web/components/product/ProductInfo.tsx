@@ -19,6 +19,7 @@ import { useCartStore } from "@/store/cartStore";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { useAuthStore } from "@/store/authStore";
 import toast from "react-hot-toast";
+import { trackAddToCart, trackViewContent, trackWhatsappClick } from "@/lib/analytics/events";
 
 export function ProductInfo({
   product,
@@ -58,6 +59,12 @@ export function ProductInfo({
       ? variants.find((v) => v.size === size)
       : variants.find((v) => v.stock > 0) ?? variants[0];
 
+  // Una vista de ficha por producto (no por cada cambio de talla).
+  useEffect(() => {
+    trackViewContent(product);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.id]);
+
   useEffect(() => {
     onOptionChange?.(selectedVariant?.size ?? null);
   }, [selectedVariant?.size, onOptionChange]);
@@ -87,6 +94,7 @@ export function ProductInfo({
     }
     // La foto de la opción elegida es la que viaja al carrito y al checkout.
     addItem(product, selectedVariant, qty, variantImage(product.images, selectedVariant.size)?.url);
+    trackAddToCart(product, qty);
     toast.success(`${product.name} agregado al carrito`);
   };
 
@@ -226,7 +234,12 @@ export function ProductInfo({
       <ShippingReturns content={shippingReturns} />
 
       {whatsappHref && (
-        <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
+        <a
+          href={whatsappHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => trackWhatsappClick("product", product)}
+        >
           <Button variant="glass" className="w-full" icon={<MessageCircle size={18} />}>
             {t("whatsapp")}
           </Button>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Inter } from "next/font/google";
 import { notFound } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
@@ -11,6 +12,7 @@ import { Footer } from "@/components/layout/Footer";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { ProfileCompletionModal } from "@/components/account/ProfileCompletionModal";
 import { StoreSettingsProvider } from "@/components/layout/StoreSettingsProvider";
+import { AnalyticsScripts } from "@/components/analytics/AnalyticsScripts";
 import { getMenuCategories } from "@/lib/api/categories";
 import { getStoreSettings } from "@/lib/api/storeSettings";
 
@@ -66,6 +68,11 @@ export default async function RootLayout({
               <CartDrawer />
               {/* Una vez tras iniciar sesión, si faltan teléfono, país o verificar el correo. */}
               <ProfileCompletionModal />
+              {/* Píxeles de TikTok y Meta + GA4, cada uno solo si su ID está definido.
+                  Suspense: lee useSearchParams para registrar cada cambio de página. */}
+              <Suspense fallback={null}>
+                <AnalyticsScripts />
+              </Suspense>
             </StoreSettingsProvider>
           </Providers>
         </NextIntlClientProvider>

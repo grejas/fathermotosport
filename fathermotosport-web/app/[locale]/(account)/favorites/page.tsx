@@ -9,6 +9,7 @@ import { useCartStore } from "@/store/cartStore";
 import { Button } from "@/components/ui/Button";
 import { finalPrice, formatPrice, getCategoryColor, getImageUrl } from "@/lib/utils";
 import toast from "react-hot-toast";
+import { trackAddToCart } from "@/lib/analytics/events";
 
 export default function FavoritesPage() {
   const t = useTranslations("favorites");
@@ -39,6 +40,7 @@ export default function FavoritesPage() {
       return;
     }
     addItem(product, variant, 1);
+    trackAddToCart(product, 1);
     toast.success(tProduct("added_to_cart", { name: product.name }));
   };
 
