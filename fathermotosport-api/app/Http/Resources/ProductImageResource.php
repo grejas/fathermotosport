@@ -12,6 +12,8 @@ class ProductImageResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            // Color al que pertenece la foto; null = sirve para todos los colores.
+            'color' => $this->color,
             // Se convierte la ruta relativa de la DB en URL pública absoluta.
             'url' => ProductImage::publicUrl($this->url),
             // image, gif o video. thumbnail_url: en un GIF, su primer fotograma estático.

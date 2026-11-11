@@ -110,8 +110,8 @@ export const useCartStore = create<CartState>()(
                 name: product.name,
                 slug: product.slug,
                 image: image ?? product.primary_image,
-                // El color es del producto, no algo que el cliente elige.
-                color: product.color ?? null,
+                // El color elegido si el producto tiene varios; si no, el del producto.
+                color: variant.color ?? product.color ?? null,
                 size: variant.size,
                 price,
                 listPrice,

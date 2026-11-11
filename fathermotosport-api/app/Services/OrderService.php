@@ -154,8 +154,9 @@ class OrderService
                     'unit_price' => $line['unit_price'],
                     'subtotal' => $line['subtotal'],
                     'size' => $variant->size,
-                    // El color es del producto (un producto = un color).
-                    'color' => $variant->product->color,
+                    // El color elegido si la variante lo tiene; si no, el del producto
+                    // (un producto = un color).
+                    'color' => $variant->color ?: $variant->product->color,
                 ]);
             }
 

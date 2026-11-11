@@ -64,6 +64,8 @@ export interface Category {
 export interface ProductImage {
   id: string;
   url: string;
+  /** Color al que pertenece (productos con varios colores); falta o null = sirve para todos. */
+  color?: string | null;
   /** Sin el campo (API anterior) es una imagen. */
   type?: "image" | "gif" | "video";
   /** En un GIF, su primer fotograma estático (para la miniatura). */
@@ -81,6 +83,8 @@ export interface ProductVariant {
   id: string;
   product_id: string;
   size: string | null;
+  /** Color elegible; null en los productos de un solo color. */
+  color?: string | null;
   finish: string | null;
   sku: string;
   stock: number;

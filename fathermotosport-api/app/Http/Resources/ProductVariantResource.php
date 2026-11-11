@@ -13,6 +13,8 @@ class ProductVariantResource extends JsonResource
             'id' => $this->id,
             'product_id' => $this->product_id,
             'size' => $this->size,
+            // Color elegible de la variante; null en los productos de un solo color.
+            'color' => $this->color,
             'finish' => $this->finish,
             'sku' => $this->sku,
             'stock' => (int) $this->stock,

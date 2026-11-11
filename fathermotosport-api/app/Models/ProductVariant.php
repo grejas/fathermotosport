@@ -14,9 +14,12 @@ class ProductVariant extends Model
 {
     use HasFactory, HasUuid;
 
-    // color y price quedan como columnas sin uso: el color y el precio son del producto.
+    // price queda como columna sin uso: el precio es del producto. El color de la variante
+    // solo se usa en los productos con varios colores elegibles (ver skuFor); en el resto
+    // es NULL y el color es el del producto.
     protected $fillable = [
         'product_id',
+        'color',
         'size',
         'finish',
         'sku',
@@ -30,21 +33,28 @@ class ProductVariant extends Model
     ];
 
     /**
-     * SKU de variante: {SKU_PRODUCTO}-{TALLA}, o solo {SKU_PRODUCTO} si no hay talla.
+     * SKU de variante: {SKU_PRODUCTO}-{TALLA}, o solo {SKU_PRODUCTO} si no hay talla. Si la
+     * variante tiene color: {SKU_PRODUCTO}-{COLOR}-{TALLA} (el color sin tildes ni espacios).
      * Lo usan el formulario de Filament y el comando products:fix-comma-sizes.
      */
-    public static function skuFor(string $productSku, ?string $size): string
+    public static function skuFor(string $productSku, ?string $size, ?string $color = null): string
     {
-        return filled($size) ? $productSku.'-'.Str::upper(trim($size)) : $productSku;
+        $sku = $productSku;
+
+        if (filled($color)) {
+            $sku .= '-'.Str::upper(Str::slug($color));
+        }
+
+        return filled($size) ? $sku.'-'.Str::upper(trim($size)) : $sku;
     }
 
     /**
      * Indica si un SKU sigue el patrón vigente para ese producto y talla. Acepta el
      * sufijo numérico (-2, -3…) que se agrega cuando el SKU base ya estaba ocupado.
      */
-    public static function skuMatchesPattern(?string $sku, string $productSku, ?string $size): bool
+    public static function skuMatchesPattern(?string $sku, string $productSku, ?string $size, ?string $color = null): bool
     {
-        $base = static::skuFor($productSku, $size);
+        $base = static::skuFor($productSku, $size, $color);
 
         return $sku === $base || (bool) preg_match('/^'.preg_quote($base, '/').'-\d+$/', (string) $sku);
     }
