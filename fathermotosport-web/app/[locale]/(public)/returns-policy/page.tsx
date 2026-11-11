@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { MessageCircle } from "lucide-react";
 import { ContactEmail } from "@/components/shared/ContactEmail";
+import { TrackedWhatsappLink } from "@/components/analytics/TrackedWhatsappLink";
 import { getShippingReturnsContent } from "@/lib/shippingReturns";
 import { whatsappUrl } from "@/lib/api/storeSettings";
 
@@ -40,15 +41,14 @@ export default async function ReturnsPolicyPage({
         <p className="text-sm text-brand-muted">{page.help}</p>
         <div className="mt-4 flex flex-col items-stretch gap-3 sm:flex-row sm:justify-center">
           {whatsappHref && (
-            <a
+            <TrackedWhatsappLink
               href={whatsappHref}
-              target="_blank"
-              rel="noopener noreferrer"
+              origen="returns_policy"
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110"
             >
               <MessageCircle size={16} />
               {t("contact_whatsapp")}
-            </a>
+            </TrackedWhatsappLink>
           )}
           <ContactEmail email={contact.email} />
         </div>

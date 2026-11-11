@@ -10,6 +10,7 @@ import { useStoreSettings } from "@/components/layout/StoreSettingsProvider";
 import { whatsappUrl } from "@/lib/api/storeSettings";
 import { Spinner } from "@/components/ui/Spinner";
 import { capturePaypalOrder } from "@/lib/api/payments";
+import { trackWhatsappClick } from "@/lib/analytics/events";
 
 type Estado = "capturando" | "ok" | "error";
 
@@ -96,6 +97,7 @@ export function PaypalSuccessClient() {
         {whatsappHref && (
           <a
             href={whatsappHref}
+            onClick={() => trackWhatsappClick("paypal_error")}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110"

@@ -10,6 +10,7 @@ import { useCartStore } from "@/store/cartStore";
 import { useFlashPromos } from "@/lib/hooks/useFlashPromo";
 import { flashPromoAppliesTo } from "@/lib/api/flashPromo";
 import toast from "react-hot-toast";
+import { trackAddToCart } from "@/lib/analytics/events";
 
 export function ProductCard({ product }: { product: Product }) {
   const t = useTranslations("product");
@@ -37,6 +38,7 @@ export function ProductCard({ product }: { product: Product }) {
       return;
     }
     addItem(product, variant, 1);
+    trackAddToCart(product, 1);
     toast.success(t("added_to_cart", { name: product.name }));
   };
 

@@ -7,6 +7,7 @@ import { Link } from "@/lib/i18n/navigation";
 import { Button } from "@/components/ui/Button";
 import { useStoreSettings } from "@/components/layout/StoreSettingsProvider";
 import { whatsappUrl } from "@/lib/api/storeSettings";
+import { trackWhatsappClick } from "@/lib/analytics/events";
 
 /**
  * El cliente canceló en PayPal. El pedido ya existe como pendiente de pago:
@@ -38,6 +39,7 @@ export function PaypalCancelClient() {
       {whatsappHref && (
         <a
           href={whatsappHref}
+          onClick={() => trackWhatsappClick("paypal_cancel")}
           target="_blank"
           rel="noopener noreferrer"
           className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-brand-muted transition hover:text-cat-boots"

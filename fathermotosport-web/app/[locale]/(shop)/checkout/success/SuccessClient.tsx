@@ -8,6 +8,7 @@ import { Check } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { UpsellOffer } from "@/components/checkout/UpsellOffer";
 import { CreateAccountFromOrder } from "@/components/checkout/CreateAccountFromOrder";
+import { OrderConversionTracker } from "@/components/checkout/OrderConversionTracker";
 import { getOrder } from "@/lib/api/orders";
 import { useAuthStore } from "@/store/authStore";
 
@@ -98,6 +99,9 @@ export function SuccessClient() {
 
       {/* Modal, en un portal: se abre solo un momento después, cuando el cliente ya
           vio que su compra salió bien. No ocupa lugar en la página ni tapa la cuenta. */}
+      {/* Conversión para TikTok, Meta y GA4. No muestra nada. */}
+      {orderId && <OrderConversionTracker orderId={orderId} accessToken={accessToken} isAuth={isAuth} />}
+
       {orderId && (
         <UpsellOffer orderId={orderId} orderNumber={orderNumber} accessToken={accessToken} />
       )}
