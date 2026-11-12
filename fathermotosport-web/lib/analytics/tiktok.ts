@@ -22,7 +22,8 @@ export type TikTokEvent =
   | "AddPaymentInfo"
   | "PlaceAnOrder"
   | "Purchase"
-  | "Contact";
+  | "Contact"
+  | "Lead";
 
 export interface TikTokContent {
   content_id: string;

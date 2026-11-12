@@ -572,5 +572,32 @@
     "error_text": "Ocurrió un error. Inténtalo de nuevo en unos minutos.",
     "retry": "Intentar de nuevo",
     "back_home": "Volver a la tienda"
+  },
+  "promo_popup": {
+    "badge": "Solo para tu primera compra",
+    "title_before": "Descubre tu",
+    "title_highlight": "descuento",
+    "subtitle": "Déjanos tu correo y te revelamos tu cupón: 10%, 15%, 20% o 25% para tu primera compra.",
+    "email_placeholder": "Tu correo electrónico",
+    "whatsapp_placeholder": "WhatsApp (opcional) +52 55…",
+    "country": "Tu país",
+    "consent": "Acepto recibir ofertas de FatherMotoSport por correo y WhatsApp. Puedo darme de baja cuando quiera.",
+    "cta": "Revelar mi descuento",
+    "footer": "Envíos a toda América y Europa",
+    "won_title": "¡Tu descuento es!",
+    "existing_title": "Ya tenías tu cupón reservado",
+    "copy": "Copiar código",
+    "terms": "Un solo uso · válido hasta el {date} · en toda la tienda.",
+    "terms_no_date": "Un solo uso · en toda la tienda.",
+    "minimum": "Compra mínima: ${amount}.",
+    "apply": "Ir a comprar con mi cupón",
+    "applied_note": "Lo guardamos en tu carrito: se aplica al pagar.",
+    "error_email": "Escribe un correo válido.",
+    "error_whatsapp": "Escribe el WhatsApp con el código de país, por ejemplo +52 55 1234 5678.",
+    "error_consent": "Marca la casilla para recibir tu cupón.",
+    "error_already_used": "Este correo ya usó su cupón de bienvenida.",
+    "error_limited": "Demasiados intentos desde esta conexión. Prueba más tarde.",
+    "error_invalid": "Revisa los datos e inténtalo de nuevo.",
+    "error_network": "No pudimos conectar. Inténtalo de nuevo en un momento."
   }
 }
