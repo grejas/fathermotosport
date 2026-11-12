@@ -58,6 +58,30 @@ class CouponService
     }
 
     /**
+     * Cupón del popup de la web: porcentaje, un solo uso y SIN dueño, para que sirva
+     * también en compras sin cuenta. Código propio WEB-XXXXXX para distinguirlo en
+     * los pedidos y en el panel.
+     */
+    public function generatePopupCoupon(int $percent, int $validDays, float $minimumAmount = 0.0): Coupon
+    {
+        $vence = now()->addDays($validDays);
+
+        return Coupon::create([
+            'user_id' => null,
+            'code' => $this->uniqueCode('WEB-'),
+            'type' => 'percentage',
+            'value' => $percent,
+            'minimum_amount' => $minimumAmount,
+            'max_uses' => 1,
+            'used_count' => 0,
+            'start_date' => now(),
+            'end_date' => $vence,
+            'expires_at' => $vence,
+            'is_active' => true,
+        ]);
+    }
+
+    /**
      * Verifica la validez completa de un cupón para un monto dado.
      *
      * @return array{valid: bool, message: string, coupon: ?Coupon, discount: float}

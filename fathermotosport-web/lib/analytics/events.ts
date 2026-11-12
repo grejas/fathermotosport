@@ -171,3 +171,14 @@ export function trackWhatsappClick(origen: string, product?: Pick<Product, "id" 
   });
   ga4Event("whatsapp_click", { source: origen, ...(product ? { item_id: product.id, item_name: product.name } : {}) });
 }
+
+/**
+ * Dejó su email en el popup a cambio de un cupón. `percent` es el descuento que le tocó.
+ * TikTok y Meta: Lead · GA4: generate_lead.
+ */
+export function trackLead(percent: number, email?: string, phone?: string): void {
+  void tiktokIdentify(email, phone);
+  tiktokTrack("Lead", { description: `popup_${percent}` });
+  metaTrack("Lead", { content_name: `popup_${percent}` });
+  ga4Event("generate_lead", { source: "popup", coupon_percent: percent });
+}

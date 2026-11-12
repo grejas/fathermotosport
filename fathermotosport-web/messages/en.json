@@ -572,5 +572,32 @@
     "error_text": "Something went wrong. Try again in a few minutes.",
     "retry": "Try again",
     "back_home": "Back to the store"
+  },
+  "promo_popup": {
+    "badge": "For your first order only",
+    "title_before": "Reveal your",
+    "title_highlight": "discount",
+    "subtitle": "Leave your email and we'll reveal your coupon: 10%, 15%, 20% or 25% off your first order.",
+    "email_placeholder": "Your email address",
+    "whatsapp_placeholder": "WhatsApp (optional) +1 305…",
+    "country": "Your country",
+    "consent": "I agree to receive FatherMotoSport offers by email and WhatsApp. I can unsubscribe at any time.",
+    "cta": "Reveal my discount",
+    "footer": "Shipping across the Americas and Europe",
+    "won_title": "Your discount is!",
+    "existing_title": "Your coupon is still waiting for you",
+    "copy": "Copy code",
+    "terms": "Single use · valid until {date} · storewide.",
+    "terms_no_date": "Single use · storewide.",
+    "minimum": "Minimum order: ${amount}.",
+    "apply": "Shop with my coupon",
+    "applied_note": "We saved it to your cart: it applies at checkout.",
+    "error_email": "Enter a valid email.",
+    "error_whatsapp": "Enter your WhatsApp with the country code, e.g. +1 305 123 4567.",
+    "error_consent": "Tick the box to get your coupon.",
+    "error_already_used": "This email has already used its welcome coupon.",
+    "error_limited": "Too many attempts from this connection. Try again later.",
+    "error_invalid": "Check your details and try again.",
+    "error_network": "We couldn't connect. Please try again in a moment."
   }
 }

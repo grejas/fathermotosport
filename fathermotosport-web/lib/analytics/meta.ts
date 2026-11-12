@@ -20,7 +20,8 @@ export type MetaStandardEvent =
   | "InitiateCheckout"
   | "AddPaymentInfo"
   | "Purchase"
-  | "Contact";
+  | "Contact"
+  | "Lead";
 
 export interface MetaContent {
   id: string;
