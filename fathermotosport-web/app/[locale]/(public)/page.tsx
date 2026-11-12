@@ -1,5 +1,4 @@
 import { HeroSection } from "@/components/home/HeroSection";
-import { Promo1111 } from "@/components/home/Promo1111";
 import { FlashPromoBanner } from "@/components/home/FlashPromoBanner";
 import { MarqueeBar } from "@/components/home/MarqueeBar";
 import { CategoryGrid } from "@/components/home/CategoryGrid";
@@ -24,7 +23,6 @@ export default async function HomePage() {
 
   return (
     <>
-      <Promo1111 />
       <FlashPromoBanner />
       <HeroSection banner={hero[0] ?? null} />
       <MarqueeBar />
