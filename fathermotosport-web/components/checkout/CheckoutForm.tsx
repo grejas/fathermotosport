@@ -183,13 +183,16 @@ export function CheckoutForm() {
     }
   }, [user]);
 
-  // Cupón llegado por enlace (?cupon= en el carrito): se precarga y, con sesión y un
-  // método que admite cupón (no PayPal), se aplica solo una vez.
+  // Cupón llegado por enlace (?cupon= en el carrito) o por el popup: se precarga y, con
+  // sesión (o si es un cupón WEB- sin dueño) y un método que admite cupón (no PayPal),
+  // se aplica solo una vez.
   const cuponAutoAplicado = useRef<string | null>(null);
   useEffect(() => {
     if (!pendingCoupon) return;
     setCoupon((actual) => actual || pendingCoupon);
-    if (!isAuth || isPaypal || cuponAutoAplicado.current === pendingCoupon) return;
+    // Los cupones del popup (WEB-) no tienen dueño: se aplican también sin sesión.
+    const sinDueno = pendingCoupon.startsWith("WEB-");
+    if ((!isAuth && !sinDueno) || isPaypal || cuponAutoAplicado.current === pendingCoupon) return;
     cuponAutoAplicado.current = pendingCoupon;
     void applyCoupon(pendingCoupon);
     // applyCoupon cambia en cada render; solo importan el código, la sesión y el método.
