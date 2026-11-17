@@ -60,6 +60,8 @@ class StoreSettingsPage extends Page implements HasForms
             'usdt_bep20_address' => $config->usdt_bep20_address,
             'btc_address' => $config->btc_address,
             'btc_bep20_address' => $config->btc_bep20_address,
+            'binance_pay_url' => $config->binance_pay_url,
+            'binance_pay_name' => $config->binance_pay_name,
         ]);
     }
 
@@ -170,6 +172,17 @@ class StoreSettingsPage extends Page implements HasForms
                         self::campoDeBilletera('usdt_bep20', 'usdt_bep20_address', 'USDT · red BNB Smart Chain (BEP20)', '0x…'),
                         self::campoDeBilletera('btc', 'btc_address', 'Bitcoin (BTC · red Bitcoin)', 'bc1…'),
                         self::campoDeBilletera('btc_bep20', 'btc_bep20_address', 'Bitcoin en BNB Smart Chain (BTC · BEP20)', '0x…'),
+                        Forms\Components\TextInput::make('binance_pay_url')
+                            ->label('Binance Pay · enlace del QR de cobro')
+                            ->placeholder('https://app.binance.com/uni-qr/…')
+                            ->maxLength(255)
+                            ->rules([self::regla(fn ($v) => ManualPaymentService::direccionValida('binance_pay', $v), 'Pega el enlace que contiene tu QR de cobro de Binance (https://app.binance.com/…).')])
+                            ->helperText('Lo que lee el QR de "Recibir" de Binance Pay. La web genera el QR con este enlace. Vacío: Binance Pay no se ofrece.'),
+                        Forms\Components\TextInput::make('binance_pay_name')
+                            ->label('Binance Pay · nombre que ve el cliente')
+                            ->placeholder('fathersons Imp LLC')
+                            ->maxLength(100)
+                            ->helperText('El mismo nombre que muestra Binance al escanear, para que el cliente confirme que paga a la cuenta correcta.'),
                     ]),
             ])
             ->statePath('data');
@@ -211,6 +224,8 @@ class StoreSettingsPage extends Page implements HasForms
             'usdt_bep20_address' => $texto('usdt_bep20_address'),
             'btc_address' => $texto('btc_address'),
             'btc_bep20_address' => $texto('btc_bep20_address'),
+            'binance_pay_url' => $texto('binance_pay_url'),
+            'binance_pay_name' => $texto('binance_pay_name'),
         ]);
 
         $this->data['whatsapp'] = $config->whatsapp;

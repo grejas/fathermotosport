@@ -245,12 +245,14 @@
     "pm_sepa": "Transferência bancária (Europa)",
     "pm_sepa_desc": "SEPA em euros, de qualquer banco da zona do euro",
     "pm_crypto": "Criptomoedas",
-    "pm_crypto_desc": "USDT ou Bitcoin da sua carteira ou exchange",
+    "pm_crypto_desc": "Binance Pay, USDT ou Bitcoin da sua carteira ou exchange",
     "pm_network": "Escolha a rede",
     "pm_crypto_network_hint": "Use a mesma rede ao sacar da sua exchange. A TRC20 costuma ter a menor taxa.",
     "pm_sepa_note": "Ao confirmar, você verá o valor exato em euros, o IBAN e a referência. Você tem 72 horas para transferir; preparamos seu pedido quando o pagamento for creditado.",
     "pm_crypto_note": "Ao confirmar, você verá o valor exato, o endereço e um QR code. USDT: 24 horas para pagar. BTC: o preço fica travado por 2 horas.",
-    "manual_continue": "Confirmar e ver dados de pagamento"
+    "manual_continue": "Confirmar e ver dados de pagamento",
+    "pm_binance_hint": "Pague pelo app da Binance escaneando nosso QR: sem escolher rede e sem taxa de saque.",
+    "pm_binance_note": "Ao confirmar, você verá o valor, nosso QR do Binance Pay e um botão para abrir o app. Você pode pagar com USDT, USDC ou BTC. Você tem 24 horas."
   },
   "pay_pending": {
     "title": "Conclua o pagamento do seu pedido",
@@ -692,6 +694,14 @@
     "copied": "Copiado",
     "copy_label": "Copiar {label}",
     "whatsapp_message": "Olá, já paguei o pedido {number}: {amount} via {method}. Segue o comprovante.",
-    "warning_btc_bep20": "É Bitcoin na BNB Smart Chain (BTCB): na sua exchange, saque BTC pela rede BSC / BEP20, não pela rede Bitcoin."
+    "warning_btc_bep20": "É Bitcoin na BNB Smart Chain (BTCB): na sua exchange, saque BTC pela rede BSC / BEP20, não pela rede Bitcoin.",
+    "binance_title": "Pagamento com Binance Pay",
+    "binance_alt_currencies": "Você pode pagar em USDT, USDC ou o equivalente em BTC dentro da Binance.",
+    "binance_account": "Conta Binance Pay",
+    "binance_open": "Abrir na Binance",
+    "binance_how": "No celular, toque no botão. No computador, escaneie o QR com o app da Binance (Pagar → Escanear).",
+    "qr_binance": "Escaneie com o app da Binance",
+    "binance_note": "Antes de pagar, confira se a Binance mostra a conta {name}. Digite o valor exato e guarde o print do pagamento.",
+    "binance_step_1": "Abra o Binance Pay pelo botão ou pelo QR e envie {amount} (ou o equivalente em USDC ou BTC)."
   }
 }

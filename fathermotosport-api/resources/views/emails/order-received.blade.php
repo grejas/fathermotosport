@@ -24,6 +24,12 @@
           <div class="row"><span class="row-k">Banco</span><span class="row-v">{{ $pago['bank_name'] }}</span></div>
         @endif
         <div class="row"><span class="row-k">Concepto</span><span class="row-v"><strong>{{ $pago['reference'] }}</strong></span></div>
+      @elseif($pago['method'] === 'binance_pay')
+        <div class="row"><span class="row-k">Pagar con</span><span class="row-v"><strong>Binance Pay</strong></span></div>
+        @if(!empty($pago['merchant_name']))
+          <div class="row"><span class="row-k">Cuenta</span><span class="row-v">{{ $pago['merchant_name'] }}</span></div>
+        @endif
+        <div class="row"><span class="row-k">Enlace de pago</span><span class="row-v" style="word-break:break-all"><a href="{{ $pago['pay_url'] }}">{{ $pago['pay_url'] }}</a></span></div>
       @else
         <div class="row"><span class="row-k">Red</span><span class="row-v"><strong>{{ $pago['network'] }}</strong></span></div>
         <div class="row"><span class="row-k">Dirección</span><span class="row-v" style="font-family:monospace;word-break:break-all">{{ $pago['address'] }}</span></div>
@@ -37,6 +43,9 @@
       @if($pago['method'] === 'sepa')
         Usa el número de pedido <strong>{{ $pago['reference'] }}</strong> como concepto: así identificamos tu pago.
         Una transferencia SEPA suele acreditarse en 1 día hábil (al instante si tu banco ofrece SEPA Instant).
+      @elseif($pago['method'] === 'binance_pay')
+        Abre el enlace o el código QR de la página de pago con la app de Binance y envía <strong>{{ $pago['amount'] }} USDT</strong>
+        (o el equivalente en USDC o BTC) a <strong>{{ $pago['merchant_name'] ?: 'nuestra cuenta' }}</strong>. No necesitas elegir red.
       @else
         Envía solo por la red <strong>{{ $pago['network'] }}</strong>: un envío por otra red se pierde y no se puede recuperar.
         @if($pago['method'] === 'btc_bep20')
