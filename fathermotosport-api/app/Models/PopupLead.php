@@ -19,6 +19,9 @@ class PopupLead extends Model
         'consent',
         'consent_at',
         'ip_hash',
+        'welcome_sent_at',
+        'reminder_sent_at',
+        'unsubscribed_at',
     ];
 
     protected $casts = [
@@ -26,7 +29,15 @@ class PopupLead extends Model
         'consent' => 'boolean',
         'consent_at' => 'datetime',
         'percent' => 'integer',
+        'welcome_sent_at' => 'datetime',
+        'reminder_sent_at' => 'datetime',
+        'unsubscribed_at' => 'datetime',
     ];
+
+    public function idioma(): string
+    {
+        return in_array($this->locale, ['es', 'pt', 'en'], true) ? $this->locale : 'es';
+    }
 
     public function coupon(): BelongsTo
     {

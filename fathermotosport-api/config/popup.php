@@ -35,4 +35,8 @@ return [
 
     // Máximo de contactos nuevos por IP y por día (freno contra quien crea emails falsos).
     'max_per_ip_per_day' => (int) env('POPUP_MAX_PER_IP_PER_DAY', 3),
+
+    // Correos automáticos al contacto: bienvenida con el cupón y recordatorio antes de vencer.
+    'emails_enabled' => (bool) env('POPUP_EMAILS_ENABLED', true),
+    'reminder_hours_before' => (int) env('POPUP_REMINDER_HOURS', 48),
 ];

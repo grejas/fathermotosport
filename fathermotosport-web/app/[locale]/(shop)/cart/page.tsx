@@ -54,7 +54,9 @@ export default function CartPage() {
   useEffect(() => {
     if (!mounted || !pendingCoupon) return;
     setCoupon((actual) => actual || pendingCoupon);
-    if (!isAuth || !items.length || autoAplicado.current === pendingCoupon) return;
+    // Los cupones del popup (WEB-) no tienen dueño: se aplican también sin sesión.
+    const sinDueno = pendingCoupon.startsWith("WEB-");
+    if ((!isAuth && !sinDueno) || !items.length || autoAplicado.current === pendingCoupon) return;
     autoAplicado.current = pendingCoupon;
     void apply(pendingCoupon);
     // apply cambia en cada render; solo importan el código, la sesión y el carrito.

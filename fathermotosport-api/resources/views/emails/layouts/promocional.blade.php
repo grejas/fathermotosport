@@ -4,6 +4,7 @@
   // Variables: $idiomaCorreo (es, pt, en), $urlBaja (enlace firmado a la página /baja).
   // Opcional: $mostrarBaja (por defecto true). En false el pie no muestra el enlace de baja;
   // las cabeceras List-Unsubscribe de CorreoPromocional siguen igual.
+  // Opcional: $motivoPie (por qué recibe el correo; por defecto, "tienes una cuenta").
   $idiomaCorreo = in_array($idiomaCorreo ?? null, ['es', 'pt', 'en'], true) ? $idiomaCorreo : 'es';
   $mostrarBaja = $mostrarBaja ?? true;
   $whatsappPie = \App\Support\PieDeCorreo::whatsappUrl();
@@ -43,7 +44,7 @@
     <div class="footer">
       <div class="footer-text">
         {{ \App\Support\PieDeCorreo::TIENDA }}<br>
-        {{ __('marketing.footer_reason', [], $idiomaCorreo) }}
+        {{ $motivoPie ?? __('marketing.footer_reason', [], $idiomaCorreo) }}
       </div>
       <div class="footer-links">
         <a href="{{ config('app.frontend_url') }}" class="footer-link">{{ __('marketing.visit_store', [], $idiomaCorreo) }}</a>

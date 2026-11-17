@@ -33,7 +33,7 @@ export function CouponFromLink() {
       className="mx-auto mb-6 flex max-w-2xl items-start gap-3 rounded-xl border border-brand-gold/30 bg-brand-gold/5 px-4 py-3 text-left text-sm text-brand-muted"
     >
       <Tag size={18} className="mt-0.5 shrink-0 text-brand-gold" />
-      {isAuth ? (
+      {isAuth || pendingCoupon.startsWith("WEB-") ? (
         <p>{t("coupon_from_link", { code: pendingCoupon })}</p>
       ) : (
         <p>
