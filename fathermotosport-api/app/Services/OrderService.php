@@ -8,6 +8,7 @@ use App\Models\OrderItem;
 use App\Models\ProductVariant;
 use App\Models\ShippingOption;
 use App\Models\User;
+use App\Services\Payments\ManualPaymentService;
 use App\Support\Paises;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -18,6 +19,7 @@ class OrderService
         private CouponService $coupons,
         private ShippingWeightService $weights,
         private PrecioFinal $precios,
+        private ManualPaymentService $manualPayments,
     ) {}
 
     /**
@@ -28,7 +30,14 @@ class OrderService
      */
     public function createOrder(array $data, ?User $user = null): Order
     {
-        return DB::transaction(function () use ($data, $user) {
+        // Transferencia / cripto: la cotización se pide antes de abrir la transacción
+        // (es una llamada HTTP, no debe tener filas bloqueadas). Si no hay cotización,
+        // el pedido no se crea.
+        $cotizacion = ManualPaymentService::esManual($data['payment_method'] ?? null)
+            ? $this->manualPayments->cotizar($data['payment_method'])
+            : null;
+
+        return DB::transaction(function () use ($data, $user, $cotizacion) {
             // 1. Cargar y bloquear las variantes implicadas (evita sobreventa concurrente).
             $variantIds = collect($data['items'])->pluck('variant_id')->all();
             $variants = ProductVariant::with('product')
@@ -135,7 +144,9 @@ class OrderService
                 'country' => $address->country,
                 'locale' => Order::idiomaValido($data['locale'] ?? null),
                 'notes' => $data['notes'] ?? null,
-            ]);
+            ] + ($cotizacion
+                ? ManualPaymentService::camposDelPedido($data['payment_method'], round($total, 2), $cotizacion)
+                : []));
 
             // 7. Crear los items del pedido.
             //

@@ -12,6 +12,7 @@ import { AVISO_PEDIDO_CANCELADO } from "@/components/cart/CartNotice";
 import { useStoreSettings } from "@/components/layout/StoreSettingsProvider";
 import { PaypalButton } from "@/components/checkout/PaypalButton";
 import { StripePaymentModal } from "@/components/checkout/StripePaymentModal";
+import { ManualPaymentInstructions } from "@/components/checkout/ManualPaymentInstructions";
 import { getOrder } from "@/lib/api/orders";
 import { createPaypalOrder, createStripeIntent } from "@/lib/api/payments";
 import { ENABLED_PAYMENT_METHODS } from "@/lib/data/paymentMethods";
@@ -30,6 +31,7 @@ export function PayPendingClient({ id }: { id: string }) {
   const t = useTranslations("pay_pending");
   const { email: contacto } = useStoreSettings();
   const tCheckout = useTranslations("checkout");
+  const tManual = useTranslations("manual_payment");
   const tCart = useTranslations("cart");
   const tCommon = useTranslations("common");
   const router = useRouter();
@@ -61,6 +63,15 @@ export function PayPendingClient({ id }: { id: string }) {
   useEffect(() => {
     cargar();
   }, [cargar]);
+
+  // Transferencia / cripto: el pago lo confirma el equipo desde el panel. Mientras la
+  // página siga abierta se revisa cada 30 s, así el cliente ve el "pagado" sin recargar.
+  const esManual = Boolean(order?.manual_payment) && estado === "listo";
+  useEffect(() => {
+    if (!esManual) return;
+    const id = setInterval(cargar, 30_000);
+    return () => clearInterval(id);
+  }, [esManual, cargar]);
 
   const exito = useMemo(
     () =>
@@ -151,6 +162,31 @@ export function PayPendingClient({ id }: { id: string }) {
           <Button variant="primary">{tCommon("explore_products")}</Button>
         </Link>
       </Aviso>
+    );
+  }
+
+  if (order.manual_payment) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 pb-16 pt-24">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-red">{tManual("eyebrow")}</p>
+        <h1 className="mt-1 text-2xl font-extrabold text-brand-white sm:text-3xl">{tManual("title")}</h1>
+        <p className="mt-1 text-sm text-brand-muted">{t("order_number", { number: order.order_number })}</p>
+        <p className="mt-3 text-sm text-brand-white/80">{tManual("intro")}</p>
+
+        <div className="mt-6">
+          <ManualPaymentInstructions order={order} pago={order.manual_payment} />
+        </div>
+
+        <p className="mt-8 text-center text-xs text-brand-muted">
+          {t.rich("contact", {
+            email: () => (
+              <a href={`mailto:${contacto}`} className="text-brand-red hover:brightness-125">
+                {contacto}
+              </a>
+            ),
+          })}
+        </p>
+      </div>
     );
   }
 

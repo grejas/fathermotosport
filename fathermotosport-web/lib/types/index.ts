@@ -231,7 +231,31 @@ export interface OrderItem {
 export type OrderStatus = "pending" | "processing" | "shipped" | "delivered" | "cancelled";
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
 export type ShippingStatus = "pending" | "preparing" | "in_transit" | "delivered";
-export type PaymentMethod = "paypal" | "stripe" | "mercadopago";
+export type PaymentMethod = "paypal" | "stripe" | "mercadopago" | ManualPaymentMethod;
+
+/** Cobros que el cliente hace por fuera (banco o billetera) y el equipo confirma a mano. */
+export type ManualPaymentMethod = "sepa" | "usdt_trc20" | "usdt_bep20" | "btc";
+
+/** Datos para pagar un pedido por transferencia o cripto, con el monto ya cotizado. */
+export interface ManualPaymentInstructions {
+  method: ManualPaymentMethod;
+  currency: "EUR" | "USDT" | "BTC";
+  /** Monto exacto en la moneda del método (texto, para no perder decimales). */
+  amount: string;
+  /** USD por 1 unidad de la moneda del método, usado al crear el pedido. */
+  rate_usd: string | null;
+  /** Número de pedido: concepto de la transferencia. */
+  reference: string;
+  expires_at: string | null;
+  // SEPA
+  beneficiary?: string | null;
+  iban?: string | null;
+  bic?: string | null;
+  bank_name?: string | null;
+  // Cripto
+  network?: string;
+  address?: string | null;
+}
 
 export interface Order {
   id: string;
@@ -253,6 +277,8 @@ export interface Order {
   payment_method: PaymentMethod | null;
   country: string;
   notes: string | null;
+  /** Solo en transferencia / cripto. */
+  manual_payment?: ManualPaymentInstructions | null;
   items?: OrderItem[];
   address?: Address;
   payment?: { id: string; provider: string; status: string; amount: string } | null;

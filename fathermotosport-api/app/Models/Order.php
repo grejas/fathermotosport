@@ -25,15 +25,28 @@ class Order extends Model
      * cobro (transferencia, contra entrega, WhatsApp). Son los únicos que reciben el
      * correo de "recibimos tu pedido" al crearse.
      *
-     * Hoy está vacía a propósito: paypal, stripe y mercadopago son pasarelas que cobran
-     * en el momento, así que su primer correo es el de pago confirmado, desde markPaid().
+     * paypal, stripe y mercadopago no están: son pasarelas que cobran en el momento, así
+     * que su primer correo es el de pago confirmado, desde markPaid(). Sí están la
+     * transferencia SEPA y las cripto (ver ManualPaymentService): su correo de "recibimos
+     * tu pedido" lleva los datos para pagar.
      *
      * Es una lista de los que SÍ avisan y no de los que no, justamente para que una
      * pasarela nueva quede fuera del correo prematuro sin que nadie tenga que acordarse
      * de agregarla acá. Antes la condición era `payment_method !== 'paypal'` y por eso
      * Stripe avisaba "recibimos tu pedido" incluso con la tarjeta rechazada.
      */
-    public const METODOS_CON_COORDINACION_MANUAL = [];
+    public const METODOS_CON_COORDINACION_MANUAL = ['sepa', 'usdt_trc20', 'usdt_bep20', 'btc'];
+
+    /** Nombre de cada método para el panel y los correos. */
+    public const METODOS_DE_PAGO = [
+        'paypal' => 'PayPal',
+        'stripe' => 'Tarjeta (Stripe)',
+        'mercadopago' => 'MercadoPago',
+        'sepa' => 'Transferencia SEPA (EUR)',
+        'usdt_trc20' => 'USDT · TRC20',
+        'usdt_bep20' => 'USDT · BEP20',
+        'btc' => 'Bitcoin (BTC)',
+    ];
 
     /** Idiomas de la tienda. El primero es el de respaldo: el de los pedidos sin idioma. */
     public const LOCALES = ['es', 'pt', 'en'];
@@ -64,6 +77,11 @@ class Order extends Model
         'locale',
         'notes',
         'attention_reason',
+        // Cotización fijada al crear un pedido de pago manual (ManualPaymentService).
+        'payment_currency',
+        'payment_amount',
+        'payment_rate',
+        'payment_expires_at',
     ];
 
     protected $casts = [
@@ -79,6 +97,9 @@ class Order extends Model
         // captura (fallo) y el comando payments:recover-pending (aviso enviado).
         'payment_failed_at' => 'datetime',
         'recovery_email_sent_at' => 'datetime',
+        'payment_amount' => 'decimal:8',
+        'payment_rate' => 'decimal:8',
+        'payment_expires_at' => 'datetime',
     ];
 
     protected static function booted(): void
@@ -170,7 +191,7 @@ class Order extends Model
 
         $next = $last ? ((int) substr($last, 4)) + 1 : 1;
 
-        return 'FMS-' . str_pad((string) $next, 4, '0', STR_PAD_LEFT);
+        return 'FMS-'.str_pad((string) $next, 4, '0', STR_PAD_LEFT);
     }
 
     // Relaciones

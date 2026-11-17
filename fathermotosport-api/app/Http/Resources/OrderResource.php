@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Services\Payments\ManualPaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -31,6 +32,9 @@ class OrderResource extends JsonResource
             'payment_method' => $this->payment_method,
             'country' => $this->country,
             'notes' => $this->notes,
+            // Transferencia / cripto: monto exacto, referencia y datos para pagar. Este
+            // recurso solo llega a quien puede ver el pedido (token o dueño).
+            'manual_payment' => app(ManualPaymentService::class)->instrucciones($this->resource),
 
             'items' => OrderItemResource::collection($this->whenLoaded('items')),
             'address' => new AddressResource($this->whenLoaded('address')),

@@ -22,7 +22,7 @@ import {
   countryFlag,
   shippingCountryName,
 } from "@/lib/data/shippingCountries";
-import { ENABLED_PAYMENT_METHODS } from "@/lib/data/paymentMethods";
+import { ENABLED_PAYMENT_METHODS, isManualPaymentMethod } from "@/lib/data/paymentMethods";
 import { whatsappUrl } from "@/lib/api/storeSettings";
 import { useStoreSettings } from "@/components/layout/StoreSettingsProvider";
 import { validateCheckout, hasErrors, isEmail, type FieldErrors } from "@/lib/validators";
@@ -41,7 +41,10 @@ type PedidoCreado = Pick<Order, "id" | "order_number" | "access_token">;
 
 export function CheckoutForm() {
   const t = useTranslations("checkout");
-  const whatsappHref = whatsappUrl(useStoreSettings().whatsappDigits);
+  const storeSettings = useStoreSettings();
+  const whatsappHref = whatsappUrl(storeSettings.whatsappDigits);
+  // Transferencia SEPA / cripto: solo los que el panel tiene configurados.
+  const manualDisponibles = storeSettings.manualPaymentMethods;
   const tAuth = useTranslations("auth");
   const tCart = useTranslations("cart");
   const tCountries = useTranslations("countries");
@@ -110,7 +113,8 @@ export function CheckoutForm() {
   // para que el panel no reciba el país en tres idiomas distintos.
   const countryName = shippingCountryName(form.country) ?? form.country;
 
-  const methodEnabled = ENABLED_PAYMENT_METHODS.includes(method);
+  const isManual = isManualPaymentMethod(method);
+  const methodEnabled = ENABLED_PAYMENT_METHODS.includes(method) || (isManual && manualDisponibles.includes(method));
   // PayPal no usa el formulario de datos: la dirección la elige el cliente en PayPal.
   const isPaypal = method === "paypal";
   const isStripe = method === "stripe";
@@ -346,10 +350,13 @@ export function CheckoutForm() {
     try {
       // Si ya se creó el pedido en un intento anterior que no llegó a pagarse, se reusa:
       // volver a apretar "Confirmar" no debe dejar dos pedidos por la misma compra.
-      if (!pedidoEnCurso && !(await preciosAlDia())) return;
-      const pedido = pedidoEnCurso ?? (await crearPedido()).order;
+      // El pedido de un intento con tarjeta no se reutiliza para transferencia / cripto:
+      // tiene otro método y no trae cotización. Ese queda pendiente y vence solo.
+      const previo = isManual ? null : pedidoEnCurso;
+      if (!previo && !(await preciosAlDia())) return;
+      const pedido = previo ?? (await crearPedido()).order;
       // El cupón se consume al crear el pedido: el que llegó por enlace ya no hace falta.
-      if (!pedidoEnCurso && coupon.trim() && coupon.trim().toUpperCase() === pendingCoupon) setPendingCoupon(null);
+      if (!previo && coupon.trim() && coupon.trim().toUpperCase() === pendingCoupon) setPendingCoupon(null);
 
       if (method === "stripe") {
         setPedidoEnCurso(pedido);
@@ -357,6 +364,14 @@ export function CheckoutForm() {
         const intent = await createStripeIntent(pedido.id, pedido.access_token ?? undefined);
         setStripeSecret(intent.client_secret);
 
+        return;
+      }
+
+      // Transferencia / cripto: el cliente paga por fuera. Va a la página de pago del
+      // pedido, con el monto exacto cotizado, los datos y el QR (sirve también sin cuenta).
+      if (isManual) {
+        clearCart();
+        router.push(`/checkout/pay/${pedido.id}` + (pedido.access_token ? `?t=${pedido.access_token}` : ""));
         return;
       }
 
@@ -477,6 +492,7 @@ export function CheckoutForm() {
             value={method}
             onChange={setMethod}
             enabled={ENABLED_PAYMENT_METHODS}
+            manual={manualDisponibles}
             comingSoonLabel={t("payments_coming_soon")}
           />
           {!methodEnabled && (
@@ -714,7 +730,7 @@ export function CheckoutForm() {
               ) : (
                 <Button type="submit" variant="primary" className="mt-4 w-full" loading={loading}>
                   {/* Con tarjeta el botón lleva al formulario de pago, no cierra la compra. */}
-                  {isStripe ? t("stripe_continue") : t("confirm_order")}
+                  {isStripe ? t("stripe_continue") : isManual ? t("manual_continue") : t("confirm_order")}
                 </Button>
               )}
               <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-brand-muted">

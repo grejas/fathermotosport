@@ -127,7 +127,11 @@ class RecuperarPagosPendientes extends Command
             ->whereNotIn('status', ['cancelled', 'refunded'])
             ->whereNull('attention_reason')
             ->whereNull('recovery_email_sent_at')
-            ->whereNull('upsell_of_order_id');
+            ->whereNull('upsell_of_order_id')
+            // Transferencia / cripto no tienen un cobro que "falló": el cliente paga por
+            // fuera y ya recibió los datos en el correo de "recibimos tu pedido".
+            ->where(fn ($q) => $q->whereNull('payment_method')
+                ->orWhereNotIn('payment_method', Order::METODOS_CON_COORDINACION_MANUAL));
     }
 
     /**

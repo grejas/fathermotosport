@@ -8,6 +8,7 @@ use App\Models\InventoryMovement;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\ProductVariant;
+use App\Services\Payments\ManualPaymentService;
 use App\Services\Payments\MercadoPagoService;
 use App\Services\Payments\PaypalService;
 use App\Services\Payments\StripeService;
@@ -26,8 +27,7 @@ class PaymentController extends Controller
         private PaypalService $paypal,
         private StripeService $stripe,
         private MercadoPagoService $mercadopago,
-    ) {
-    }
+    ) {}
 
     // ───────────────────────── PayPal ─────────────────────────
 
@@ -835,6 +835,48 @@ class PaymentController extends Controller
         }
 
         return response()->json(['received' => true]);
+    }
+
+    // ───────────────────────── Pagos manuales ─────────────────────────
+
+    /**
+     * Confirma un pago de transferencia o cripto que el equipo ya vio entrar (panel →
+     * pedido → "Confirmar pago recibido"). Pasa por markPaid, igual que una pasarela:
+     * descuenta el stock, marca el pedido y manda la confirmación al cliente, una sola vez.
+     *
+     * @param  string  $referencia  Hash de la transacción o referencia del extracto bancario.
+     */
+    public function confirmarPagoManual(Order $order, string $referencia, ?string $nota = null, mixed $confirmadoPor = null): void
+    {
+        if (! ManualPaymentService::esManual($order->payment_method)) {
+            throw new \InvalidArgumentException('El pedido no es de pago manual.');
+        }
+
+        // Un mismo hash no puede pagar dos pedidos: transaction_id es único.
+        $referencia = trim($referencia);
+        $transactionId = $order->payment_method.':'.$referencia;
+
+        $existente = Payment::where('transaction_id', $transactionId)->first();
+        if ($existente && $existente->order_id !== $order->id) {
+            throw new \InvalidArgumentException('Esa referencia ya se usó para confirmar otro pedido.');
+        }
+
+        // El registro del pago va en USD, como el total del pedido; lo cobrado en
+        // EUR / USDT / BTC queda en gateway_response.
+        $payment = $this->recordPayment($order, $order->payment_method, $transactionId, 'USD');
+
+        $this->markPaid($payment, [
+            'manual' => true,
+            'method' => $order->payment_method,
+            'reference' => $referencia,
+            'expected_amount' => $order->payment_amount !== null
+                ? ManualPaymentService::formatoMonto($order->payment_amount, $order->payment_currency)
+                : null,
+            'currency' => $order->payment_currency,
+            'note' => $nota,
+            'confirmed_by' => $confirmadoPor,
+            'confirmed_at' => now()->toIso8601String(),
+        ]);
     }
 
     // ───────────────────────── Helpers ─────────────────────────

@@ -81,7 +81,8 @@ class ShippingOptionTest extends TestCase
     {
         $this->option(['min_weight_kg' => 0, 'max_weight_kg' => 5]);
 
-        foreach (['BR', 'ZZ'] as $country) {
+        // VE: país de la lista sin tarifa (las migraciones de datos cargan BR, MX, Europa...).
+        foreach (['VE', 'ZZ'] as $country) {
             $this->getJson("/api/v1/shipping/calculate?country_code={$country}&weight_kg=1")
                 ->assertOk()
                 ->assertJsonPath('available', false)
