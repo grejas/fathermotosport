@@ -613,5 +613,12 @@
     "add_aria": "Agregar {name} al carrito",
     "choose_size": "Elegir talla",
     "added": "{name} agregado al carrito"
+  },
+  "size_picker": {
+    "title": "Elige tu talla",
+    "size_add": "Agregar talla {size}",
+    "size_out": "Talla {size} agotada",
+    "last_units": "{n, plural, one {Última unidad} other {Últimas #}}",
+    "guide": "Ver guía de tallas y detalles"
   }
 }
