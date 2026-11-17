@@ -17,6 +17,14 @@ class ShippingOptionTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // Las migraciones de datos cargan las tarifas reales (América y Europa);
+        // estas pruebas arman las suyas desde cero.
+        ShippingOption::query()->delete();
+    }
+
     private function option(array $attributes = []): ShippingOption
     {
         return ShippingOption::create(array_merge([
@@ -81,8 +89,8 @@ class ShippingOptionTest extends TestCase
     {
         $this->option(['min_weight_kg' => 0, 'max_weight_kg' => 5]);
 
-        // VE: país de la lista sin tarifa (las migraciones de datos cargan BR, MX, Europa...).
-        foreach (['VE', 'ZZ'] as $country) {
+        // ZZ/AQ: países fuera de las listas (las migraciones de datos cubren América y Europa).
+        foreach (['AQ', 'ZZ'] as $country) {
             $this->getJson("/api/v1/shipping/calculate?country_code={$country}&weight_kg=1")
                 ->assertOk()
                 ->assertJsonPath('available', false)
