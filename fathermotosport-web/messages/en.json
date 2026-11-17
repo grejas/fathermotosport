@@ -605,5 +605,13 @@
     "banner_live": "Deals live on selected gear",
     "banner_cta_teaser": "Learn more",
     "banner_cta_live": "Shop deals"
+  },
+  "cross_sell": {
+    "title": "Complete your gear",
+    "subtitle": "Often bought together",
+    "add": "Add",
+    "add_aria": "Add {name} to cart",
+    "choose_size": "Choose size",
+    "added": "{name} added to cart"
   }
 }
