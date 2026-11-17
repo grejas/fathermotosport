@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
 import { CartNotice } from "@/components/cart/CartNotice";
 import { CouponFromLink } from "@/components/cart/CouponFromLink";
+import { CompleteYourGear } from "@/components/cart/CompleteYourGear";
 import { useAuthStore } from "@/store/authStore";
 import { formatDiscount, formatPrice, getImageUrl } from "@/lib/utils";
 import { useCartPricesOnShow } from "@/lib/hooks/useCartPrices";
@@ -97,7 +98,7 @@ export default function CartPage() {
       </Suspense>
       <h1 className="mb-8 text-3xl font-extrabold text-brand-white">{t("my_cart")}</h1>
 
-      <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="space-y-4">
           {items.map((item) => (
             <div
@@ -168,6 +169,8 @@ export default function CartPage() {
               {t("clear_cart")}
             </Button>
           </div>
+
+          <CompleteYourGear limit={4} origen="cart_page" />
         </div>
 
         <div className="lg:sticky lg:top-24 lg:self-start">
