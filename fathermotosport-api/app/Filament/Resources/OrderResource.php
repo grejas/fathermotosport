@@ -313,7 +313,9 @@ class OrderResource extends Resource
                     ->label('Tracking')
                     ->icon('heroicon-o-truck')
                     ->form([
-                        Forms\Components\TextInput::make('tracking_number')->label('N° de seguimiento')->required(),
+                        Forms\Components\TextInput::make('tracking_number')->label('N° de seguimiento')->required()
+                            ->maxLength(255)
+                            ->helperText('Si el pedido va en varios paquetes, escribe todos los números separados por coma. El cliente los recibe juntos en el correo.'),
                         Forms\Components\TextInput::make('carrier')->label('Transportista'),
                     ])
                     ->action(function (Order $record, array $data) {

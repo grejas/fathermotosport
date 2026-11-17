@@ -15,6 +15,13 @@ class FreeShippingMigrationTest extends TestCase
     public function test_two_helmets_ship_free_to_spain_guatemala_mexico_and_us(): void
     {
         $this->seed(DatabaseSeeder::class);
+        // Como en producción: Bolivia y Brasil con tarifa de 1 a 2 kg.
+        foreach (['BO', 'BR'] as $pais) {
+            ShippingOption::create([
+                'country_code' => $pais, 'method_name' => 'Estándar', 'min_weight_kg' => 1,
+                'max_weight_kg' => 2, 'price' => 0, 'currency' => 'USD', 'is_active' => true,
+            ]);
+        }
         // Corre de nuevo sobre los datos sembrados: debe ser idempotente.
         (require database_path('migrations/2026_11_17_200002_free_shipping_europe_mx_us_gt.php'))->up();
         (require database_path('migrations/2026_11_17_200002_free_shipping_europe_mx_us_gt.php'))->up();
@@ -28,5 +35,9 @@ class FreeShippingMigrationTest extends TestCase
         }
 
         $this->assertSame(1, ShippingOption::forCountry('ES')->count(), 'sin duplicados');
+
+        foreach (['BO', 'BR'] as $pais) {
+            $this->assertNotEmpty(ShippingOption::availableFor($pais, 12), "{$pais} sin límite de peso");
+        }
     }
 }

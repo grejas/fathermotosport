@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\DB;
  * Antes las tarifas existentes iban de 1 a 2 kg: un carrito con dos cascos (o un
  * producto sin peso cargado por debajo de 1 kg) quedaba "sin tarifa para ese país".
  *
+ * Bolivia y Brasil: solo se quita el límite de peso (precio y plazos quedan como
+ * estén). Un pedido pesado se despacha en varios paquetes con varios números de
+ * rastreo, así que el peso no debe bloquear la compra.
+ *
  * Idempotente: si el país ya tiene la opción "Estándar", se la deja gratis y sin
  * límite de peso conservando sus plazos; si no, se crea. Los plazos de las nuevas
  * quedan vacíos (no se inventan): se cargan desde el panel, en Opciones de envío.
@@ -50,6 +54,11 @@ return new class extends Migration
                 ]);
             }
         }
+
+        DB::table('shipping_options')
+            ->whereIn('country_code', ['BO', 'BR'])
+            ->where('is_active', true)
+            ->update(['min_weight_kg' => 0, 'max_weight_kg' => null, 'updated_at' => now()]);
     }
 
     public function down(): void
