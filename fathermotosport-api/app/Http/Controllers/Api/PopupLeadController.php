@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Models\PopupLead;
+use App\Support\BajaDelPopup;
+
 use App\Http\Controllers\Controller;
 use App\Services\PopupLeadService;
 use Illuminate\Http\JsonResponse;
@@ -44,5 +47,17 @@ class PopupLeadController extends Controller
                 'minimum_amount' => (float) $resultado['lead']->coupon->minimum_amount,
             ], $resultado['status'] === 'new' ? 201 : 200),
         };
+    }
+
+    /** Baja de los correos del popup. La firma de la URL ya la verificó el middleware. */
+    public function unsubscribe(Request $request, PopupLead $lead)
+    {
+        BajaDelPopup::darDeBaja($lead);
+
+        if ($request->isMethod('post')) {
+            return response()->noContent();
+        }
+
+        return response()->view('popup-baja', ['idioma' => $lead->idioma()]);
     }
 }

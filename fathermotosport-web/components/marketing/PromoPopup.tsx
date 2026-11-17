@@ -71,7 +71,14 @@ export function PromoPopup() {
 
   useEffect(() => {
     captureUtm();
-  }, []);
+    // Llega desde el correo del popup (?cupon=WEB-XXXXXX): el cupón queda guardado para el
+    // carrito y el pago, y el popup no vuelve a ofrecerse a quien ya lo tiene.
+    const desdeCorreo = new URLSearchParams(window.location.search).get("cupon")?.trim().toUpperCase();
+    if (desdeCorreo && /^WEB-[A-Z0-9]{6}$/.test(desdeCorreo)) {
+      setPendingCoupon(desdeCorreo);
+      guardar({ state: "claimed", code: desdeCorreo, percent: 0, expires_at: null });
+    }
+  }, [setPendingCoupon]);
 
   useEffect(() => {
     if (excluida || open || premio) return;

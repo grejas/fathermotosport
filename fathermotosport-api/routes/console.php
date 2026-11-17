@@ -50,3 +50,9 @@ Schedule::command('cumpleanos:enviar')
 Schedule::command('campanas:enviar')
     ->everyMinute()
     ->withoutOverlapping();
+
+// Popup de la web: correo de bienvenida con el cupón y recordatorio antes de que venza.
+// Sin contactos pendientes no hace nada.
+Schedule::command('popup:correos')
+    ->everyFiveMinutes()
+    ->withoutOverlapping();

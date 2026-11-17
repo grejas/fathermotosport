@@ -155,6 +155,10 @@ Route::prefix('v1')->group(function () {
 
     // Popup de la web: email (+ WhatsApp) a cambio de un cupón de 10–25 %.
     Route::post('/popup/lead', [PopupLeadController::class, 'store'])->middleware('throttle:6,1');
+    // Baja de los correos del popup (enlace firmado; GET confirma, POST = un clic de Gmail/Yahoo).
+    Route::match(['get', 'post'], '/popup/unsubscribe/{lead}', [PopupLeadController::class, 'unsubscribe'])
+        ->middleware(['signed', 'throttle:20,1'])
+        ->name('popup.unsubscribe');
 
     // Webhooks de pasarelas
     Route::post('/webhooks/paypal', [PaymentController::class, 'paypalWebhook']);
