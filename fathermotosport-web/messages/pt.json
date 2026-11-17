@@ -605,5 +605,13 @@
     "banner_live": "Ofertas ativas em equipamentos selecionados",
     "banner_cta_teaser": "Saiba mais",
     "banner_cta_live": "Ver ofertas"
+  },
+  "cross_sell": {
+    "title": "Complete seu equipamento",
+    "subtitle": "Costumam levar junto",
+    "add": "Adicionar",
+    "add_aria": "Adicionar {name} ao carrinho",
+    "choose_size": "Escolher tamanho",
+    "added": "{name} adicionado ao carrinho"
   }
 }

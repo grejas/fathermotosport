@@ -3,10 +3,9 @@
 import { useMemo, useState } from "react";
 import { Bebas_Neue } from "next/font/google";
 import { useTranslations } from "next-intl";
-import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, MessageCircle, ShieldCheck, Truck, Zap } from "lucide-react";
 import { Link } from "@/lib/i18n/navigation";
-import { getProducts } from "@/lib/api/products";
+import { useAllProducts } from "@/lib/hooks/useAllProducts";
 import { whatsappUrl } from "@/lib/api/storeSettings";
 import { CONTACT_WHATSAPP } from "@/lib/data/contact";
 import { trackWhatsappClick } from "@/lib/analytics/events";
@@ -20,18 +19,8 @@ const bebas = Bebas_Neue({ weight: "400", subsets: ["latin"] });
 
 const CLIP = "polygon(0 0, calc(100% - 28px) 0, 100% 28px, 100% 100%, 28px 100%, 0 calc(100% - 28px))";
 
-/** Todo el catálogo (137 productos ≈ 3 páginas de 60) y se queda con lo que tiene descuento real. */
-async function fetchDiscounted(): Promise<Product[]> {
-  const all: Product[] = [];
-  let page = 1;
-  let last = 1;
-  do {
-    const res = await getProducts({ per_page: 60, page });
-    all.push(...res.data);
-    last = res.meta?.last_page ?? 1;
-    page += 1;
-  } while (page <= last && page <= 10);
-
+/** Productos con descuento real: los que tienen stock primero, luego el mayor descuento. */
+function discounted(all: Product[]): Product[] {
   return all
     .filter((p) => Number(p.discount_percent) > 0)
     .sort((a, b) => Number(b.in_stock) - Number(a.in_stock) || Number(b.discount_percent) - Number(a.discount_percent));
@@ -47,12 +36,8 @@ export function BlackFridayClient() {
   const { segments } = useCountdown(target, mounted && phase !== "ended");
   const [category, setCategory] = useState<number | null>(null);
 
-  const { data: products = [], isLoading } = useQuery({
-    queryKey: ["black-friday-products"],
-    queryFn: fetchDiscounted,
-    staleTime: 60_000,
-    enabled: phase !== "ended",
-  });
+  const { data: all, isLoading } = useAllProducts(phase !== "ended");
+  const products = useMemo(() => discounted(all ?? []), [all]);
 
   const categories = useMemo(() => {
     const map = new Map<number, { id: number; name: string; count: number; max: number }>();

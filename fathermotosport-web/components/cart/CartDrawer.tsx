@@ -8,6 +8,7 @@ import { Drawer } from "@/components/ui/Drawer";
 import { Button } from "@/components/ui/Button";
 import { formatPrice } from "@/lib/utils";
 import { useCartPricesOnShow } from "@/lib/hooks/useCartPrices";
+import { CompleteYourGear } from "./CompleteYourGear";
 import { CartItem } from "./CartItem";
 
 export function CartDrawer() {
@@ -59,7 +60,12 @@ export function CartDrawer() {
           </Link>
         </div>
       ) : (
-        items.map((item) => <CartItem key={item.variantId} item={item} />)
+        <>
+          {items.map((item) => (
+            <CartItem key={item.variantId} item={item} />
+          ))}
+          <CompleteYourGear limit={2} compact origen="cart_drawer" />
+        </>
       )}
     </Drawer>
   );

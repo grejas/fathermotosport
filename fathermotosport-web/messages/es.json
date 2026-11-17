@@ -605,5 +605,13 @@
     "banner_live": "Ofertas activas en equipamiento seleccionado",
     "banner_cta_teaser": "Ver más",
     "banner_cta_live": "Ver ofertas"
+  },
+  "cross_sell": {
+    "title": "Completa tu equipo",
+    "subtitle": "Lo que suelen llevar junto",
+    "add": "Agregar",
+    "add_aria": "Agregar {name} al carrito",
+    "choose_size": "Elegir talla",
+    "added": "{name} agregado al carrito"
   }
 }
