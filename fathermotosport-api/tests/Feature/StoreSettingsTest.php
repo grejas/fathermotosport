@@ -77,6 +77,9 @@ class StoreSettingsTest extends TestCase
             'logo_url' => 'store/logo-secreto.png',
             'currency' => 'BRL',
             'maintenance_mode' => true,
+            // Configurado, pero el IBAN nunca sale acá: va solo en el pedido.
+            'sepa_beneficiary' => 'Fatherson Import',
+            'sepa_iban' => 'ES9121000418450200051332',
         ]);
 
         $response = $this->getJson(self::URL)
@@ -94,11 +97,17 @@ class StoreSettingsTest extends TestCase
                         'youtube' => 'https://youtube.com/@fathermotosport',
                         'tiktok' => 'https://www.tiktok.com/@fathermotosport',
                     ],
+                    'payment_methods' => [
+                        'sepa' => true,
+                        'usdt_trc20' => false,
+                        'usdt_bep20' => false,
+                        'btc' => false,
+                    ],
                 ],
             ]);
 
         $body = $response->getContent();
-        foreach (['payment_keys', 'logo-secreto', 'BRL', 'maintenance', 'created_at', '"id"'] as $fuga) {
+        foreach (['payment_keys', 'ES9121', 'Fatherson Import', 'logo-secreto', 'BRL', 'maintenance', 'created_at', '"id"'] as $fuga) {
             $this->assertStringNotContainsString($fuga, $body);
         }
     }

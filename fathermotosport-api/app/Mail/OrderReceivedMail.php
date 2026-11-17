@@ -4,6 +4,7 @@ namespace App\Mail;
 
 use App\Models\Order;
 use App\Models\User;
+use App\Services\Payments\ManualPaymentService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -37,6 +38,10 @@ class OrderReceivedMail extends Mailable
             with: [
                 'order' => $this->order->loadMissing(['items.variant.product', 'address']),
                 'user' => $this->user,
+                // Transferencia / cripto: datos para pagar y enlace a la página de pago.
+                'pago' => app(ManualPaymentService::class)->instrucciones($this->order),
+                'enlacePago' => rtrim((string) config('app.frontend_url'), '/')
+                    .'/checkout/pay/'.$this->order->id.'?t='.urlencode((string) $this->order->access_token),
             ],
         );
     }

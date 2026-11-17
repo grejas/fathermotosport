@@ -3,10 +3,13 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\OrderResource\Pages;
+use App\Http\Controllers\Api\PaymentController;
 use App\Models\Order;
 use App\Services\EmailService;
+use App\Services\Payments\ManualPaymentService;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -122,8 +125,9 @@ class OrderResource extends Resource
                             if (! $a) {
                                 return '—';
                             }
+
                             return "{$a->full_name} · {$a->phone}\n{$a->address_line}, {$a->city}, {$a->country}"
-                                . ($a->reference ? " ({$a->reference})" : '');
+                                .($a->reference ? " ({$a->reference})" : '');
                         }),
                 ]),
 
@@ -137,10 +141,12 @@ class OrderResource extends Resource
                             }
                             $lines = $record->items->map(function ($item) {
                                 $name = optional(optional($item->variant)->product)->name ?? 'Producto';
-                                $variant = trim(($item->size ?? '') . ' ' . ($item->color ?? ''));
-                                return "• {$name} " . ($variant ? "({$variant}) " : '')
-                                    . "x{$item->quantity} — $" . number_format($item->subtotal, 2);
+                                $variant = trim(($item->size ?? '').' '.($item->color ?? ''));
+
+                                return "• {$name} ".($variant ? "({$variant}) " : '')
+                                    ."x{$item->quantity} — $".number_format($item->subtotal, 2);
                             })->implode("\n");
+
                             return $lines ?: 'Sin items';
                         }),
                 ]),
@@ -149,15 +155,15 @@ class OrderResource extends Resource
                 ->columns(2)
                 ->schema([
                     Forms\Components\Placeholder::make('subtotal_p')->label('Subtotal')
-                        ->content(fn (?Order $r) => '$' . number_format($r?->subtotal ?? 0, 2)),
+                        ->content(fn (?Order $r) => '$'.number_format($r?->subtotal ?? 0, 2)),
                     Forms\Components\Placeholder::make('discount_p')->label('Descuento')
-                        ->content(fn (?Order $r) => '$' . number_format($r?->discount ?? 0, 2)),
+                        ->content(fn (?Order $r) => '$'.number_format($r?->discount ?? 0, 2)),
                     Forms\Components\Placeholder::make('shipping_p')->label('Envío')
                         ->content(fn (?Order $r) => $r?->shipping > 0
                             ? '$'.number_format($r->shipping, 2).' · '.($r->shipping_method_name ?? 'Envío')
                             : '$0.00 · Gratis'),
                     Forms\Components\Placeholder::make('total_p')->label('Total')
-                        ->content(fn (?Order $r) => '$' . number_format($r?->total ?? 0, 2)),
+                        ->content(fn (?Order $r) => '$'.number_format($r?->total ?? 0, 2)),
                 ]),
         ]);
     }
@@ -214,7 +220,8 @@ class OrderResource extends Resource
                         'preparing' => 'warning',
                         default => 'gray',
                     }),
-                Tables\Columns\TextColumn::make('payment_method')->label('Método')->badge(),
+                Tables\Columns\TextColumn::make('payment_method')->label('Método')->badge()
+                    ->formatStateUsing(fn (?string $state) => Order::METODOS_DE_PAGO[$state] ?? $state),
                 Tables\Columns\TextColumn::make('country')->label('País')->badge(),
                 Tables\Columns\TextColumn::make('created_at')->label('Fecha')->dateTime('d/m/Y H:i')->sortable(),
             ])
@@ -256,9 +263,7 @@ class OrderResource extends Resource
                 Tables\Filters\SelectFilter::make('country')->label('País')->options([
                     'Bolivia' => 'Bolivia', 'Brasil' => 'Brasil',
                 ]),
-                Tables\Filters\SelectFilter::make('payment_method')->label('Método')->options([
-                    'paypal' => 'PayPal', 'stripe' => 'Stripe', 'mercadopago' => 'MercadoPago',
-                ]),
+                Tables\Filters\SelectFilter::make('payment_method')->label('Método')->options(Order::METODOS_DE_PAGO),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
@@ -274,6 +279,36 @@ class OrderResource extends Resource
                     ->modalDescription(fn (Order $record) => $record->attention_reason)
                     ->action(fn (Order $record) => $record->update(['attention_reason' => null]))
                     ->successNotificationTitle('Pedido marcado como resuelto'),
+                // Transferencia / cripto: el equipo ve el ingreso en el banco o la billetera
+                // y lo confirma acá. Reutiliza markPaid (stock + correo de confirmación).
+                Tables\Actions\Action::make('confirmar_pago_manual')
+                    ->label('Confirmar pago recibido')
+                    ->icon('heroicon-o-banknotes')
+                    ->color('success')
+                    ->visible(fn (Order $record) => $record->requiereCoordinacionManual() && $record->payment_status === 'pending')
+                    ->modalHeading(fn (Order $record) => "Confirmar pago de {$record->order_number}")
+                    ->modalDescription(fn (Order $record) => $record->payment_amount !== null
+                        ? 'Monto esperado: '.ManualPaymentService::formatoMonto($record->payment_amount, $record->payment_currency).' '.$record->payment_currency
+                            .' ('.(Order::METODOS_DE_PAGO[$record->payment_method] ?? $record->payment_method).'). Verifica que el monto llegó completo, a la red o cuenta correcta y con el concepto '.$record->order_number.'.'
+                        : null)
+                    ->form([
+                        Forms\Components\TextInput::make('referencia')
+                            ->label('Hash de la transacción o referencia bancaria')
+                            ->required()
+                            ->maxLength(200),
+                        Forms\Components\Textarea::make('nota')->label('Nota interna (opcional)')->rows(2)->maxLength(500),
+                    ])
+                    ->action(function (Order $record, array $data) {
+                        try {
+                            app(PaymentController::class)->confirmarPagoManual($record, $data['referencia'], $data['nota'] ?? null, auth()->id());
+                        } catch (\InvalidArgumentException $e) {
+                            Notification::make()->title($e->getMessage())->danger()->send();
+
+                            return;
+                        }
+
+                        Notification::make()->title('Pago confirmado: stock descontado y cliente notificado')->success()->send();
+                    }),
                 Tables\Actions\Action::make('tracking')
                     ->label('Tracking')
                     ->icon('heroicon-o-truck')
@@ -355,7 +390,7 @@ class OrderResource extends Resource
             fclose($out);
         };
 
-        return Response::streamDownload($callback, 'pedidos-' . now()->format('Ymd-His') . '.csv', [
+        return Response::streamDownload($callback, 'pedidos-'.now()->format('Ymd-His').'.csv', [
             'Content-Type' => 'text/csv',
         ]);
     }

@@ -1,4 +1,6 @@
 import { CONTACT_EMAIL, CONTACT_WHATSAPP } from "@/lib/data/contact";
+import { MANUAL_PAYMENT_METHODS } from "@/lib/data/paymentMethods";
+import type { ManualPaymentMethod } from "@/lib/types";
 
 /** Tag de caché compartido con Laravel (StoreConfig::REVALIDATE_TAG). */
 export const STORE_SETTINGS_TAG = "store-settings";
@@ -13,6 +15,8 @@ export interface StoreSettingsApi {
   /** Solo dígitos. */
   whatsapp: string | null;
   social: Partial<Record<SocialNetwork, string | null>>;
+  /** Transferencia / cripto configurados en el panel. */
+  payment_methods?: Partial<Record<ManualPaymentMethod, boolean>>;
 }
 
 /**
@@ -24,6 +28,8 @@ export interface StoreSettings {
   /** Solo dígitos, para https://wa.me/<dígitos>. null = vacío en el panel. */
   whatsappDigits: string | null;
   social: Record<SocialNetwork, string | null>;
+  /** Métodos manuales que el checkout puede ofrecer (con sus datos completos en el panel). */
+  manualPaymentMethods: ManualPaymentMethod[];
 }
 
 /** Mismos dominios que StoreConfig::SOCIAL_DOMAINS (más su variante www.). */
@@ -44,6 +50,8 @@ export const FALLBACK_STORE_SETTINGS: StoreSettings = {
   email: CONTACT_EMAIL,
   whatsappDigits: CONTACT_WHATSAPP,
   social: { facebook: null, instagram: null, youtube: null, tiktok: null },
+  // Sin API no se sabe si están configurados: no se ofrecen.
+  manualPaymentMethods: [],
 };
 
 /** El enlace solo se pinta si es https y del dominio de esa red (la API ya lo valida). */
@@ -82,6 +90,7 @@ export function resolveStoreSettings(api: StoreSettingsApi | null): StoreSetting
     social: Object.fromEntries(
       SOCIAL_NETWORKS.map((network) => [network, safeSocialUrl(network, api.social?.[network])])
     ) as Record<SocialNetwork, string | null>,
+    manualPaymentMethods: MANUAL_PAYMENT_METHODS.filter((m) => api.payment_methods?.[m] === true),
   };
 }
 

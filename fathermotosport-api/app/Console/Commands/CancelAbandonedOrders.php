@@ -37,7 +37,18 @@ class CancelAbandonedOrders extends Command
             // Un pedido marcado para revisión no se cancela solo: puede tener dinero
             // cobrado que no cuadra (ver el webhook de Stripe) y lo resuelve una persona.
             ->whereNull('attention_reason')
-            ->where('created_at', '<', $limite)
+            ->where(fn ($q) => $q
+                // Pasarelas: el cobro es al instante, a los N minutos es un abandono.
+                ->where(fn ($q) => $q
+                    ->where(fn ($q) => $q->whereNull('payment_method')
+                        ->orWhereNotIn('payment_method', Order::METODOS_CON_COORDINACION_MANUAL))
+                    ->where('created_at', '<', $limite))
+                // Transferencia / cripto: el cliente paga por fuera y una transferencia
+                // tarda días. Se cancelan recién cuando vence su cotización.
+                ->orWhere(fn ($q) => $q
+                    ->whereIn('payment_method', Order::METODOS_CON_COORDINACION_MANUAL)
+                    ->whereNotNull('payment_expires_at')
+                    ->where('payment_expires_at', '<', now())))
             ->get();
 
         if ($pedidos->isEmpty()) {

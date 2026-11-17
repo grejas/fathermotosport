@@ -3,13 +3,16 @@
 namespace App\Models;
 
 use App\Services\FrontendRevalidator;
+use App\Services\Payments\ManualPaymentService;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
 /**
  * Configuración de la tienda (fila única, id=1). Las credenciales de pago no viven
- * acá: se configuran solo en el .env del servidor.
+ * acá: se configuran solo en el .env del servidor. Sí viven acá los datos donde el
+ * cliente paga por transferencia o cripto (IBAN, direcciones de billetera): no son
+ * secretos, se le muestran a cada comprador.
  */
 class StoreConfig extends Model
 {
@@ -41,6 +44,13 @@ class StoreConfig extends Model
         'youtube',
         'tiktok',
         'maintenance_mode',
+        'sepa_beneficiary',
+        'sepa_iban',
+        'sepa_bic',
+        'sepa_bank_name',
+        'usdt_trc20_address',
+        'usdt_bep20_address',
+        'btc_address',
     ];
 
     protected $casts = [
@@ -114,7 +124,7 @@ class StoreConfig extends Model
      * otro campo de store_config. Vacío => null; una red con un enlace que no pasa la
      * validación también llega como null, para que la web no la muestre.
      *
-     * @return array{store_name: ?string, email: ?string, phone: ?string, whatsapp: ?string, social: array<string, ?string>}
+     * @return array{store_name: ?string, email: ?string, phone: ?string, whatsapp: ?string, social: array<string, ?string>, payment_methods: array<string, bool>}
      */
     public static function datosPublicos(): array
     {
@@ -134,6 +144,9 @@ class StoreConfig extends Model
                 'phone' => $texto($config?->phone),
                 'whatsapp' => self::soloDigitos($config?->whatsapp),
                 'social' => $social,
+                // Solo si cada método está configurado; los datos para pagar no salen
+                // acá, van en el pedido (ManualPaymentService::instrucciones).
+                'payment_methods' => app(ManualPaymentService::class)->disponibles($config),
             ];
         });
     }

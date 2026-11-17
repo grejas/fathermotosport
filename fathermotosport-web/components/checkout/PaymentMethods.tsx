@@ -1,74 +1,196 @@
 "use client";
 
-import { CreditCard, Wallet } from "lucide-react";
-import type { PaymentMethod } from "@/lib/types";
+import { Bitcoin, CreditCard, Landmark, Wallet } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { CRYPTO_PAYMENT_METHODS, isManualPaymentMethod } from "@/lib/data/paymentMethods";
+import type { ManualPaymentMethod, PaymentMethod } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const methods: { id: PaymentMethod; label: string; desc: string; icon: typeof Wallet }[] = [
-  { id: "paypal", label: "PayPal", desc: "Paga con tu cuenta PayPal", icon: Wallet },
-  { id: "stripe", label: "Tarjeta", desc: "Visa, MasterCard, Amex", icon: CreditCard },
-  { id: "mercadopago", label: "MercadoPago", desc: "Tarjeta, QR o saldo", icon: Wallet },
+type Pasarela = "paypal" | "stripe" | "mercadopago";
+
+const PASARELAS: { id: Pasarela; icon: typeof Wallet }[] = [
+  { id: "paypal", icon: Wallet },
+  { id: "stripe", icon: CreditCard },
+  { id: "mercadopago", icon: Wallet },
 ];
+
+/** Etiqueta corta de cada red cripto, como la muestran los exchanges al retirar. */
+const REDES: Record<Exclude<ManualPaymentMethod, "sepa">, { moneda: string; red: string }> = {
+  usdt_trc20: { moneda: "USDT", red: "TRC20" },
+  usdt_bep20: { moneda: "USDT", red: "BEP20" },
+  btc: { moneda: "BTC", red: "Bitcoin" },
+};
 
 interface Props {
   value: PaymentMethod;
   onChange: (m: PaymentMethod) => void;
-  /** Métodos habilitados; el resto se muestra en gris con "Próximamente". */
+  /** Pasarelas habilitadas; el resto se muestra en gris con "Próximamente". */
   enabled?: readonly PaymentMethod[];
+  /** Transferencia / cripto configurados en el panel. Los que no están, no se muestran. */
+  manual?: readonly ManualPaymentMethod[];
   comingSoonLabel?: string;
 }
 
-export function PaymentMethods({ value, onChange, enabled, comingSoonLabel }: Props) {
+export function PaymentMethods({ value, onChange, enabled, manual = [], comingSoonLabel }: Props) {
+  const t = useTranslations("checkout");
+  const conSepa = manual.includes("sepa");
+  const cripto = CRYPTO_PAYMENT_METHODS.filter((m) => manual.includes(m));
+  const criptoActiva = cripto.includes(value as ManualPaymentMethod);
+
   return (
     <div className="space-y-3">
-      {methods.map((m) => {
-        const Icon = m.icon;
+      {PASARELAS.map((m) => {
         const disponible = !enabled || enabled.includes(m.id);
-        const active = disponible && value === m.id;
         return (
-          <button
+          <Opcion
             key={m.id}
-            type="button"
+            icon={m.icon}
+            label={t(`pm_${m.id}`)}
+            desc={disponible ? t(`pm_${m.id}_desc`) : comingSoonLabel ?? t(`pm_${m.id}_desc`)}
+            active={disponible && value === m.id}
             disabled={!disponible}
+            // PayPal conserva su amarillo también cuando está elegido.
+            iconClass={m.id === "paypal" ? "bg-[#FFC439] text-[#003087]" : undefined}
             onClick={() => onChange(m.id)}
-            className={cn(
-              "flex w-full items-center gap-3 rounded-xl border p-4 text-left transition",
-              active
-                ? "border-brand-red bg-brand-red/10"
-                : "border-white/10 hover:border-white/30",
-              !disponible && "cursor-not-allowed opacity-40 hover:border-white/10"
-            )}
-          >
-            <span
-              className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-lg",
-                // PayPal conserva su amarillo también cuando está elegido.
-                m.id === "paypal"
-                  ? "bg-[#FFC439] text-[#003087]"
-                  : active
-                    ? "bg-brand-red text-white"
-                    : "bg-white/5 text-brand-muted"
-              )}
-            >
-              <Icon size={18} />
-            </span>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-brand-white">{m.label}</p>
-              <p className="text-xs text-brand-muted">
-                {disponible ? m.desc : comingSoonLabel ?? m.desc}
-              </p>
-            </div>
-            {disponible && (
-              <span
-                className={cn(
-                  "h-4 w-4 rounded-full border-2",
-                  active ? "border-brand-red bg-brand-red" : "border-white/30"
-                )}
-              />
-            )}
-          </button>
+          />
         );
       })}
+
+      {conSepa && (
+        <Opcion
+          icon={Landmark}
+          label={t("pm_sepa")}
+          desc={t("pm_sepa_desc")}
+          badge="EUR"
+          active={value === "sepa"}
+          onClick={() => onChange("sepa")}
+        />
+      )}
+
+      {cripto.length > 0 && (
+        <div
+          className={cn(
+            "rounded-xl border transition",
+            criptoActiva ? "border-brand-red bg-brand-red/10" : "border-white/10 hover:border-white/30"
+          )}
+        >
+          <Opcion
+            icon={Bitcoin}
+            label={t("pm_crypto")}
+            desc={t("pm_crypto_desc")}
+            badge={[...new Set(cripto.map((m) => REDES[m as keyof typeof REDES].moneda))].join(" · ")}
+            active={criptoActiva}
+            bare
+            onClick={() => {
+              if (!criptoActiva) onChange(cripto[0]);
+            }}
+          />
+
+          {criptoActiva && (
+            <div className="px-4 pb-4">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-brand-muted">
+                {t("pm_network")}
+              </p>
+              <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label={t("pm_network")}>
+                {cripto.map((m) => {
+                  const { moneda, red } = REDES[m as keyof typeof REDES];
+                  const activa = value === m;
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      role="radio"
+                      aria-checked={activa}
+                      onClick={() => onChange(m)}
+                      className={cn(
+                        "rounded-lg border px-2 py-2 text-center transition",
+                        activa
+                          ? "border-brand-red bg-brand-red text-white"
+                          : "border-white/15 bg-white/5 text-brand-white hover:border-white/40"
+                      )}
+                    >
+                      <span className="block text-sm font-bold">{moneda}</span>
+                      <span className={cn("block text-[11px]", activa ? "text-white/85" : "text-brand-muted")}>
+                        {red}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-2 text-[11px] leading-relaxed text-brand-muted">{t("pm_crypto_network_hint")}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {isManualPaymentMethod(value) && (
+        <p className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-xs leading-relaxed text-brand-muted">
+          {value === "sepa" ? t("pm_sepa_note") : t("pm_crypto_note")}
+        </p>
+      )}
     </div>
+  );
+}
+
+function Opcion({
+  icon: Icon,
+  label,
+  desc,
+  badge,
+  active,
+  disabled,
+  iconClass,
+  bare,
+  onClick,
+}: {
+  icon: typeof Wallet;
+  label: string;
+  desc: string;
+  badge?: string;
+  active: boolean;
+  disabled?: boolean;
+  iconClass?: string;
+  /** Sin borde propio: va dentro de otro contenedor (cripto). */
+  bare?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        "flex w-full items-center gap-3 p-4 text-left transition",
+        !bare && "rounded-xl border",
+        !bare && (active ? "border-brand-red bg-brand-red/10" : "border-white/10 hover:border-white/30"),
+        disabled && "cursor-not-allowed opacity-40 hover:border-white/10"
+      )}
+    >
+      <span
+        className={cn(
+          "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
+          iconClass ?? (active ? "bg-brand-red text-white" : "bg-white/5 text-brand-muted")
+        )}
+      >
+        <Icon size={18} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="flex items-center gap-2 text-sm font-semibold text-brand-white">
+          {label}
+          {badge && (
+            <span className="rounded-md border border-white/15 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-brand-muted">
+              {badge}
+            </span>
+          )}
+        </p>
+        <p className="text-xs text-brand-muted">{desc}</p>
+      </div>
+      {!disabled && (
+        <span
+          className={cn("h-4 w-4 shrink-0 rounded-full border-2", active ? "border-brand-red bg-brand-red" : "border-white/30")}
+        />
+      )}
+    </button>
   );
 }

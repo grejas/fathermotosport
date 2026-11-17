@@ -119,6 +119,9 @@ class OrderController extends Controller
             'paypal' => 'POST /payments/paypal/create',
             'stripe' => 'POST /payments/stripe/intent',
             'mercadopago' => 'POST /payments/mercadopago/create',
+            // Transferencia y cripto: el cliente paga por fuera con los datos de
+            // order.manual_payment y el equipo confirma el ingreso desde el panel.
+            'sepa', 'usdt_trc20', 'usdt_bep20', 'btc' => 'manual',
             default => '',
         };
     }

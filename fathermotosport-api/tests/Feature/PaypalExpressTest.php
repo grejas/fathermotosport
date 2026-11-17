@@ -203,7 +203,7 @@ class PaypalExpressTest extends TestCase
     }
 
     /** Ninguno de los métodos de hoy se coordina a mano: todos son pasarelas. */
-    public function test_no_current_method_requires_manual_coordination(): void
+    public function test_gateways_do_not_require_manual_coordination(): void
     {
         foreach (['paypal', 'stripe', 'mercadopago'] as $metodo) {
             $order = new Order;
@@ -212,10 +212,9 @@ class PaypalExpressTest extends TestCase
             $this->assertFalse($order->requiereCoordinacionManual(), "método: {$metodo}");
         }
 
-        // La lista está vacía a propósito. El día que se agregue un método coordinado a
-        // mano (transferencia, contra entrega), sumarlo a esta constante es lo único que
-        // hace falta para que vuelva a salir el correo de "recibimos tu pedido".
-        $this->assertSame([], Order::METODOS_CON_COORDINACION_MANUAL);
+        // Solo los cobros que el cliente hace por fuera (transferencia y cripto) reciben
+        // el correo de "recibimos tu pedido", con los datos para pagar.
+        $this->assertSame(['sepa', 'usdt_trc20', 'usdt_bep20', 'btc'], Order::METODOS_CON_COORDINACION_MANUAL);
     }
 
     public function test_express_requires_a_valid_shipping_option(): void

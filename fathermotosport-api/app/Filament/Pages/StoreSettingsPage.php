@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\StoreConfig;
+use App\Services\Payments\ManualPaymentService;
 use Closure;
 use Filament\Actions\Action;
 use Filament\Forms;
@@ -51,7 +52,34 @@ class StoreSettingsPage extends Page implements HasForms
             'instagram' => $config->instagram,
             'youtube' => $config->youtube,
             'tiktok' => $config->tiktok,
+            'sepa_beneficiary' => $config->sepa_beneficiary,
+            'sepa_iban' => ManualPaymentService::ibanAgrupado($config->sepa_iban),
+            'sepa_bic' => $config->sepa_bic,
+            'sepa_bank_name' => $config->sepa_bank_name,
+            'usdt_trc20_address' => $config->usdt_trc20_address,
+            'usdt_bep20_address' => $config->usdt_bep20_address,
+            'btc_address' => $config->btc_address,
         ]);
+    }
+
+    /** Regla con un validador de ManualPaymentService; vacío siempre pasa. */
+    private static function regla(callable $valido, string $mensaje): Closure
+    {
+        return fn (): Closure => function (string $attribute, $value, Closure $fail) use ($valido, $mensaje) {
+            if (filled($value) && ! $valido($value)) {
+                $fail($mensaje);
+            }
+        };
+    }
+
+    private static function campoDeBilletera(string $metodo, string $campo, string $label, string $placeholder): Forms\Components\TextInput
+    {
+        return Forms\Components\TextInput::make($campo)
+            ->label($label)
+            ->placeholder($placeholder)
+            ->maxLength(90)
+            ->rules([self::regla(fn ($v) => ManualPaymentService::direccionValida($metodo, $v), 'La dirección no tiene el formato de esa red. Cópiala de nuevo desde tu billetera.')])
+            ->helperText('Revisa que sea de la red correcta: un envío a otra red se pierde. Vacío: el método no se ofrece.');
     }
 
     /** Regla del enlace de una red: solo https y solo sus dominios. */
@@ -116,6 +144,31 @@ class StoreSettingsPage extends Page implements HasForms
                         self::campoDeRed('youtube', 'YouTube', 'https://youtube.com/@fathermotosport'),
                         self::campoDeRed('tiktok', 'TikTok', 'https://tiktok.com/@fathermotosport'),
                     ]),
+
+                Forms\Components\Section::make('Transferencia bancaria en Europa (SEPA · EUR)')
+                    ->description('El cliente ve estos datos con el monto exacto en EUR y el número de pedido como concepto. Confirmas el ingreso desde el pedido con "Confirmar pago recibido". Sin beneficiario e IBAN, el método no aparece en la web.')
+                    ->columns(2)
+                    ->schema([
+                        Forms\Components\TextInput::make('sepa_beneficiary')->label('Titular de la cuenta')->maxLength(255)
+                            ->requiredWith('sepa_iban'),
+                        Forms\Components\TextInput::make('sepa_iban')->label('IBAN')->maxLength(42)
+                            ->placeholder('ES00 0000 0000 0000 0000 0000')
+                            ->requiredWith('sepa_beneficiary')
+                            ->rules([self::regla(fn ($v) => ManualPaymentService::ibanValido($v), 'El IBAN no es válido (revisa los dígitos de control).')]),
+                        Forms\Components\TextInput::make('sepa_bic')->label('BIC / SWIFT')->maxLength(11)
+                            ->rules([self::regla(fn ($v) => ManualPaymentService::bicValido($v), 'BIC de 8 u 11 caracteres.')])
+                            ->helperText('Opcional dentro de la zona SEPA, pero ayuda a los bancos de fuera.'),
+                        Forms\Components\TextInput::make('sepa_bank_name')->label('Banco')->maxLength(255),
+                    ]),
+
+                Forms\Components\Section::make('Pagos en cripto (billetera propia)')
+                    ->description('Monto en USDT 1:1 con el precio en USD; en BTC se cotiza en vivo y vale 2 horas. Confirmas el ingreso desde el pedido con el hash de la transacción.')
+                    ->columns(1)
+                    ->schema([
+                        self::campoDeBilletera('usdt_trc20', 'usdt_trc20_address', 'USDT · red TRON (TRC20)', 'T…'),
+                        self::campoDeBilletera('usdt_bep20', 'usdt_bep20_address', 'USDT · red BNB Smart Chain (BEP20)', '0x…'),
+                        self::campoDeBilletera('btc', 'btc_address', 'Bitcoin (BTC · red Bitcoin)', 'bc1…'),
+                    ]),
             ])
             ->statePath('data');
     }
@@ -148,6 +201,13 @@ class StoreSettingsPage extends Page implements HasForms
             'instagram' => $texto('instagram'),
             'youtube' => $texto('youtube'),
             'tiktok' => $texto('tiktok'),
+            'sepa_beneficiary' => $texto('sepa_beneficiary'),
+            'sepa_iban' => filled($data['sepa_iban'] ?? null) ? ManualPaymentService::normalizarIban($data['sepa_iban']) : null,
+            'sepa_bic' => filled($data['sepa_bic'] ?? null) ? strtoupper(trim($data['sepa_bic'])) : null,
+            'sepa_bank_name' => $texto('sepa_bank_name'),
+            'usdt_trc20_address' => $texto('usdt_trc20_address'),
+            'usdt_bep20_address' => $texto('usdt_bep20_address'),
+            'btc_address' => $texto('btc_address'),
         ]);
 
         $this->data['whatsapp'] = $config->whatsapp;
