@@ -102,6 +102,7 @@ class StoreSettingsTest extends TestCase
                         'usdt_trc20' => false,
                         'usdt_bep20' => false,
                         'btc' => false,
+                        'btc_bep20' => false,
                     ],
                 ],
             ]);

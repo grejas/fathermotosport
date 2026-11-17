@@ -691,6 +691,7 @@
     "auto_update": "Esta página se atualiza sozinha quando confirmarmos seu pagamento.",
     "copied": "Copiado",
     "copy_label": "Copiar {label}",
-    "whatsapp_message": "Olá, já paguei o pedido {number}: {amount} via {method}. Segue o comprovante."
+    "whatsapp_message": "Olá, já paguei o pedido {number}: {amount} via {method}. Segue o comprovante.",
+    "warning_btc_bep20": "É Bitcoin na BNB Smart Chain (BTCB): na sua exchange, saque BTC pela rede BSC / BEP20, não pela rede Bitcoin."
   }
 }

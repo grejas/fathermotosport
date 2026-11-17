@@ -118,6 +118,7 @@ export function ManualPaymentInstructions({ order, pago }: { order: Order; pago:
             {esSepa
               ? t("warning_sepa", { reference: pago.reference })
               : t("warning_crypto", { network: pago.network ?? "", currency: pago.currency })}
+            {pago.method === "btc_bep20" && <strong className="mt-1 block">{t("warning_btc_bep20")}</strong>}
           </p>
         </div>
       </div>

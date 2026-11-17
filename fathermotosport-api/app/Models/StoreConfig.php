@@ -51,6 +51,7 @@ class StoreConfig extends Model
         'usdt_trc20_address',
         'usdt_bep20_address',
         'btc_address',
+        'btc_bep20_address',
     ];
 
     protected $casts = [
