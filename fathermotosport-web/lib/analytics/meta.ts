@@ -8,10 +8,20 @@
  * Eventos estándar: https://developers.facebook.com/docs/meta-pixel/reference
  */
 
-export const META_PIXEL_ID = (process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "").trim();
+/**
+ * Admite uno o varios píxeles separados por coma (por ejemplo, el de la cuenta publicitaria
+ * en USD y el anterior). `fbq('track', ...)` envía cada evento a todos los píxeles iniciados.
+ */
+export const META_PIXEL_IDS: string[] = (process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "")
+  .split(",")
+  .map((id) => id.trim())
+  /** Los IDs del píxel de Meta son solo dígitos (15–16 normalmente). */
+  .filter((id) => /^\d{10,20}$/.test(id));
 
-/** Los IDs del píxel de Meta son solo dígitos (15–16 normalmente). */
-export const metaPixelEnabled = /^\d{10,20}$/.test(META_PIXEL_ID);
+/** Primer píxel válido (compatibilidad con código que espera un solo ID). */
+export const META_PIXEL_ID = META_PIXEL_IDS[0] ?? "";
+
+export const metaPixelEnabled = META_PIXEL_IDS.length > 0;
 
 export type MetaStandardEvent =
   | "PageView"

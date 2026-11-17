@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import Script from "next/script";
 import { usePathname, useSearchParams } from "next/navigation";
 import { TIKTOK_PIXEL_ID, tiktokPage, tiktokPixelEnabled } from "@/lib/analytics/tiktok";
-import { META_PIXEL_ID, metaPageView, metaPixelEnabled } from "@/lib/analytics/meta";
+import { META_PIXEL_IDS, metaPageView, metaPixelEnabled } from "@/lib/analytics/meta";
 import { GA4_ID, ga4Enabled } from "@/lib/analytics/ga4";
 
 /**
@@ -38,7 +38,7 @@ n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
 n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
 document,'script','https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '${META_PIXEL_ID}');
+${META_PIXEL_IDS.map((id) => `fbq('init', '${id}');`).join("\n")}
 fbq('track', 'PageView');`}
         </Script>
       )}
