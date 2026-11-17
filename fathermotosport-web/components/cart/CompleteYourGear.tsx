@@ -12,6 +12,8 @@ import { trackAddToCart } from "@/lib/analytics/events";
 import { ga4Event } from "@/lib/analytics/ga4";
 import { finalPrice, formatPrice, getImageUrl } from "@/lib/utils";
 import type { Product } from "@/lib/types";
+import { QuickSizePicker, needsSizeChoice } from "@/components/product/QuickSizePicker";
+import { useState } from "react";
 
 /**
  * Qué completa a qué (por slug de categoría), en orden de prioridad. Un casco pide guantes;
@@ -71,6 +73,7 @@ export function CompleteYourGear({ limit = 4, compact = false, origen }: { limit
   const items = useCartStore((s) => s.items);
   const addItem = useCartStore((s) => s.addItem);
   const { data: catalogo } = useAllProducts(items.length > 0);
+  const [eligiendo, setEligiendo] = useState<Product | null>(null);
 
   const enCarrito = useMemo(() => new Set(items.map((i) => String(i.productId))), [items]);
   const sugeridos = useMemo(() => recomendar(catalogo ?? [], enCarrito, limit), [catalogo, enCarrito, limit]);
@@ -96,7 +99,7 @@ export function CompleteYourGear({ limit = 4, compact = false, origen }: { limit
         {sugeridos.map((p) => {
           const vars = disponibles(p);
           // Con una sola opción (o sin talla) se agrega directo; con tallas, a elegir en la ficha.
-          const directo = vars.length === 1 || vars.every((v) => !v.size);
+          const directo = !needsSizeChoice(p) && vars.length > 0;
           const precio = finalPrice(p);
           const lista = Number(p.price);
           const rebajado = Number(p.discount_percent) > 0 && lista > precio;
@@ -146,13 +149,16 @@ export function CompleteYourGear({ limit = 4, compact = false, origen }: { limit
                       {!compact && t("add")}
                     </button>
                   ) : (
-                    <Link
-                      href={`/product/${p.slug}`}
-                      onClick={() => ga4Event("cross_sell_click", { origen, item_id: p.id })}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        ga4Event("cross_sell_click", { origen, item_id: p.id });
+                        setEligiendo(p);
+                      }}
                       className="shrink-0 rounded-lg border border-brand-gold/40 px-2.5 py-1.5 text-[11px] font-bold text-brand-gold hover:bg-brand-gold/10"
                     >
                       {t("choose_size")}
-                    </Link>
+                    </button>
                   )}
                 </div>
               </div>
@@ -160,6 +166,7 @@ export function CompleteYourGear({ limit = 4, compact = false, origen }: { limit
           );
         })}
       </div>
+      {eligiendo && <QuickSizePicker product={eligiendo} open onClose={() => setEligiendo(null)} origen={origen} />}
     </section>
   );
 }
