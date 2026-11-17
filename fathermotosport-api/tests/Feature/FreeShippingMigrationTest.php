@@ -36,8 +36,30 @@ class FreeShippingMigrationTest extends TestCase
 
         $this->assertSame(1, ShippingOption::forCountry('ES')->count(), 'sin duplicados');
 
-        foreach (['BO', 'BR'] as $pais) {
-            $this->assertNotEmpty(ShippingOption::availableFor($pais, 12), "{$pais} sin límite de peso");
+        $this->assertNotEmpty(ShippingOption::availableFor('BO', 12), 'BO sin límite de peso');
+    }
+
+    public function test_seventy_five_usd_to_south_and_central_america(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        // Como en producción: una sola fila de Brasil, gratis, de 1 a 2 kg y con plazos.
+        ShippingOption::forCountry('BR')->delete();
+        ShippingOption::create([
+            'country_code' => 'BR', 'method_name' => 'Estándar', 'min_weight_kg' => 1, 'max_weight_kg' => 2,
+            'price' => 0, 'currency' => 'USD', 'is_active' => true, 'estimated_days_min' => 5, 'estimated_days_max' => 7,
+        ]);
+        $migracion = require database_path('migrations/2026_11_17_200003_shipping_75_usd_south_central_america.php');
+        $migracion->up();
+        $migracion->up();
+
+        foreach (['BR', 'PE', 'EC', 'CL', 'AR', 'SV', 'CR'] as $pais) {
+            foreach ([0.3, 3.2, 12] as $peso) {
+                $opciones = ShippingOption::availableFor($pais, $peso);
+                $this->assertCount(1, $opciones, "{$pais} {$peso} kg");
+                $this->assertSame('75.00', $opciones->first()->price);
+            }
         }
+
+        $this->assertSame(7, ShippingOption::forCountry('BR')->first()->estimated_days_max, 'conserva los plazos');
     }
 }
