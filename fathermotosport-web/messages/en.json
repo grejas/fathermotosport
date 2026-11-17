@@ -614,6 +614,13 @@
     "choose_size": "Choose size",
     "added": "{name} added to cart"
   },
+  "size_picker": {
+    "title": "Choose your size",
+    "size_add": "Add size {size}",
+    "size_out": "Size {size} sold out",
+    "last_units": "{n, plural, one {Last one} other {Last #}}",
+    "guide": "See size guide and details"
+  },
   "promo_popup": {
     "badge": "For your first order only",
     "title_before": "Reveal your",

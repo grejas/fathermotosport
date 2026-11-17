@@ -614,6 +614,13 @@
     "choose_size": "Escolher tamanho",
     "added": "{name} adicionado ao carrinho"
   },
+  "size_picker": {
+    "title": "Escolha seu tamanho",
+    "size_add": "Adicionar tamanho {size}",
+    "size_out": "Tamanho {size} esgotado",
+    "last_units": "{n, plural, one {Última unidade} other {Últimas #}}",
+    "guide": "Ver guia de tamanhos e detalhes"
+  },
   "promo_popup": {
     "badge": "Só para a sua primeira compra",
     "title_before": "Descubra o seu",

@@ -11,6 +11,8 @@ import { useFlashPromos } from "@/lib/hooks/useFlashPromo";
 import { flashPromoAppliesTo } from "@/lib/api/flashPromo";
 import toast from "react-hot-toast";
 import { trackAddToCart } from "@/lib/analytics/events";
+import { useState } from "react";
+import { QuickSizePicker, needsSizeChoice } from "./QuickSizePicker";
 
 export function ProductCard({ product }: { product: Product }) {
   const t = useTranslations("product");
@@ -20,6 +22,7 @@ export function ProductCard({ product }: { product: Product }) {
   // Precio final del servidor (descuento propio o de categoría, el más bajo).
   const conDescuento = hasDiscount(product);
   const addItem = useCartStore((s) => s.addItem);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   // Todas las cards comparten una sola consulta (react-query dedupe por queryKey).
   const { data: flashPromos } = useFlashPromos();
@@ -32,6 +35,11 @@ export function ProductCard({ product }: { product: Product }) {
 
   const quickAdd = (e: React.MouseEvent) => {
     e.preventDefault();
+    // Con varias tallas se pregunta cuál; nunca se elige una por el cliente.
+    if (needsSizeChoice(product)) {
+      setPickerOpen(true);
+      return;
+    }
     const variant = product.variants?.find((v) => v.is_active && v.stock > 0);
     if (!variant) {
       toast.error(t("no_stock"));
@@ -133,6 +141,7 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
         </div>
       </article>
+      <QuickSizePicker product={product} open={pickerOpen} onClose={() => setPickerOpen(false)} />
     </Link>
   );
 }
