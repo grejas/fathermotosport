@@ -52,6 +52,8 @@ class StoreConfig extends Model
         'usdt_bep20_address',
         'btc_address',
         'btc_bep20_address',
+        'binance_pay_url',
+        'binance_pay_name',
     ];
 
     protected $casts = [

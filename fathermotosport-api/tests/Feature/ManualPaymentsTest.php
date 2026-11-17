@@ -53,6 +53,8 @@ class ManualPaymentsTest extends TestCase
             'usdt_bep20_address' => self::BEP20,
             'btc_address' => self::BTC,
             'btc_bep20_address' => self::BEP20,
+            'binance_pay_url' => 'https://app.binance.com/uni-qr/JvKpbhpc',
+            'binance_pay_name' => 'fathersons Imp LLC',
         ]);
     }
 
@@ -149,6 +151,14 @@ class ManualPaymentsTest extends TestCase
             ->assertJsonPath('order.manual_payment.network', 'BNB Smart Chain (BEP20)')
             ->assertJsonPath('order.manual_payment.address', self::BEP20);
 
+        // Binance Pay: monto en USDT 1:1, enlace del QR y nombre de la cuenta.
+        $this->pedir('binance_pay')->assertCreated()
+            ->assertJsonPath('order.manual_payment.currency', 'USDT')
+            ->assertJsonPath('order.manual_payment.amount', '430.00')
+            ->assertJsonPath('order.manual_payment.pay_url', 'https://app.binance.com/uni-qr/JvKpbhpc')
+            ->assertJsonPath('order.manual_payment.merchant_name', 'fathersons Imp LLC')
+            ->assertJsonPath('order.manual_payment.accepted_currencies', ['USDT', 'USDC', 'BTC']);
+
         $this->assertSame('0.00430001', ManualPaymentService::montoAPagar(430.0001, ['moneda' => 'BTC', 'tasa' => 100000]));
     }
 
@@ -223,6 +233,9 @@ class ManualPaymentsTest extends TestCase
         $this->assertFalse(ManualPaymentService::direccionValida('btc', self::TRC20));
         $this->assertTrue(ManualPaymentService::direccionValida('btc_bep20', self::BEP20));
         $this->assertFalse(ManualPaymentService::direccionValida('btc_bep20', self::BTC));
+        $this->assertTrue(ManualPaymentService::direccionValida('binance_pay', 'https://app.binance.com/uni-qr/JvKpbhpc'));
+        $this->assertFalse(ManualPaymentService::direccionValida('binance_pay', 'https://binance.com.phishing.io/uni-qr/x'));
+        $this->assertFalse(ManualPaymentService::direccionValida('binance_pay', 'javascript:alert(1)'));
     }
 
     public function test_lists_stay_in_sync(): void

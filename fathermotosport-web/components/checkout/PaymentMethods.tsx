@@ -15,11 +15,12 @@ const PASARELAS: { id: Pasarela; icon: typeof Wallet }[] = [
 ];
 
 /** Etiqueta corta de cada red cripto, como la muestran los exchanges al retirar. */
-const REDES: Record<Exclude<ManualPaymentMethod, "sepa">, { moneda: string; red: string }> = {
-  usdt_trc20: { moneda: "USDT", red: "TRC20" },
-  usdt_bep20: { moneda: "USDT", red: "BEP20" },
-  btc: { moneda: "BTC", red: "Bitcoin" },
-  btc_bep20: { moneda: "BTC", red: "BEP20 (BSC)" },
+const REDES: Record<Exclude<ManualPaymentMethod, "sepa">, { moneda: string; red: string; monedas: string[] }> = {
+  binance_pay: { moneda: "Binance Pay", red: "USDT · USDC · BTC", monedas: ["USDT", "USDC", "BTC"] },
+  usdt_trc20: { moneda: "USDT", red: "TRC20", monedas: ["USDT"] },
+  usdt_bep20: { moneda: "USDT", red: "BEP20", monedas: ["USDT"] },
+  btc: { moneda: "BTC", red: "Bitcoin", monedas: ["BTC"] },
+  btc_bep20: { moneda: "BTC", red: "BEP20 (BSC)", monedas: ["BTC"] },
 };
 
 interface Props {
@@ -79,7 +80,7 @@ export function PaymentMethods({ value, onChange, enabled, manual = [], comingSo
             icon={Bitcoin}
             label={t("pm_crypto")}
             desc={t("pm_crypto_desc")}
-            badge={[...new Set(cripto.map((m) => REDES[m as keyof typeof REDES].moneda))].join(" · ")}
+            badge={[...new Set(cripto.flatMap((m) => REDES[m as keyof typeof REDES].monedas))].join(" · ")}
             active={criptoActiva}
             bare
             onClick={() => {
@@ -96,6 +97,7 @@ export function PaymentMethods({ value, onChange, enabled, manual = [], comingSo
                 {cripto.map((m) => {
                   const { moneda, red } = REDES[m as keyof typeof REDES];
                   const activa = value === m;
+                  const binance = m === "binance_pay";
                   return (
                     <button
                       key={m}
@@ -106,19 +108,28 @@ export function PaymentMethods({ value, onChange, enabled, manual = [], comingSo
                       className={cn(
                         "rounded-lg border px-2 py-2 text-center transition",
                         activa
-                          ? "border-brand-red bg-brand-red text-white"
+                          ? binance
+                            ? "border-[#F0B90B] bg-[#F0B90B] text-[#181A20]"
+                            : "border-brand-red bg-brand-red text-white"
                           : "border-white/15 bg-white/5 text-brand-white hover:border-white/40"
                       )}
                     >
                       <span className="block text-sm font-bold">{moneda}</span>
-                      <span className={cn("block text-[11px]", activa ? "text-white/85" : "text-brand-muted")}>
+                      <span
+                        className={cn(
+                          "block text-[11px]",
+                          activa ? (binance ? "text-[#181A20]/75" : "text-white/85") : "text-brand-muted"
+                        )}
+                      >
                         {red}
                       </span>
                     </button>
                   );
                 })}
               </div>
-              <p className="mt-2 text-[11px] leading-relaxed text-brand-muted">{t("pm_crypto_network_hint")}</p>
+              <p className="mt-2 text-[11px] leading-relaxed text-brand-muted">
+                {value === "binance_pay" ? t("pm_binance_hint") : t("pm_crypto_network_hint")}
+              </p>
             </div>
           )}
         </div>
@@ -126,7 +137,11 @@ export function PaymentMethods({ value, onChange, enabled, manual = [], comingSo
 
       {isManualPaymentMethod(value) && (
         <p className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-xs leading-relaxed text-brand-muted">
-          {value === "sepa" ? t("pm_sepa_note") : t("pm_crypto_note")}
+          {value === "sepa"
+            ? t("pm_sepa_note")
+            : value === "binance_pay"
+              ? t("pm_binance_note")
+              : t("pm_crypto_note")}
         </p>
       )}
     </div>

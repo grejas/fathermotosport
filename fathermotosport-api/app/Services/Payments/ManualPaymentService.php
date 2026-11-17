@@ -39,6 +39,10 @@ class ManualPaymentService
         'btc' => ['moneda' => 'BTC', 'horas' => 2, 'campos' => ['btc_address']],
         // BTC como token en BNB Smart Chain (BTCB), a una dirección 0x… de BSC.
         'btc_bep20' => ['moneda' => 'BTC', 'horas' => 2, 'campos' => ['btc_bep20_address']],
+        // Binance Pay: el cliente escanea el QR de cobro desde la app de Binance y paga sin
+        // elegir red. El monto se pide en USDT (1:1 con USD); puede pagar el equivalente
+        // en USDC o BTC dentro de Binance y el equipo lo verifica al confirmar.
+        'binance_pay' => ['moneda' => 'USDT', 'horas' => 24, 'campos' => ['binance_pay_url']],
     ];
 
     /** Nombre de cada red tal como lo muestran los exchanges al retirar. */
@@ -47,6 +51,7 @@ class ManualPaymentService
         'usdt_bep20' => 'BNB Smart Chain (BEP20)',
         'btc' => 'Bitcoin',
         'btc_bep20' => 'BNB Smart Chain (BEP20)',
+        'binance_pay' => 'Binance Pay',
     ];
 
     private const CACHE_SEGUNDOS = 300;
@@ -150,6 +155,15 @@ class ManualPaymentService
                 'iban' => self::ibanAgrupado($config?->sepa_iban),
                 'bic' => $config?->sepa_bic,
                 'bank_name' => $config?->sepa_bank_name,
+            ];
+        }
+
+        if ($metodo === 'binance_pay') {
+            return $base + [
+                'network' => self::REDES[$metodo],
+                'pay_url' => $config?->binance_pay_url,
+                'merchant_name' => $config?->binance_pay_name,
+                'accepted_currencies' => ['USDT', 'USDC', 'BTC'],
             ];
         }
 
@@ -273,6 +287,8 @@ class ManualPaymentService
             'usdt_trc20' => (bool) preg_match('/^T[1-9A-HJ-NP-Za-km-z]{33}$/', $direccion),
             // Dirección EVM.
             'usdt_bep20', 'btc_bep20' => (bool) preg_match('/^0x[a-fA-F0-9]{40}$/', $direccion),
+            // Enlace de cobro de Binance Pay (el contenido del QR). Solo dominios de Binance.
+            'binance_pay' => (bool) preg_match('#^https://(app|s|www)\.binance\.com/[A-Za-z0-9/_\-]+$#', $direccion),
             // Legacy (1…), P2SH (3…) o bech32 / taproot (bc1…).
             'btc' => (bool) preg_match('/^(bc1[ac-hj-np-z02-9]{11,71}|[13][1-9A-HJ-NP-Za-km-z]{25,34})$/', $direccion),
             default => false,

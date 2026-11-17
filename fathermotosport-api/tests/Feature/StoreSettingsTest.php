@@ -103,6 +103,7 @@ class StoreSettingsTest extends TestCase
                         'usdt_bep20' => false,
                         'btc' => false,
                         'btc_bep20' => false,
+                        'binance_pay' => false,
                     ],
                 ],
             ]);
