@@ -59,6 +59,7 @@ class StoreSettingsPage extends Page implements HasForms
             'usdt_trc20_address' => $config->usdt_trc20_address,
             'usdt_bep20_address' => $config->usdt_bep20_address,
             'btc_address' => $config->btc_address,
+            'btc_bep20_address' => $config->btc_bep20_address,
         ]);
     }
 
@@ -168,6 +169,7 @@ class StoreSettingsPage extends Page implements HasForms
                         self::campoDeBilletera('usdt_trc20', 'usdt_trc20_address', 'USDT · red TRON (TRC20)', 'T…'),
                         self::campoDeBilletera('usdt_bep20', 'usdt_bep20_address', 'USDT · red BNB Smart Chain (BEP20)', '0x…'),
                         self::campoDeBilletera('btc', 'btc_address', 'Bitcoin (BTC · red Bitcoin)', 'bc1…'),
+                        self::campoDeBilletera('btc_bep20', 'btc_bep20_address', 'Bitcoin en BNB Smart Chain (BTC · BEP20)', '0x…'),
                     ]),
             ])
             ->statePath('data');
@@ -208,6 +210,7 @@ class StoreSettingsPage extends Page implements HasForms
             'usdt_trc20_address' => $texto('usdt_trc20_address'),
             'usdt_bep20_address' => $texto('usdt_bep20_address'),
             'btc_address' => $texto('btc_address'),
+            'btc_bep20_address' => $texto('btc_bep20_address'),
         ]);
 
         $this->data['whatsapp'] = $config->whatsapp;

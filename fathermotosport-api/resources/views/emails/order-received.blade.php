@@ -39,6 +39,9 @@
         Una transferencia SEPA suele acreditarse en 1 día hábil (al instante si tu banco ofrece SEPA Instant).
       @else
         Envía solo por la red <strong>{{ $pago['network'] }}</strong>: un envío por otra red se pierde y no se puede recuperar.
+        @if($pago['method'] === 'btc_bep20')
+          Es Bitcoin como token en BNB Smart Chain (BTCB): en tu exchange elige retirar BTC por la red BSC / BEP20, <strong>no</strong> por la red Bitcoin.
+        @endif
         Si tu exchange cobra comisión de retiro, súmala para que llegue el monto completo.
       @endif
       Pasado el plazo, el pedido se cancela y la cotización deja de valer.

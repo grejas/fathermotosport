@@ -52,6 +52,7 @@ class ManualPaymentsTest extends TestCase
             'usdt_trc20_address' => self::TRC20,
             'usdt_bep20_address' => self::BEP20,
             'btc_address' => self::BTC,
+            'btc_bep20_address' => self::BEP20,
         ]);
     }
 
@@ -141,6 +142,13 @@ class ManualPaymentsTest extends TestCase
             ->assertJsonPath('order.manual_payment.currency', 'BTC')
             ->assertJsonPath('order.manual_payment.amount', '0.00430000');
 
+        // Bitcoin en BSC: misma cotización, dirección 0x… y red BEP20.
+        $this->pedir('btc_bep20')->assertCreated()
+            ->assertJsonPath('order.manual_payment.currency', 'BTC')
+            ->assertJsonPath('order.manual_payment.amount', '0.00430000')
+            ->assertJsonPath('order.manual_payment.network', 'BNB Smart Chain (BEP20)')
+            ->assertJsonPath('order.manual_payment.address', self::BEP20);
+
         $this->assertSame('0.00430001', ManualPaymentService::montoAPagar(430.0001, ['moneda' => 'BTC', 'tasa' => 100000]));
     }
 
@@ -213,6 +221,8 @@ class ManualPaymentsTest extends TestCase
         $this->assertTrue(ManualPaymentService::direccionValida('usdt_bep20', self::BEP20));
         $this->assertTrue(ManualPaymentService::direccionValida('btc', self::BTC));
         $this->assertFalse(ManualPaymentService::direccionValida('btc', self::TRC20));
+        $this->assertTrue(ManualPaymentService::direccionValida('btc_bep20', self::BEP20));
+        $this->assertFalse(ManualPaymentService::direccionValida('btc_bep20', self::BTC));
     }
 
     public function test_lists_stay_in_sync(): void

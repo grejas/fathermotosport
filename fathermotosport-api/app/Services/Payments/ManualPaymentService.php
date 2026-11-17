@@ -37,6 +37,8 @@ class ManualPaymentService
         'usdt_trc20' => ['moneda' => 'USDT', 'horas' => 24, 'campos' => ['usdt_trc20_address']],
         'usdt_bep20' => ['moneda' => 'USDT', 'horas' => 24, 'campos' => ['usdt_bep20_address']],
         'btc' => ['moneda' => 'BTC', 'horas' => 2, 'campos' => ['btc_address']],
+        // BTC como token en BNB Smart Chain (BTCB), a una dirección 0x… de BSC.
+        'btc_bep20' => ['moneda' => 'BTC', 'horas' => 2, 'campos' => ['btc_bep20_address']],
     ];
 
     /** Nombre de cada red tal como lo muestran los exchanges al retirar. */
@@ -44,6 +46,7 @@ class ManualPaymentService
         'usdt_trc20' => 'TRON (TRC20)',
         'usdt_bep20' => 'BNB Smart Chain (BEP20)',
         'btc' => 'Bitcoin',
+        'btc_bep20' => 'BNB Smart Chain (BEP20)',
     ];
 
     private const CACHE_SEGUNDOS = 300;
@@ -269,7 +272,7 @@ class ManualPaymentService
             // Base58, empieza con T, 34 caracteres.
             'usdt_trc20' => (bool) preg_match('/^T[1-9A-HJ-NP-Za-km-z]{33}$/', $direccion),
             // Dirección EVM.
-            'usdt_bep20' => (bool) preg_match('/^0x[a-fA-F0-9]{40}$/', $direccion),
+            'usdt_bep20', 'btc_bep20' => (bool) preg_match('/^0x[a-fA-F0-9]{40}$/', $direccion),
             // Legacy (1…), P2SH (3…) o bech32 / taproot (bc1…).
             'btc' => (bool) preg_match('/^(bc1[ac-hj-np-z02-9]{11,71}|[13][1-9A-HJ-NP-Za-km-z]{25,34})$/', $direccion),
             default => false,

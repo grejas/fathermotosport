@@ -19,6 +19,7 @@ const REDES: Record<Exclude<ManualPaymentMethod, "sepa">, { moneda: string; red:
   usdt_trc20: { moneda: "USDT", red: "TRC20" },
   usdt_bep20: { moneda: "USDT", red: "BEP20" },
   btc: { moneda: "BTC", red: "Bitcoin" },
+  btc_bep20: { moneda: "BTC", red: "BEP20 (BSC)" },
 };
 
 interface Props {

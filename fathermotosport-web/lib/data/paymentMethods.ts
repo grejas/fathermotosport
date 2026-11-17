@@ -14,9 +14,9 @@ export const ENABLED_PAYMENT_METHODS: readonly PaymentMethod[] = ["paypal", "str
  * Transferencia SEPA y cripto. Se ofrecen solo si el panel tiene sus datos completos
  * (StoreSettings.manualPaymentMethods); el pago lo confirma una persona.
  */
-export const MANUAL_PAYMENT_METHODS: readonly ManualPaymentMethod[] = ["sepa", "usdt_trc20", "usdt_bep20", "btc"];
+export const MANUAL_PAYMENT_METHODS: readonly ManualPaymentMethod[] = ["sepa", "usdt_trc20", "usdt_bep20", "btc", "btc_bep20"];
 
-export const CRYPTO_PAYMENT_METHODS: readonly ManualPaymentMethod[] = ["usdt_trc20", "usdt_bep20", "btc"];
+export const CRYPTO_PAYMENT_METHODS: readonly ManualPaymentMethod[] = ["usdt_trc20", "usdt_bep20", "btc", "btc_bep20"];
 
 export function isManualPaymentMethod(method: string | null | undefined): method is ManualPaymentMethod {
   return MANUAL_PAYMENT_METHODS.includes(method as ManualPaymentMethod);
