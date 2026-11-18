@@ -79,7 +79,7 @@
     "blog_title": "Latest from the blog",
     "blog_view_all": "View all posts",
     "pay_in_installments": "Pay in installments · 100% secure",
-    "payment_desc": "We accept PayPal, Stripe and MercadoPago with SSL encryption.",
+    "payment_desc": "We accept PayPal, credit and debit cards, MercadoPago, IBAN bank transfer in Europe and crypto (USDT and Bitcoin).",
     "view_payment_methods": "View payment methods"
   },
   "promo_1111": {
