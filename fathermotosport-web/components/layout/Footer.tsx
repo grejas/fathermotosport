@@ -77,9 +77,10 @@ export function Footer({ categories, settings }: { categories: MenuCategory[]; s
         <div>
           <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-brand-white">{t("payments")}</h4>
           <div className="flex flex-wrap gap-2">
-            {["PayPal", "Visa", "MasterCard", "MercadoPago"].map((m) => (
+            {["PayPal", "Visa", "MasterCard", "MercadoPago", "IBAN · SEPA", "USDT", "Bitcoin", "Binance Pay"].map((m) => (
               <span
                 key={m}
+                translate="no"
                 className="rounded-md border border-white/10 bg-brand-card px-2.5 py-1 text-xs text-brand-muted"
               >
                 {m}

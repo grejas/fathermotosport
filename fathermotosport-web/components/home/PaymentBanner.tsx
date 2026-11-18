@@ -16,10 +16,11 @@ export function PaymentBanner() {
             {t("payment_desc")}
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          {["PayPal", "Stripe", "MercadoPago"].map((m) => (
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          {["PayPal", "Stripe", "MercadoPago", "IBAN · SEPA", "USDT", "Bitcoin"].map((m) => (
             <span
               key={m}
+              translate="no"
               className="rounded-lg border border-white/10 bg-brand-carbon px-4 py-2 text-sm font-semibold text-brand-white"
             >
               {m}
