@@ -101,7 +101,7 @@ class PopupLeadTest extends TestCase
         config(['popup.weights' => [25 => 1]]);
         $this->assertSame(25, app(PopupLeadService::class)->sortearPorcentaje());
 
-        config(['popup.weights' => [10 => 50, 15 => 30, 20 => 15, 25 => 5]]);
+        config(['popup.weights' => [10 => 88, 15 => 9, 20 => 2, 25 => 1]]);
         $vistos = [];
         for ($i = 0; $i < 400; $i++) {
             $vistos[app(PopupLeadService::class)->sortearPorcentaje()] = true;
@@ -114,5 +114,21 @@ class PopupLeadTest extends TestCase
         $cupon = app(CouponService::class)->generatePopupCoupon(15, 7);
         $this->assertStringStartsWith('WEB-', $cupon->code);
         $this->assertEquals(15, $cupon->value);
+    }
+
+    public function test_default_odds_are_88_9_2_1(): void
+    {
+        $this->assertSame([10 => 88, 15 => 9, 20 => 2, 25 => 1], config('popup.weights'));
+
+        // 20.000 sorteos: cada premio cae cerca de su probabilidad.
+        $conteo = array_fill_keys([10, 15, 20, 25], 0);
+        $servicio = app(\App\Services\PopupLeadService::class);
+        for ($i = 0; $i < 20000; $i++) {
+            $conteo[$servicio->sortearPorcentaje()]++;
+        }
+        $this->assertEqualsWithDelta(0.88, $conteo[10] / 20000, 0.015);
+        $this->assertEqualsWithDelta(0.09, $conteo[15] / 20000, 0.01);
+        $this->assertEqualsWithDelta(0.02, $conteo[20] / 20000, 0.006);
+        $this->assertEqualsWithDelta(0.01, $conteo[25] / 20000, 0.005);
     }
 }
