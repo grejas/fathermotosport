@@ -7,16 +7,17 @@
 |
 | Cada contacto nuevo recibe UN cupón de porcentaje, de un solo uso, sin dueño
 | (sirve también en compras sin cuenta). El porcentaje sale al azar según los pesos:
-| con los valores de abajo, de cada 100 contactos ~50 reciben 10 %, ~30 el 15 %,
-| ~15 el 20 % y ~5 el 25 %. Cambiar los pesos cambia el costo medio del descuento.
+| con los valores de abajo, de cada 100 contactos ~88 reciben 10 %, ~9 el 15 %,
+| ~2 el 20 % y ~1 el 25 % (descuento medio ≈ 10,8 %). Cambiar los pesos cambia el
+| costo medio del descuento.
 |
-| POPUP_WEIGHTS="10:50,15:30,20:15,25:5" en el .env del servidor permite ajustarlo
+| POPUP_WEIGHTS="10:88,15:9,20:2,25:1" en el .env del servidor permite ajustarlo
 | sin tocar código (luego: php artisan config:clear).
 |
 */
 
 $pesos = [];
-foreach (explode(',', (string) env('POPUP_WEIGHTS', '10:50,15:30,20:15,25:5')) as $par) {
+foreach (explode(',', (string) env('POPUP_WEIGHTS', '10:88,15:9,20:2,25:1')) as $par) {
     [$porcentaje, $peso] = array_pad(explode(':', trim($par)), 2, 0);
     if ((int) $porcentaje > 0 && (int) $peso > 0) {
         $pesos[(int) $porcentaje] = (int) $peso;
@@ -25,7 +26,7 @@ foreach (explode(',', (string) env('POPUP_WEIGHTS', '10:50,15:30,20:15,25:5')) a
 
 return [
     // porcentaje => peso relativo
-    'weights' => $pesos ?: [10 => 50, 15 => 30, 20 => 15, 25 => 5],
+    'weights' => $pesos ?: [10 => 88, 15 => 9, 20 => 2, 25 => 1],
 
     // Días de validez del cupón desde que se entrega.
     'valid_days' => (int) env('POPUP_VALID_DAYS', 7),
