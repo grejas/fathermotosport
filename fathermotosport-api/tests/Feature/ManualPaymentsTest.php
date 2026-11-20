@@ -126,6 +126,49 @@ class ManualPaymentsTest extends TestCase
         Mail::assertSent(OrderReceivedMail::class);
     }
 
+    public function test_us_bank_transfer_is_hidden_until_configured_and_charges_usd_as_is(): void
+    {
+        $this->configurar();
+        $this->getJson('/api/v1/store/settings')->assertJsonPath('data.payment_methods.us_bank', false);
+        $this->pedir('us_bank')->assertStatus(422)->assertJsonValidationErrors('payment_method');
+
+        // Datos de prueba (routing público de ejemplo), no los de la cuenta real.
+        StoreConfig::current()->update([
+            'usbank_beneficiary' => 'FATHERSON IMP LLC',
+            'usbank_bank_name' => 'Banco de prueba',
+            'usbank_account_number' => '1234567890',
+            'usbank_routing_number' => '021000021',
+            'usbank_account_type' => 'Checking',
+        ]);
+        Cache::flush();
+        Http::fake(); // USD no consulta ninguna cotización.
+
+        $this->getJson('/api/v1/store/settings')->assertJsonPath('data.payment_methods.us_bank', true);
+
+        $res = $this->pedir('us_bank')->assertCreated();
+        $res->assertJsonPath('order.manual_payment.currency', 'USD')
+            ->assertJsonPath('order.manual_payment.amount', '430.00')
+            ->assertJsonPath('order.manual_payment.routing_number', '021000021')
+            ->assertJsonPath('order.manual_payment.account_number', '1234567890')
+            ->assertJsonPath('order.manual_payment.beneficiary', 'FATHERSON IMP LLC')
+            ->assertJsonPath('order.manual_payment.reference', $res->json('order.order_number'))
+            ->assertJsonPath('payment.next_step', 'manual');
+
+        $order = Order::findOrFail($res->json('order.id'));
+        $this->assertEqualsWithDelta(96, now()->diffInHours($order->payment_expires_at), 1);
+        Http::assertNothingSent();
+        Mail::assertSent(OrderReceivedMail::class);
+    }
+
+    public function test_us_routing_and_account_validation(): void
+    {
+        $this->assertTrue(ManualPaymentService::routingValido('021000021'));
+        $this->assertFalse(ManualPaymentService::routingValido('021000022'));
+        $this->assertFalse(ManualPaymentService::routingValido('12345678'));
+        $this->assertTrue(ManualPaymentService::cuentaUsValida('1234567890'));
+        $this->assertFalse(ManualPaymentService::cuentaUsValida('12AB'));
+    }
+
     public function test_usdt_is_one_to_one_and_btc_rounds_up(): void
     {
         $this->configurar();

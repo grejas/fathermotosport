@@ -252,7 +252,10 @@
     "pm_crypto_note": "Ao confirmar, você verá o valor exato, o endereço e um QR code. USDT: 24 horas para pagar. BTC: o preço fica travado por 2 horas.",
     "manual_continue": "Confirmar e ver dados de pagamento",
     "pm_binance_hint": "Pague pelo app da Binance escaneando nosso QR: sem escolher rede e sem taxa de saque.",
-    "pm_binance_note": "Ao confirmar, você verá o valor, nosso QR do Binance Pay e um botão para abrir o app. Você pode pagar com USDT, USDC ou BTC. Você tem 24 horas."
+    "pm_binance_note": "Ao confirmar, você verá o valor, nosso QR do Binance Pay e um botão para abrir o app. Você pode pagar com USDT, USDC ou BTC. Você tem 24 horas.",
+    "pm_us_bank": "Transferência bancária (EUA)",
+    "pm_us_bank_desc": "ACH ou wire em dólares, de qualquer banco dos Estados Unidos",
+    "pm_us_bank_note": "Ao confirmar, você verá o valor exato em USD, o número da conta, o routing e a referência. Você tem 96 horas para transferir; preparamos seu pedido quando o pagamento for creditado."
   },
   "pay_pending": {
     "title": "Conclua o pagamento do seu pedido",
@@ -702,6 +705,15 @@
     "binance_how": "No celular, toque no botão. No computador, escaneie o QR com o app da Binance (Pagar → Escanear).",
     "qr_binance": "Escaneie com o app da Binance",
     "binance_note": "Antes de pagar, confira se a Binance mostra a conta {name}. Digite o valor exato e guarde o print do pagamento.",
-    "binance_step_1": "Abra o Binance Pay pelo botão ou pelo QR e envie {amount} (ou o equivalente em USDC ou BTC)."
+    "binance_step_1": "Abra o Binance Pay pelo botão ou pelo QR e envie {amount} (ou o equivalente em USDC ou BTC).",
+    "us_bank_title": "Transferência bancária nos EUA (USD)",
+    "account_number": "Número da conta",
+    "routing_number": "Routing (ACH / wire)",
+    "account_type": "Tipo de conta",
+    "beneficiary_address": "Endereço do titular",
+    "bank_address": "Endereço do banco",
+    "swift_intl": "SWIFT (wires internacionais)",
+    "memo": "Referência / memo",
+    "warning_us_bank": "Use {reference} na referência ou memo: é assim que identificamos seu pagamento. ACH leva de 1 a 3 dias úteis; um wire chega no mesmo dia. Se seu banco cobrar tarifa, some-a para que chegue o valor completo."
   }
 }

@@ -35,7 +35,7 @@ class Order extends Model
      * de agregarla acá. Antes la condición era `payment_method !== 'paypal'` y por eso
      * Stripe avisaba "recibimos tu pedido" incluso con la tarjeta rechazada.
      */
-    public const METODOS_CON_COORDINACION_MANUAL = ['sepa', 'usdt_trc20', 'usdt_bep20', 'btc', 'btc_bep20', 'binance_pay'];
+    public const METODOS_CON_COORDINACION_MANUAL = ['sepa', 'us_bank', 'usdt_trc20', 'usdt_bep20', 'btc', 'btc_bep20', 'binance_pay'];
 
     /** Nombre de cada método para el panel y los correos. */
     public const METODOS_DE_PAGO = [
@@ -43,6 +43,7 @@ class Order extends Model
         'stripe' => 'Tarjeta (Stripe)',
         'mercadopago' => 'MercadoPago',
         'sepa' => 'Transferencia SEPA (EUR)',
+        'us_bank' => 'Transferencia EE.UU. · ACH / Wire (USD)',
         'usdt_trc20' => 'USDT · TRC20',
         'usdt_bep20' => 'USDT · BEP20',
         'btc' => 'Bitcoin (BTC)',

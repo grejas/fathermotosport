@@ -11,10 +11,10 @@ import type { ManualPaymentMethod, PaymentMethod } from "@/lib/types";
 export const ENABLED_PAYMENT_METHODS: readonly PaymentMethod[] = ["paypal", "stripe"];
 
 /**
- * Transferencia SEPA y cripto. Se ofrecen solo si el panel tiene sus datos completos
+ * Transferencia SEPA, transferencia en EE.UU. (ACH / wire, cuenta Mercury) y cripto. Se ofrecen solo si el panel tiene sus datos completos
  * (StoreSettings.manualPaymentMethods); el pago lo confirma una persona.
  */
-export const MANUAL_PAYMENT_METHODS: readonly ManualPaymentMethod[] = ["sepa", "binance_pay", "usdt_trc20", "usdt_bep20", "btc", "btc_bep20"];
+export const MANUAL_PAYMENT_METHODS: readonly ManualPaymentMethod[] = ["sepa", "us_bank", "binance_pay", "usdt_trc20", "usdt_bep20", "btc", "btc_bep20"];
 
 export const CRYPTO_PAYMENT_METHODS: readonly ManualPaymentMethod[] = ["binance_pay", "usdt_trc20", "usdt_bep20", "btc", "btc_bep20"];
 

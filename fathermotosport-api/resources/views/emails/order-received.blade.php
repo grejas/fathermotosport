@@ -24,6 +24,22 @@
           <div class="row"><span class="row-k">Banco</span><span class="row-v">{{ $pago['bank_name'] }}</span></div>
         @endif
         <div class="row"><span class="row-k">Concepto</span><span class="row-v"><strong>{{ $pago['reference'] }}</strong></span></div>
+      @elseif($pago['method'] === 'us_bank')
+        <div class="row"><span class="row-k">Titular</span><span class="row-v">{{ $pago['beneficiary'] }}</span></div>
+        <div class="row"><span class="row-k">Banco</span><span class="row-v">{{ $pago['bank_name'] }}</span></div>
+        <div class="row"><span class="row-k">Routing (ACH / Wire)</span><span class="row-v" style="font-family:monospace">{{ $pago['routing_number'] }}</span></div>
+        <div class="row"><span class="row-k">Número de cuenta</span><span class="row-v" style="font-family:monospace">{{ $pago['account_number'] }}</span></div>
+        <div class="row"><span class="row-k">Tipo de cuenta</span><span class="row-v">{{ $pago['account_type'] }}</span></div>
+        @if(!empty($pago['swift']))
+          <div class="row"><span class="row-k">SWIFT (internacional)</span><span class="row-v" style="font-family:monospace">{{ $pago['swift'] }}</span></div>
+        @endif
+        @if(!empty($pago['beneficiary_address']))
+          <div class="row"><span class="row-k">Dirección del titular</span><span class="row-v">{{ $pago['beneficiary_address'] }}</span></div>
+        @endif
+        @if(!empty($pago['bank_address']))
+          <div class="row"><span class="row-k">Dirección del banco</span><span class="row-v">{{ $pago['bank_address'] }}</span></div>
+        @endif
+        <div class="row"><span class="row-k">Referencia / memo</span><span class="row-v"><strong>{{ $pago['reference'] }}</strong></span></div>
       @elseif($pago['method'] === 'binance_pay')
         <div class="row"><span class="row-k">Pagar con</span><span class="row-v"><strong>Binance Pay</strong></span></div>
         @if(!empty($pago['merchant_name']))
@@ -43,6 +59,10 @@
       @if($pago['method'] === 'sepa')
         Usa el número de pedido <strong>{{ $pago['reference'] }}</strong> como concepto: así identificamos tu pago.
         Una transferencia SEPA suele acreditarse en 1 día hábil (al instante si tu banco ofrece SEPA Instant).
+      @elseif($pago['method'] === 'us_bank')
+        Escribe el número de pedido <strong>{{ $pago['reference'] }}</strong> en la referencia o memo: así identificamos tu pago.
+        Una transferencia ACH desde un banco de EE.UU. suele acreditarse en 1 a 3 días hábiles; un wire, el mismo día.
+        Si tu banco cobra comisión por el envío, súmala para que llegue el monto completo.
       @elseif($pago['method'] === 'binance_pay')
         Abre el enlace o el código QR de la página de pago con la app de Binance y envía <strong>{{ $pago['amount'] }} USDT</strong>
         (o el equivalente en USDC o BTC) a <strong>{{ $pago['merchant_name'] ?: 'nuestra cuenta' }}</strong>. No necesitas elegir red.

@@ -234,12 +234,12 @@ export type ShippingStatus = "pending" | "preparing" | "in_transit" | "delivered
 export type PaymentMethod = "paypal" | "stripe" | "mercadopago" | ManualPaymentMethod;
 
 /** Cobros que el cliente hace por fuera (banco o billetera) y el equipo confirma a mano. */
-export type ManualPaymentMethod = "sepa" | "usdt_trc20" | "usdt_bep20" | "btc" | "btc_bep20" | "binance_pay";
+export type ManualPaymentMethod = "sepa" | "us_bank" | "usdt_trc20" | "usdt_bep20" | "btc" | "btc_bep20" | "binance_pay";
 
 /** Datos para pagar un pedido por transferencia o cripto, con el monto ya cotizado. */
 export interface ManualPaymentInstructions {
   method: ManualPaymentMethod;
-  currency: "EUR" | "USDT" | "BTC";
+  currency: "EUR" | "USD" | "USDT" | "BTC";
   /** Monto exacto en la moneda del método (texto, para no perder decimales). */
   amount: string;
   /** USD por 1 unidad de la moneda del método, usado al crear el pedido. */
@@ -252,6 +252,13 @@ export interface ManualPaymentInstructions {
   iban?: string | null;
   bic?: string | null;
   bank_name?: string | null;
+  // Transferencia en EE.UU. (ACH / wire)
+  beneficiary_address?: string | null;
+  bank_address?: string | null;
+  account_number?: string | null;
+  routing_number?: string | null;
+  account_type?: string | null;
+  swift?: string | null;
   // Cripto
   network?: string;
   address?: string | null;

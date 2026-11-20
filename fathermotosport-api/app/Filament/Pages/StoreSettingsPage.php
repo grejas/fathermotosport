@@ -62,6 +62,14 @@ class StoreSettingsPage extends Page implements HasForms
             'btc_bep20_address' => $config->btc_bep20_address,
             'binance_pay_url' => $config->binance_pay_url,
             'binance_pay_name' => $config->binance_pay_name,
+            'usbank_beneficiary' => $config->usbank_beneficiary,
+            'usbank_beneficiary_address' => $config->usbank_beneficiary_address,
+            'usbank_bank_name' => $config->usbank_bank_name,
+            'usbank_bank_address' => $config->usbank_bank_address,
+            'usbank_account_number' => $config->usbank_account_number,
+            'usbank_routing_number' => $config->usbank_routing_number,
+            'usbank_account_type' => $config->usbank_account_type ?: 'Checking',
+            'usbank_swift' => $config->usbank_swift,
         ]);
     }
 
@@ -164,6 +172,32 @@ class StoreSettingsPage extends Page implements HasForms
                         Forms\Components\TextInput::make('sepa_bank_name')->label('Banco')->maxLength(255),
                     ]),
 
+                Forms\Components\Section::make('Transferencia bancaria en EE.UU. (ACH / Wire · USD) · Mercury')
+                    ->description('Cuenta de FATHERSON IMP LLC en Mercury. El cliente ve el monto exacto en USD y el número de pedido como referencia; tiene 96 horas para transferir. Copia los datos tal como aparecen en Mercury → la cuenta → "Account details". Confirmas el ingreso desde el pedido con "Confirmar pago recibido". Sin titular, banco, número de cuenta y routing, el método no aparece en la web.')
+                    ->columns(2)
+                    ->schema([
+                        Forms\Components\TextInput::make('usbank_beneficiary')->label('Titular (beneficiary)')->maxLength(255)
+                            ->placeholder('FATHERSON IMP LLC')
+                            ->requiredWith('usbank_account_number,usbank_routing_number'),
+                        Forms\Components\TextInput::make('usbank_beneficiary_address')->label('Dirección del titular')->maxLength(255)
+                            ->helperText('La que figura en Mercury. Los wires la piden.'),
+                        Forms\Components\TextInput::make('usbank_bank_name')->label('Banco')->maxLength(255)
+                            ->requiredWith('usbank_account_number')
+                            ->helperText('El banco que muestra Mercury en "Account details" (Mercury es fintech; la cuenta está en un banco asociado).'),
+                        Forms\Components\TextInput::make('usbank_bank_address')->label('Dirección del banco')->maxLength(255),
+                        Forms\Components\TextInput::make('usbank_account_number')->label('Número de cuenta (account number)')->maxLength(20)
+                            ->requiredWith('usbank_routing_number')
+                            ->rules([self::regla(fn ($v) => ManualPaymentService::cuentaUsValida($v), 'Solo dígitos, entre 4 y 17.')]),
+                        Forms\Components\TextInput::make('usbank_routing_number')->label('Routing number (ACH y wire)')->maxLength(11)
+                            ->requiredWith('usbank_account_number')
+                            ->rules([self::regla(fn ($v) => ManualPaymentService::routingValido($v), 'El routing no es válido (9 dígitos con dígito verificador). Cópialo de nuevo desde Mercury.')]),
+                        Forms\Components\Select::make('usbank_account_type')->label('Tipo de cuenta')
+                            ->options(['Checking' => 'Checking', 'Savings' => 'Savings'])->default('Checking'),
+                        Forms\Components\TextInput::make('usbank_swift')->label('SWIFT / BIC (wires internacionales)')->maxLength(11)
+                            ->rules([self::regla(fn ($v) => ManualPaymentService::bicValido($v), 'SWIFT de 8 u 11 caracteres.')])
+                            ->helperText('Opcional. Solo si Mercury te da datos para recibir wires desde fuera de EE.UU.'),
+                    ]),
+
                 Forms\Components\Section::make('Pagos en cripto (billetera propia)')
                     ->description('Monto en USDT 1:1 con el precio en USD; en BTC se cotiza en vivo y vale 2 horas. Confirmas el ingreso desde el pedido con el hash de la transacción.')
                     ->columns(1)
@@ -226,6 +260,14 @@ class StoreSettingsPage extends Page implements HasForms
             'btc_bep20_address' => $texto('btc_bep20_address'),
             'binance_pay_url' => $texto('binance_pay_url'),
             'binance_pay_name' => $texto('binance_pay_name'),
+            'usbank_beneficiary' => $texto('usbank_beneficiary'),
+            'usbank_beneficiary_address' => $texto('usbank_beneficiary_address'),
+            'usbank_bank_name' => $texto('usbank_bank_name'),
+            'usbank_bank_address' => $texto('usbank_bank_address'),
+            'usbank_account_number' => filled($data['usbank_account_number'] ?? null) ? preg_replace('/\s+/', '', $data['usbank_account_number']) : null,
+            'usbank_routing_number' => filled($data['usbank_routing_number'] ?? null) ? preg_replace('/\s+/', '', $data['usbank_routing_number']) : null,
+            'usbank_account_type' => $data['usbank_account_type'] ?? 'Checking',
+            'usbank_swift' => filled($data['usbank_swift'] ?? null) ? strtoupper(trim($data['usbank_swift'])) : null,
         ]);
 
         $this->data['whatsapp'] = $config->whatsapp;

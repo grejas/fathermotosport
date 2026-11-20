@@ -99,6 +99,7 @@ class StoreSettingsTest extends TestCase
                     ],
                     'payment_methods' => [
                         'sepa' => true,
+                        'us_bank' => false,
                         'usdt_trc20' => false,
                         'usdt_bep20' => false,
                         'btc' => false,

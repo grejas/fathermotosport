@@ -252,7 +252,10 @@
     "pm_crypto_note": "After confirming you'll see the exact amount, the address and a QR code. USDT: 24 hours to pay. BTC: the price is locked for 2 hours.",
     "manual_continue": "Confirm and see payment details",
     "pm_binance_hint": "Pay from the Binance app by scanning our QR: no network to choose and no withdrawal fee.",
-    "pm_binance_note": "After confirming you'll see the amount, our Binance Pay QR and a button to open the app. You can pay with USDT, USDC or BTC. You have 24 hours."
+    "pm_binance_note": "After confirming you'll see the amount, our Binance Pay QR and a button to open the app. You can pay with USDT, USDC or BTC. You have 24 hours.",
+    "pm_us_bank": "Bank transfer (USA)",
+    "pm_us_bank_desc": "ACH or wire in US dollars, from any US bank",
+    "pm_us_bank_note": "After confirming you'll see the exact amount in USD, the account number, routing number and reference. You have 96 hours to transfer; we prepare your order once the payment clears."
   },
   "pay_pending": {
     "title": "Complete your order payment",
@@ -702,6 +705,15 @@
     "binance_how": "On your phone, tap the button. On a computer, scan the QR with the Binance app (Pay → Scan).",
     "qr_binance": "Scan with the Binance app",
     "binance_note": "Before paying, check that Binance shows the account {name}. Enter the exact amount and keep a screenshot of the payment.",
-    "binance_step_1": "Open Binance Pay with the button or the QR and send {amount} (or its equivalent in USDC or BTC)."
+    "binance_step_1": "Open Binance Pay with the button or the QR and send {amount} (or its equivalent in USDC or BTC).",
+    "us_bank_title": "US bank transfer (USD)",
+    "account_number": "Account number",
+    "routing_number": "Routing number (ACH / wire)",
+    "account_type": "Account type",
+    "beneficiary_address": "Beneficiary address",
+    "bank_address": "Bank address",
+    "swift_intl": "SWIFT (international wires)",
+    "memo": "Reference / memo",
+    "warning_us_bank": "Enter {reference} in the reference or memo field: that's how we identify your payment. ACH takes 1–3 business days; a wire arrives the same day. If your bank charges a fee, add it so the full amount arrives."
   }
 }

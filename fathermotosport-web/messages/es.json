@@ -252,7 +252,10 @@
     "pm_crypto_note": "Al confirmar verás el monto exacto, la dirección y un QR. USDT: 24 horas para pagar. BTC: el precio se fija por 2 horas.",
     "manual_continue": "Confirmar y ver datos de pago",
     "pm_binance_hint": "Paga desde la app de Binance escaneando nuestro QR: sin elegir red y sin comisión de retiro.",
-    "pm_binance_note": "Al confirmar verás el monto, nuestro QR de Binance Pay y un botón para abrir la app. Puedes pagar con USDT, USDC o BTC. Tienes 24 horas."
+    "pm_binance_note": "Al confirmar verás el monto, nuestro QR de Binance Pay y un botón para abrir la app. Puedes pagar con USDT, USDC o BTC. Tienes 24 horas.",
+    "pm_us_bank": "Transferencia bancaria (EE.UU.)",
+    "pm_us_bank_desc": "ACH o Wire en dólares, desde cualquier banco de Estados Unidos",
+    "pm_us_bank_note": "Al confirmar verás el monto exacto en USD, el número de cuenta, el routing y la referencia. Tienes 96 horas para transferir; preparamos tu pedido cuando el pago se acredita."
   },
   "pay_pending": {
     "title": "Completa el pago de tu pedido",
@@ -702,6 +705,15 @@
     "binance_how": "Desde el celular, toca el botón. Desde la computadora, escanea el QR con la app de Binance (Pagar → Escanear).",
     "qr_binance": "Escanea con la app de Binance",
     "binance_note": "Antes de pagar, verifica que Binance muestre la cuenta {name}. Ingresa el monto exacto y guarda la captura del pago.",
-    "binance_step_1": "Abre Binance Pay con el botón o el QR y envía {amount} (o su equivalente en USDC o BTC)."
+    "binance_step_1": "Abre Binance Pay con el botón o el QR y envía {amount} (o su equivalente en USDC o BTC).",
+    "us_bank_title": "Transferencia bancaria en EE.UU. (USD)",
+    "account_number": "Número de cuenta",
+    "routing_number": "Routing (ACH / Wire)",
+    "account_type": "Tipo de cuenta",
+    "beneficiary_address": "Dirección del titular",
+    "bank_address": "Dirección del banco",
+    "swift_intl": "SWIFT (wires internacionales)",
+    "memo": "Referencia / memo",
+    "warning_us_bank": "Escribe {reference} en la referencia o memo: es como identificamos tu pago. ACH tarda de 1 a 3 días hábiles; un wire llega el mismo día. Si tu banco cobra comisión, súmala para que llegue el monto completo."
   }
 }
