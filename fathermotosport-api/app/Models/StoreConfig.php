@@ -54,6 +54,14 @@ class StoreConfig extends Model
         'btc_bep20_address',
         'binance_pay_url',
         'binance_pay_name',
+        'usbank_beneficiary',
+        'usbank_beneficiary_address',
+        'usbank_bank_name',
+        'usbank_bank_address',
+        'usbank_account_number',
+        'usbank_routing_number',
+        'usbank_account_type',
+        'usbank_swift',
     ];
 
     protected $casts = [

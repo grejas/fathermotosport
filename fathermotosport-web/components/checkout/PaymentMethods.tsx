@@ -15,7 +15,7 @@ const PASARELAS: { id: Pasarela; icon: typeof Wallet }[] = [
 ];
 
 /** Etiqueta corta de cada red cripto, como la muestran los exchanges al retirar. */
-const REDES: Record<Exclude<ManualPaymentMethod, "sepa">, { moneda: string; red: string; monedas: string[] }> = {
+const REDES: Record<Exclude<ManualPaymentMethod, "sepa" | "us_bank">, { moneda: string; red: string; monedas: string[] }> = {
   binance_pay: { moneda: "Binance Pay", red: "USDT · USDC · BTC", monedas: ["USDT", "USDC", "BTC"] },
   usdt_trc20: { moneda: "USDT", red: "TRC20", monedas: ["USDT"] },
   usdt_bep20: { moneda: "USDT", red: "BEP20", monedas: ["USDT"] },
@@ -36,6 +36,7 @@ interface Props {
 export function PaymentMethods({ value, onChange, enabled, manual = [], comingSoonLabel }: Props) {
   const t = useTranslations("checkout");
   const conSepa = manual.includes("sepa");
+  const conUsBank = manual.includes("us_bank");
   const cripto = CRYPTO_PAYMENT_METHODS.filter((m) => manual.includes(m));
   const criptoActiva = cripto.includes(value as ManualPaymentMethod);
 
@@ -66,6 +67,17 @@ export function PaymentMethods({ value, onChange, enabled, manual = [], comingSo
           badge="EUR"
           active={value === "sepa"}
           onClick={() => onChange("sepa")}
+        />
+      )}
+
+      {conUsBank && (
+        <Opcion
+          icon={Landmark}
+          label={t("pm_us_bank")}
+          desc={t("pm_us_bank_desc")}
+          badge="USD"
+          active={value === "us_bank"}
+          onClick={() => onChange("us_bank")}
         />
       )}
 
@@ -139,7 +151,9 @@ export function PaymentMethods({ value, onChange, enabled, manual = [], comingSo
         <p className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-xs leading-relaxed text-brand-muted">
           {value === "sepa"
             ? t("pm_sepa_note")
-            : value === "binance_pay"
+            : value === "us_bank"
+              ? t("pm_us_bank_note")
+              : value === "binance_pay"
               ? t("pm_binance_note")
               : t("pm_crypto_note")}
         </p>

@@ -10,7 +10,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Pagos de confirmación manual: transferencia SEPA, USDT (TRC20 / BEP20) y BTC.
+ * Pagos de confirmación manual: transferencia SEPA, transferencia en EE.UU. (ACH / wire
+ * a la cuenta Mercury de la LLC), USDT (TRC20 / BEP20), BTC y Binance Pay.
  *
  * El cliente paga por fuera (su banco o su billetera) y una persona confirma el ingreso
  * desde el panel (acción "Confirmar pago recibido" del pedido), que reutiliza markPaid:
@@ -19,6 +20,7 @@ use Illuminate\Validation\ValidationException;
  * Los precios de la tienda están en USD. Al crear el pedido se fija el monto exacto en
  * la moneda del método con una cotización en vivo (nunca una tasa escrita en el código):
  *   - EUR: tasa de referencia del BCE (Frankfurter); respaldo open.er-api.com.
+ *   - USD (transferencia en EE.UU.): el mismo precio de la tienda, sin conversión.
  *   - USDT: 1 USDT = 1 USD (stablecoin atada al dólar).
  *   - BTC: precio spot (CoinGecko); respaldo Kraken.
  * Si no se puede cotizar, el pedido no se crea: mejor un error claro que un monto falso.
@@ -34,6 +36,8 @@ class ManualPaymentService
      */
     public const METODOS = [
         'sepa' => ['moneda' => 'EUR', 'horas' => 72, 'campos' => ['sepa_beneficiary', 'sepa_iban']],
+        // ACH tarda 1 a 3 días hábiles; un wire llega en el día. 96 h cubren un fin de semana.
+        'us_bank' => ['moneda' => 'USD', 'horas' => 96, 'campos' => ['usbank_beneficiary', 'usbank_account_number', 'usbank_routing_number', 'usbank_bank_name']],
         'usdt_trc20' => ['moneda' => 'USDT', 'horas' => 24, 'campos' => ['usdt_trc20_address']],
         'usdt_bep20' => ['moneda' => 'USDT', 'horas' => 24, 'campos' => ['usdt_bep20_address']],
         'btc' => ['moneda' => 'BTC', 'horas' => 2, 'campos' => ['btc_address']],
@@ -89,7 +93,7 @@ class ManualPaymentService
         $moneda = self::METODOS[$metodo]['moneda'];
 
         $tasa = match ($moneda) {
-            'USDT' => 1.0,
+            'USDT', 'USD' => 1.0,
             'EUR' => $this->usdPorEuro(),
             'BTC' => $this->usdPorBitcoin(),
         };
@@ -155,6 +159,19 @@ class ManualPaymentService
                 'iban' => self::ibanAgrupado($config?->sepa_iban),
                 'bic' => $config?->sepa_bic,
                 'bank_name' => $config?->sepa_bank_name,
+            ];
+        }
+
+        if ($metodo === 'us_bank') {
+            return $base + [
+                'beneficiary' => $config?->usbank_beneficiary,
+                'beneficiary_address' => $config?->usbank_beneficiary_address,
+                'bank_name' => $config?->usbank_bank_name,
+                'bank_address' => $config?->usbank_bank_address,
+                'account_number' => $config?->usbank_account_number,
+                'routing_number' => $config?->usbank_routing_number,
+                'account_type' => $config?->usbank_account_type ?: 'Checking',
+                'swift' => $config?->usbank_swift,
             ];
         }
 
@@ -271,6 +288,29 @@ class ManualPaymentService
         $iban = self::normalizarIban($iban);
 
         return $iban === '' ? null : trim(chunk_split($iban, 4, ' '));
+    }
+
+    /** Número de ruta ABA: 9 dígitos con dígito verificador (pesos 3-7-1). */
+    public static function routingValido(?string $routing): bool
+    {
+        $r = preg_replace('/\s+/', '', (string) $routing);
+        if (! preg_match('/^\d{9}$/', $r)) {
+            return false;
+        }
+
+        $pesos = [3, 7, 1, 3, 7, 1, 3, 7, 1];
+        $suma = 0;
+        foreach (str_split($r) as $i => $d) {
+            $suma += (int) $d * $pesos[$i];
+        }
+
+        return $suma % 10 === 0;
+    }
+
+    /** Número de cuenta en EE.UU.: solo dígitos, de 4 a 17. */
+    public static function cuentaUsValida(?string $cuenta): bool
+    {
+        return (bool) preg_match('/^\d{4,17}$/', preg_replace('/\s+/', '', (string) $cuenta));
     }
 
     public static function bicValido(?string $bic): bool

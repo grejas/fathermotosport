@@ -22,6 +22,8 @@ export function ManualPaymentInstructions({ order, pago }: { order: Order; pago:
   const t = useTranslations("manual_payment");
   const { whatsappDigits } = useStoreSettings();
   const esSepa = pago.method === "sepa";
+  const esUsBank = pago.method === "us_bank";
+  const esBanco = esSepa || esUsBank;
   const esBinance = pago.method === "binance_pay";
   const restante = useTiempoRestante(pago.expires_at);
 
@@ -30,7 +32,7 @@ export function ManualPaymentInstructions({ order, pago }: { order: Order; pago:
   const mensaje = t("whatsapp_message", {
     number: order.order_number,
     amount: `${pago.amount} ${pago.currency}`,
-    method: esSepa ? t("sepa_title") : esBinance ? "Binance Pay" : `${pago.currency} · ${pago.network}`,
+    method: esSepa ? t("sepa_title") : esUsBank ? t("us_bank_title") : esBinance ? "Binance Pay" : `${pago.currency} · ${pago.network}`,
   });
   const whatsappHref = whatsappUrl(whatsappDigits, mensaje);
 
@@ -39,7 +41,7 @@ export function ManualPaymentInstructions({ order, pago }: { order: Order; pago:
       {/* Monto: lo primero que tiene que ver el cliente, y exacto. */}
       <div className="relative overflow-hidden rounded-2xl border border-brand-red/40 bg-gradient-to-br from-brand-red/15 via-brand-card to-brand-card p-5">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-muted">
-          {esSepa ? t("sepa_title") : esBinance ? t("binance_title") : t("crypto_title", { currency: pago.currency })}
+          {esSepa ? t("sepa_title") : esUsBank ? t("us_bank_title") : esBinance ? t("binance_title") : t("crypto_title", { currency: pago.currency })}
         </p>
         <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -57,7 +59,7 @@ export function ManualPaymentInstructions({ order, pago }: { order: Order; pago:
             {esBinance && <p className="mt-1 text-xs text-brand-white/80">{t("binance_alt_currencies")}</p>}
             <p className="mt-1 text-xs text-brand-muted">
               {t("equivalent", { total: formatPrice(order.total) })}
-              {pago.currency !== "USDT" && pago.rate_usd && (
+              {pago.currency !== "USDT" && pago.currency !== "USD" && pago.rate_usd && (
                 <> · {t("rate", { currency: pago.currency, rate: formatearTasa(pago.rate_usd) })}</>
               )}
             </p>
@@ -87,6 +89,18 @@ export function ManualPaymentInstructions({ order, pago }: { order: Order; pago:
                 <Dato label="BIC / SWIFT" valor={pago.bic} mono />
                 <Dato label={t("bank")} valor={pago.bank_name} />
                 <Dato label={t("concept")} valor={pago.reference} mono destacado />
+              </>
+            ) : esUsBank ? (
+              <>
+                <Dato label={t("beneficiary")} valor={pago.beneficiary} />
+                <Dato label={t("bank")} valor={pago.bank_name} />
+                <Dato label={t("routing_number")} valor={pago.routing_number} mono />
+                <Dato label={t("account_number")} valor={pago.account_number} mono />
+                <Dato label={t("account_type")} valor={pago.account_type} />
+                <Dato label={t("swift_intl")} valor={pago.swift} mono />
+                <Dato label={t("beneficiary_address")} valor={pago.beneficiary_address} />
+                <Dato label={t("bank_address")} valor={pago.bank_address} />
+                <Dato label={t("memo")} valor={pago.reference} mono destacado />
               </>
             ) : esBinance ? (
               <>
@@ -142,7 +156,9 @@ export function ManualPaymentInstructions({ order, pago }: { order: Order; pago:
             <p>
               {esSepa
                 ? t("warning_sepa", { reference: pago.reference })
-                : t("warning_crypto", { network: pago.network ?? "", currency: pago.currency })}
+                : esUsBank
+                  ? t("warning_us_bank", { reference: pago.reference })
+                  : t("warning_crypto", { network: pago.network ?? "", currency: pago.currency })}
               {pago.method === "btc_bep20" && <strong className="mt-1 block">{t("warning_btc_bep20")}</strong>}
             </p>
           </div>
@@ -179,7 +195,7 @@ export function ManualPaymentInstructions({ order, pago }: { order: Order; pago:
       )}
 
       <p className="flex items-center justify-center gap-1.5 text-center text-xs text-brand-muted">
-        {esSepa ? <Landmark size={13} /> : <ShieldCheck size={13} className="text-cat-boots" />}
+        {esBanco ? <Landmark size={13} /> : <ShieldCheck size={13} className="text-cat-boots" />}
         {t("auto_update")}
       </p>
     </div>
