@@ -430,7 +430,10 @@
     "prev": "Anterior",
     "next": "Siguiente",
     "see_more": "Ver más",
-    "loading": "Cargando video"
+    "loading": "Cargando video",
+    "vsl_watch_sound": "Mira el video con sonido ({duration})",
+    "vsl_watch_sound_short": "Mira el video con sonido",
+    "vsl_click_here": "Toca aquí · {duration}"
   },
   "gallery": {
     "prev": "Anterior",
