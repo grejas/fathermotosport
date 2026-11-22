@@ -427,9 +427,11 @@ export function BannerVideo({
           type="button"
           onClick={activarConSonido}
           aria-label={t("vsl_watch_sound", { duration: formatoTiempo(duracion) })}
-          className="absolute inset-0 flex items-center justify-center bg-black/30 transition hover:bg-black/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
+          className="absolute inset-0 flex items-center justify-center bg-black/50 transition hover:bg-black/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
         >
-          <span className="flex max-w-[85%] items-center gap-3 rounded-2xl bg-brand-red px-5 py-3 text-left text-white shadow-[0_12px_40px_rgba(232,0,29,0.45)] ring-1 ring-white/20 motion-safe:animate-pulse">
+          <span className="relative isolate flex max-w-[85%] items-center gap-3 rounded-2xl bg-brand-red px-5 py-3 text-left text-white shadow-[0_12px_40px_rgba(232,0,29,0.55)] ring-1 ring-white/25">
+            {/* Anillo que late detrás: llama la atención sin volver transparente el botón. */}
+            <span className="pointer-events-none absolute inset-0 -z-10 rounded-2xl bg-brand-red/60 motion-safe:animate-ping" aria-hidden />
             <Volume2 size={26} className="shrink-0" aria-hidden />
             <span className="leading-tight">
               <span className="block text-base font-extrabold uppercase tracking-wide sm:text-lg">{t("vsl_watch_sound_short")}</span>
