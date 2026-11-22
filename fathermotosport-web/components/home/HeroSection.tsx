@@ -124,6 +124,16 @@ export function HeroSection({ banner }: { banner: Banner | null }) {
                 sizes="(min-width: 1024px) 52vw, 100vw"
                 proporcion="aspect-[4/3] max-h-[42svh] md:aspect-[25/16] lg:aspect-video lg:max-h-none"
                 className="shadow-[0_24px_64px_rgba(0,0,0,0.5)]"
+                // Video con sonido = VSL: adelanto en silencio, botón "con sonido" y, al
+                // final, el botón del banner (texto y link del admin) debajo del video.
+                vsl={
+                  video.video_with_sound
+                    ? {
+                        adelantoSegundos: 12,
+                        cta: banner?.button_text ? { texto: botonBanner || banner.button_text, href: banner.link_url ?? "/catalog" } : null,
+                      }
+                    : undefined
+                }
               />
             </div>
           )}

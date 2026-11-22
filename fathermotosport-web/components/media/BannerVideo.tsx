@@ -37,6 +37,16 @@ interface Props {
   /** Imagen que se muestra si el video falla y no hay poster (la galería pasa su primera foto). */
   respaldoUrl?: string | null;
   className?: string;
+  /**
+   * Modo VSL (estilo VTurb): arranca en silencio repitiendo solo los primeros
+   * `adelantoSegundos`, con un botón grande "Mira el video con sonido". Al tocarlo, el
+   * video vuelve a 0, con sonido, sin bucle y con controles. El botón de llamado a la
+   * acción aparece debajo desde `cta.desdeSegundo` (por defecto, al 80% del video).
+   */
+  vsl?: {
+    adelantoSegundos?: number;
+    cta?: { texto: string; href: string; desdeSegundo?: number } | null;
+  };
 }
 
 /** Pantalla chica: se usa la versión móvil del video. Coincide con el md de Tailwind. */
@@ -85,6 +95,7 @@ export function BannerVideo({
   ajuste = "cover",
   respaldoUrl,
   className,
+  vsl,
 }: Props) {
   const encaje = ajuste === "contain" ? "object-contain" : "object-cover";
   const t = useTranslations("banners");
@@ -107,6 +118,11 @@ export function BannerVideo({
   const [duracion, setDuracion] = useState(0);
   const [pantallaCompleta, setPantallaCompleta] = useState(false);
   const [controlesTactiles, setControlesTactiles] = useState(false);
+  // Modo VSL: la persona ya pidió verlo con sonido (deja de ser un adelanto en bucle).
+  const [vslActivo, setVslActivo] = useState(false);
+  const [terminado, setTerminado] = useState(false);
+  const enAdelanto = Boolean(vsl) && !vslActivo;
+  const adelanto = vsl?.adelantoSegundos ?? 12;
 
   const visibleRef = useRef(false);
   // Si la persona pausó, ni el scroll ni volver a la pestaña lo reanudan.
@@ -212,6 +228,31 @@ export function BannerVideo({
     else setMontado(true); // el efecto 3 lo reproduce al estar visible
   };
 
+  // VSL: desde el principio, con sonido. Va dentro del toque, así el navegador lo permite.
+  const activarConSonido = () => {
+    pidioReproducir.current = true;
+    pausadoPorUsuario.current = false;
+    setVslActivo(true);
+    setTerminado(false);
+    setIniciado(true);
+    setFallo(false);
+    setSilenciado(false);
+    const v = videoRef.current;
+    if (!v) {
+      setMontado(true);
+      return;
+    }
+    v.loop = false;
+    v.currentTime = 0;
+    v.muted = false;
+    v.play().catch(() => {
+      // Si el navegador no deja sonar, al menos que se vea: queda el botón de sonido.
+      v.muted = true;
+      setSilenciado(true);
+      void v.play().catch(() => setReproduciendo(false));
+    });
+  };
+
   const alternarReproduccion = () => {
     const v = videoRef.current;
     if (!v) return;
@@ -259,7 +300,10 @@ export function BannerVideo({
   // (movimiento reducido, ahorro de datos) y todavía no lo pidieron, o el video falló.
   const botonGrande = controles && autoPermitido !== null && (fallo || (!autoPermitido && !iniciado));
 
-  return (
+  const ctaDesde = vsl?.cta?.desdeSegundo ?? (duracion ? duracion * 0.8 : Infinity);
+  const mostrarCta = Boolean(vsl?.cta) && vslActivo && (terminado || tiempo >= ctaDesde);
+
+  const reproductor = (
     <div
       ref={contenedorRef}
       onPointerDown={alTocar}
@@ -297,8 +341,8 @@ export function BannerVideo({
           src={src}
           poster={posterUrl ?? undefined}
           autoPlay={modo === "hero" && Boolean(autoPermitido)}
-          muted
-          loop
+          muted={!vslActivo}
+          loop={!vsl || !vslActivo}
           playsInline
           preload="metadata"
           aria-label={decorativo ? undefined : t("video_label", { title: etiqueta })}
@@ -321,7 +365,13 @@ export function BannerVideo({
           }}
           onWaiting={() => setCargando(true)}
           onPlaying={() => setCargando(false)}
-          onTimeUpdate={(e) => setTiempo(e.currentTarget.currentTime)}
+          onTimeUpdate={(e) => {
+            const v = e.currentTarget;
+            // Adelanto: solo los primeros segundos, en bucle.
+            if (enAdelanto && v.currentTime >= adelanto) v.currentTime = 0;
+            setTiempo(v.currentTime);
+          }}
+          onEnded={() => setTerminado(true)}
           // Un stream sin duración conocida (Infinity) deja la barra desactivada.
           onLoadedMetadata={(e) => {
             const v = e.currentTarget;
@@ -357,7 +407,7 @@ export function BannerVideo({
       {botonGrande && (
         <button
           type="button"
-          onClick={reproducirDesdePoster}
+          onClick={vsl ? activarConSonido : reproducirDesdePoster}
           aria-label={t("play_video", { title: etiqueta })}
           className="absolute inset-0 flex items-center justify-center bg-black/25 transition hover:bg-black/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
         >
@@ -371,7 +421,27 @@ export function BannerVideo({
           Con mouse: visibles al pasar por encima, al enfocar con teclado y siempre en
           pausa. En pantallas táctiles (sin hover) quedan siempre visibles: si estuvieran
           ocultos, el primer toque accionaría un botón invisible. Cada control mide 44px. */}
-      {montado && !fallo && controles && !botonGrande && (
+      {/* VSL en adelanto: un solo botón grande, sin barra de controles. */}
+      {enAdelanto && montado && !fallo && !botonGrande && (
+        <button
+          type="button"
+          onClick={activarConSonido}
+          aria-label={t("vsl_watch_sound", { duration: formatoTiempo(duracion) })}
+          className="absolute inset-0 flex items-center justify-center bg-black/30 transition hover:bg-black/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
+        >
+          <span className="flex max-w-[85%] items-center gap-3 rounded-2xl bg-brand-red px-5 py-3 text-left text-white shadow-[0_12px_40px_rgba(232,0,29,0.45)] ring-1 ring-white/20 motion-safe:animate-pulse">
+            <Volume2 size={26} className="shrink-0" aria-hidden />
+            <span className="leading-tight">
+              <span className="block text-base font-extrabold uppercase tracking-wide sm:text-lg">{t("vsl_watch_sound_short")}</span>
+              {duracion > 0 && (
+                <span className="block text-xs font-medium text-white/85">{t("vsl_click_here", { duration: formatoTiempo(duracion) })}</span>
+              )}
+            </span>
+          </span>
+        </button>
+      )}
+
+      {montado && !fallo && controles && !botonGrande && !enAdelanto && (
         <div
           className={cn(
             "absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/50 to-transparent px-2 pb-1 pt-10 transition-opacity duration-200",
@@ -415,6 +485,27 @@ export function BannerVideo({
               {pantallaCompleta ? <Minimize size={18} aria-hidden /> : <Maximize size={18} aria-hidden />}
             </BotonControl>
           </div>
+        </div>
+      )}
+    </div>
+  );
+
+  if (!vsl) return reproductor;
+
+  return (
+    <div>
+      {reproductor}
+      {vsl.cta && (
+        // Reserva su alto desde el inicio: cuando aparece, no empuja la página.
+        <div className="mt-3 flex min-h-[48px] justify-center" aria-live="polite">
+          {mostrarCta && (
+            <a
+              href={vsl.cta.href}
+              className="inline-flex h-12 items-center gap-2 rounded-full bg-brand-red px-7 text-sm font-extrabold uppercase tracking-widest text-white shadow-[0_10px_30px_rgba(232,0,29,0.4)] transition hover:brightness-110"
+            >
+              {vsl.cta.texto} →
+            </a>
+          )}
         </div>
       )}
     </div>
