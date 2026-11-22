@@ -45,6 +45,12 @@ export function ProductInfo({
     () => sortSizes([...new Set(variants.map((v) => v.size).filter((s): s is string => !!s))]),
     [variants]
   );
+  // Si las opciones son tallas (S, M, XL, 2XL, 58, 42.5…) se titula "Talla"; si son
+  // nombres (Azul, Dragón Azul, Fénix Amarillo…) se titula "Diseño".
+  const optionsAreSizes = useMemo(
+    () => sizes.some((s) => /^(\d*X{0,3}[SML]|\d{1,3}([.,]\d)?|[UÚ](NICA)?|ONE SIZE)$/i.test(s.trim())),
+    [sizes]
+  );
   // Selección inicial: la primera talla (en orden) que tenga stock.
   const [size, setSize] = useState<string | null>(
     () => sizes.find((s) => variants.some((v) => v.size === s && v.stock > 0)) ?? sizes[0] ?? null
@@ -157,7 +163,7 @@ export function ProductInfo({
 
       {sizes.length > 0 && (
         <div>
-          <p className="mb-2 text-sm font-semibold text-brand-white">{t("size")}</p>
+          <p className="mb-2 text-sm font-semibold text-brand-white">{optionsAreSizes ? t("size") : t("design")}</p>
           <div className="flex flex-wrap gap-2">
             {sizes.map((s) => {
               const disabled = !variants.some((x) => x.size === s && x.stock > 0);
