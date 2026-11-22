@@ -228,7 +228,7 @@ class ProductResource extends Resource
                         ->rule(static fn (): Closure => self::reglaDeUnaPrincipal())
                         ->orderColumn('sort_order')
                         ->defaultItems(0)
-                        ->maxItems(10)
+                        ->maxItems(20)
                         ->addActionLabel('+ Agregar imagen, GIF o video')
                         ->reorderable()
                         ->reorderableWithButtons()
