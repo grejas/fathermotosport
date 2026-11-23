@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { SizeGuideModal, hasSizeGuide } from "@/components/product/SizeGuideModal";
 import { ShippingReturns } from "@/components/product/ShippingReturns";
+import { StockAlertForm } from "@/components/product/StockAlertForm";
 import { REVIEWS_ANCHOR, SHOW_REVIEWS_EVENT } from "@/components/product/ProductTabs";
 import { useStoreSettings } from "@/components/layout/StoreSettingsProvider";
 import type { ShippingReturnsSummary } from "@/lib/shippingReturns";
@@ -91,6 +92,8 @@ export function ProductInfo({
   const displayStock = selectedVariant ? selectedVariant.stock : totalStock;
   const inStock = displayStock > 0;
   const canAdd = !!selectedVariant && selectedVariant.stock > 0;
+  // Agotado en todas las tallas: en vez de «Agregar al carrito» va «Avísame».
+  const soldOut = totalStock <= 0;
   const rating = Math.round(product.rating_avg ?? 0);
 
   const handleAdd = () => {
@@ -204,38 +207,48 @@ export function ProductInfo({
         </div>
       )}
 
-      <div className="flex items-center gap-4">
-        <div className="flex items-center rounded-lg border border-white/10">
-          <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="p-2.5 text-brand-muted hover:text-brand-white">
-            <Minus size={16} />
-          </button>
-          <span className="min-w-[40px] text-center font-semibold text-brand-white">{qty}</span>
-          <button
-            onClick={() => setQty((q) => Math.min(selectedVariant?.stock ?? 99, q + 1))}
-            className="p-2.5 text-brand-muted hover:text-brand-white"
-          >
-            <Plus size={16} />
-          </button>
-        </div>
-        <span className="text-xs text-brand-muted">
-          {displayStock} {t("available")}
-        </span>
-      </div>
+      {soldOut && (
+        <StockAlertForm slug={product.slug} sizes={sizes} sizeLabel={optionsAreSizes ? t("size") : t("design")} />
+      )}
 
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <Button variant="primary" className="flex-1" onClick={handleAdd} disabled={!canAdd}>
-          {t("add_to_cart")}
-        </Button>
-        {isAuth && (
-          <Button
-            variant="glass"
-            icon={<Heart size={18} className={isFav ? "fill-brand-red text-brand-red" : ""} />}
-            onClick={() => toggleFav(product)}
-          >
-            {isFav ? "Guardado" : "Favoritos"}
-          </Button>
-        )}
-      </div>
+      {!soldOut && (
+        <div className="flex items-center gap-4">
+          <div className="flex items-center rounded-lg border border-white/10">
+            <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="p-2.5 text-brand-muted hover:text-brand-white">
+              <Minus size={16} />
+            </button>
+            <span className="min-w-[40px] text-center font-semibold text-brand-white">{qty}</span>
+            <button
+              onClick={() => setQty((q) => Math.min(selectedVariant?.stock ?? 99, q + 1))}
+              className="p-2.5 text-brand-muted hover:text-brand-white"
+            >
+              <Plus size={16} />
+            </button>
+          </div>
+          <span className="text-xs text-brand-muted">
+            {displayStock} {t("available")}
+          </span>
+        </div>
+      )}
+
+      {(!soldOut || isAuth) && (
+        <div className="flex flex-col gap-3 sm:flex-row">
+          {!soldOut && (
+            <Button variant="primary" className="flex-1" onClick={handleAdd} disabled={!canAdd}>
+              {t("add_to_cart")}
+            </Button>
+          )}
+          {isAuth && (
+            <Button
+              variant="glass"
+              icon={<Heart size={18} className={isFav ? "fill-brand-red text-brand-red" : ""} />}
+              onClick={() => toggleFav(product)}
+            >
+              {isFav ? "Guardado" : "Favoritos"}
+            </Button>
+          )}
+        </div>
+      )}
 
       <ShippingReturns content={shippingReturns} />
 

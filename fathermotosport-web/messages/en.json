@@ -719,5 +719,18 @@
     "swift_intl": "SWIFT (international wires)",
     "memo": "Reference / memo",
     "warning_us_bank": "Enter {reference} in the reference or memo field: that's how we identify your payment. ACH takes 1–3 business days; a wire arrives the same day. If your bank charges a fee, add it so the full amount arrives."
+  },
+  "stock_alert": {
+    "title": "Notify me when available",
+    "subtitle": "Sold out in every size. Leave your contact and we'll let you know as soon as it's back.",
+    "any_size": "any",
+    "email_placeholder": "Your email",
+    "whatsapp_placeholder": "WhatsApp (optional)",
+    "button": "Notify me when it's back",
+    "sending": "Sending…",
+    "success": "Done! We'll let you know as soon as it's back in stock.",
+    "error_invalid": "Please check your email or WhatsApp.",
+    "error_limited": "Too many attempts. Please try again later.",
+    "error_network": "We couldn't save your request. Try again or message us on WhatsApp."
   }
 }
