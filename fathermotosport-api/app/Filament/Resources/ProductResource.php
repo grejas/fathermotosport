@@ -304,10 +304,10 @@ class ProductResource extends Resource
                             // salvo que la variante ya tenga una talla guardada.
                             Forms\Components\Select::make('size')
                                 ->label('Talla')
-                                ->options(fn (Get $get, ?string $state) => static::opcionesTalla($get('../../category_id'), $state))
+                                ->options(fn (Get $get, ?string $state) => static::opcionesTalla($get('../../category_id'), $state, static::tallasDeVariantes($get('../../variants'))))
                                 ->visible(fn (Get $get, ?string $state) => filled($state)
-                                    || SizeCatalog::forCategoryId($get('../../category_id')) !== [])
-                                ->required(fn (Get $get) => SizeCatalog::forCategoryId($get('../../category_id')) !== [])
+                                    || static::tallasDelFormulario($get) !== [])
+                                ->required(fn (Get $get) => static::tallasDelFormulario($get) !== [])
                                 ->distinct()
                                 ->placeholder('Elegí una talla'),
                             Forms\Components\TextInput::make('stock')
@@ -399,12 +399,36 @@ class ProductResource extends Resource
     }
 
     /**
+     * Tallas que ofrece el formulario: las de la categoría; si la categoría no usa
+     * tallas pero el producto ya vende por talla (ej. los alerones de Repuestos),
+     * las tallas en letras, para poder agregar o cambiar tallas desde el panel.
+     */
+    protected static function tallasPara(int|string|null $categoryId, bool $productoConTallas): array
+    {
+        $tallas = SizeCatalog::forCategoryId($categoryId);
+
+        return $tallas === [] && $productoConTallas ? SizeCatalog::LETTER_ORDER : $tallas;
+    }
+
+    /** Tallas del formulario para una fila del repeater de variantes. */
+    protected static function tallasDelFormulario(Get $get): array
+    {
+        return static::tallasPara($get('../../category_id'), static::tallasDeVariantes($get('../../variants')));
+    }
+
+    /** ¿Alguna variante del formulario tiene talla? */
+    protected static function tallasDeVariantes(mixed $variantes): bool
+    {
+        return collect(is_array($variantes) ? $variantes : [])->contains(fn ($v) => filled($v['size'] ?? null));
+    }
+
+    /**
      * Opciones del Select de talla. Si la variante ya tiene una talla fuera de la lista
      * (datos viejos, ej. "M L XL"), se agrega marcada como no estándar para no perderla.
      */
-    protected static function opcionesTalla(int|string|null $categoryId, ?string $actual): array
+    protected static function opcionesTalla(int|string|null $categoryId, ?string $actual, bool $productoConTallas = false): array
     {
-        $tallas = SizeCatalog::forCategoryId($categoryId);
+        $tallas = static::tallasPara($categoryId, $productoConTallas);
         $opciones = array_combine($tallas, $tallas);
 
         if (filled($actual) && ! in_array($actual, $tallas, true)) {

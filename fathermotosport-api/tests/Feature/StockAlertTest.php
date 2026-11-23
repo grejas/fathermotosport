@@ -2,11 +2,15 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Resources\ProductResource\Pages\EditProduct;
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\StockAlert;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
+use Filament\Forms\Components\Select;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 /** «Avísame cuando esté disponible» en productos agotados. */
@@ -178,5 +182,45 @@ class StockAlertTest extends TestCase
         $this->assertSame('FMS-AGV-CQMASX-XXL', $xxl->first()->sku);
         $this->assertTrue($xxl->first()->is_active);
         $this->assertSame(1, $p->inventoryMovements()->count());
+    }
+
+    public function test_la_migracion_da_tallas_m_l_xxl_a_los_alerones(): void
+    {
+        $aleron = Product::factory()->create(['slug' => 'aleron-de-casco-agv-pista-gp-r-joan-mir', 'sku' => 'FMS-AGV-W9OAYD']);
+        $aleron->variants()->delete();
+        $original = $aleron->variants()->create(['size' => null, 'sku' => 'FMS-AGV-W9OAYD', 'stock' => 7, 'is_active' => true]);
+        $casco = Product::factory()->create(['slug' => 'casco-agv-pista-gp-rr-performante']);
+        $tallasCasco = $casco->variants()->pluck('stock', 'size')->all();
+
+        $migracion = require database_path('migrations/2026_11_23_100007_tallas_m_l_xxl_en_alerones.php');
+        $migracion->up();
+        $migracion->up(); // idempotente
+
+        $this->assertSame(['L' => 7, 'M' => 7, 'XXL' => 7], $aleron->variants()->orderBy('size')->pluck('stock', 'size')->all());
+        $this->assertSame('M', $original->fresh()->size, 'La variante original pasa a ser la M');
+        $this->assertSame('FMS-AGV-W9OAYD-XXL', $aleron->variants()->where('size', 'XXL')->value('sku'));
+        $this->assertSame(14, $aleron->inventoryMovements()->sum('quantity'));
+        $this->assertSame(1, $aleron->inventoryMovements()->count());
+        $this->assertSame($tallasCasco, $casco->variants()->pluck('stock', 'size')->all(), 'Los cascos no se tocan');
+    }
+
+    public function test_el_panel_ofrece_tallas_a_un_aleron_de_una_categoria_sin_tallas(): void
+    {
+        $repuestos = Category::create(['name' => 'Repuestos test', 'slug' => 'repuestos-test', 'size_type' => Category::SIZE_NONE]);
+        $aleron = Product::factory()->create(['slug' => 'aleron-de-casco-test', 'sku' => 'FMS-ALE-TEST', 'category_id' => $repuestos->id]);
+        $aleron->variants()->delete();
+        $m = $aleron->variants()->create(['size' => 'M', 'sku' => 'FMS-ALE-TEST-M', 'stock' => 3, 'is_active' => true]);
+
+        $this->actingAs(User::where('email', 'admin@fathermotosport.com')->firstOrFail());
+        $opciones = null;
+        Livewire::test(EditProduct::class, ['record' => $aleron->getRouteKey()])
+            ->assertFormFieldExists("variants.record-{$m->id}.size", function (Select $campo) use (&$opciones) {
+                $opciones = array_keys($campo->getOptions());
+
+                return true;
+            });
+
+        $this->assertContains('L', $opciones);
+        $this->assertContains('XXL', $opciones);
     }
 }
