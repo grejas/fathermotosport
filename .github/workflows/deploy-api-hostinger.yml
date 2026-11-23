@@ -1,0 +1,55 @@
+name: Deploy API a Hostinger
+
+# Se dispara a mano (desde GitHub o por Claude a pedido de Gerson).
+# Ejecuta en el servidor un script de scripts/ descargado del commit indicado.
+# Secrets necesarios: HOSTINGER_SSH_KEY, HOSTINGER_SSH_HOST, HOSTINGER_SSH_USER.
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Commit o rama de donde sale el script"
+        required: true
+      script:
+        description: "Script dentro de scripts/ (ej. deploy-avisos-stock.sh)"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-api-hostinger
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Validar entradas
+        env:
+          REF: ${{ inputs.ref }}
+          SCRIPT: ${{ inputs.script }}
+        run: |
+          [[ "$REF" =~ ^[A-Za-z0-9._/-]+$ ]] || { echo "ref inválido"; exit 1; }
+          [[ "$SCRIPT" =~ ^[A-Za-z0-9._-]+\.sh$ ]] || { echo "script inválido"; exit 1; }
+
+      - name: Preparar SSH
+        env:
+          KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        run: |
+          [ -n "$KEY" ] && [ -n "$HOST" ] || { echo "Faltan los secrets HOSTINGER_SSH_KEY / HOSTINGER_SSH_HOST"; exit 1; }
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/id_hostinger && chmod 600 ~/.ssh/id_hostinger
+          ssh-keyscan -p 65002 "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Ejecutar script en el servidor
+        env:
+          HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          USER_SSH: ${{ secrets.HOSTINGER_SSH_USER }}
+          REF: ${{ inputs.ref }}
+          SCRIPT: ${{ inputs.script }}
+        run: |
+          URL="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${REF}/scripts/${SCRIPT}"
+          ssh -i ~/.ssh/id_hostinger -p 65002 -o BatchMode=yes "${USER_SSH}@${HOST}" \
+            "cd ~ && curl -fsSL '$URL' -o '$SCRIPT' && bash '$SCRIPT'"
