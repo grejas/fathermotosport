@@ -141,7 +141,15 @@ function StripeForm({
 
   return (
     <div className="space-y-4">
-      <PaymentElement />
+      {/* Billeteras primero: en Safari/iPhone sale Apple Pay, en Chrome Google Pay, y
+          Amazon Pay donde aplique. Stripe solo muestra las que el dispositivo admite. */}
+      <PaymentElement
+        options={{
+          layout: { type: "tabs", defaultCollapsed: false },
+          paymentMethodOrder: ["apple_pay", "google_pay", "amazon_pay", "card"],
+          wallets: { applePay: "auto", googlePay: "auto" },
+        }}
+      />
 
       {error && (
         <p className="rounded-xl border border-brand-red/40 bg-brand-red/10 p-3 text-sm text-brand-white">

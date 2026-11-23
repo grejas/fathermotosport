@@ -1,10 +1,12 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Bitcoin, CreditCard, Landmark, Wallet } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { CRYPTO_PAYMENT_METHODS, isManualPaymentMethod } from "@/lib/data/paymentMethods";
 import type { ManualPaymentMethod, PaymentMethod } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { WalletLogos } from "@/components/ui/WalletLogos";
 
 type Pasarela = "paypal" | "stripe" | "mercadopago";
 
@@ -54,6 +56,8 @@ export function PaymentMethods({ value, onChange, enabled, manual = [], comingSo
             disabled={!disponible}
             // PayPal conserva su amarillo también cuando está elegido.
             iconClass={m.id === "paypal" ? "bg-[#FFC439] text-[#003087]" : undefined}
+            // Tarjeta va por Stripe, que además cobra con Apple Pay, Google Pay y Amazon Pay.
+            extra={m.id === "stripe" && disponible ? <WalletLogos variant="inline" className="mt-1.5" /> : undefined}
             onClick={() => onChange(m.id)}
           />
         );
@@ -171,6 +175,7 @@ function Opcion({
   disabled,
   iconClass,
   bare,
+  extra,
   onClick,
 }: {
   icon: typeof Wallet;
@@ -182,6 +187,8 @@ function Opcion({
   iconClass?: string;
   /** Sin borde propio: va dentro de otro contenedor (cripto). */
   bare?: boolean;
+  /** Contenido debajo de la descripción (p. ej. logos de billeteras). */
+  extra?: ReactNode;
   onClick: () => void;
 }) {
   return (
@@ -215,6 +222,7 @@ function Opcion({
           )}
         </p>
         <p className="text-xs text-brand-muted">{desc}</p>
+        {extra}
       </div>
       {!disabled && (
         <span
