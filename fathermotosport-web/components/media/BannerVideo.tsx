@@ -427,16 +427,16 @@ export function BannerVideo({
           type="button"
           onClick={activarConSonido}
           aria-label={t("vsl_watch_sound", { duration: formatoTiempo(duracion) })}
-          className="absolute inset-0 flex items-center justify-center bg-black/50 transition hover:bg-black/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
+          className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/55 via-transparent to-transparent pb-3 sm:pb-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
         >
-          <span className="relative isolate flex max-w-[85%] items-center gap-3 rounded-2xl bg-brand-red px-5 py-3 text-left text-white shadow-[0_12px_40px_rgba(232,0,29,0.55)] ring-1 ring-white/25">
+          <span className="relative isolate flex max-w-[92%] items-center gap-2.5 rounded-full bg-brand-red px-4 py-2 text-left text-white shadow-[0_10px_30px_rgba(232,0,29,0.55)] ring-1 ring-white/25 sm:px-5 sm:py-2.5">
             {/* Anillo que late detrás: llama la atención sin volver transparente el botón. */}
-            <span className="pointer-events-none absolute inset-0 -z-10 rounded-2xl bg-brand-red/60 motion-safe:animate-ping" aria-hidden />
-            <Volume2 size={26} className="shrink-0" aria-hidden />
+            <span className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-brand-red/50 motion-safe:animate-ping" aria-hidden />
+            <Volume2 size={20} className="shrink-0" aria-hidden />
             <span className="leading-tight">
-              <span className="block text-base font-extrabold uppercase tracking-wide sm:text-lg">{t("vsl_watch_sound_short")}</span>
+              <span className="block text-sm font-extrabold uppercase tracking-wide sm:text-base">{t("vsl_watch_sound_short")}</span>
               {duracion > 0 && (
-                <span className="block text-xs font-medium text-white/85">{t("vsl_click_here", { duration: formatoTiempo(duracion) })}</span>
+                <span className="block text-[11px] font-medium text-white/85">{t("vsl_click_here", { duration: formatoTiempo(duracion) })}</span>
               )}
             </span>
           </span>
