@@ -2,7 +2,8 @@ name: Deploy API a Hostinger
 
 # Se dispara a mano (desde GitHub o por Claude a pedido de Gerson).
 # Ejecuta en el servidor un script de scripts/ descargado del commit indicado.
-# Secrets necesarios: HOSTINGER_SSH_KEY, HOSTINGER_SSH_HOST, HOSTINGER_SSH_USER.
+# Secrets: HOSTINGER_SSH_KEY y HOSTINGER_SSH_HOST (también acepta la grafía HOSTINGUER_*).
+# HOSTINGER_SSH_USER es opcional (por defecto u206357267).
 on:
   workflow_dispatch:
     inputs:
@@ -35,8 +36,8 @@ jobs:
 
       - name: Preparar SSH
         env:
-          KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
-          HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          KEY: ${{ secrets.HOSTINGER_SSH_KEY || secrets.HOSTINGUER_SSH_KEY }}
+          HOST: ${{ secrets.HOSTINGER_SSH_HOST || secrets.HOSTINGUER_SSH_HOST }}
         run: |
           [ -n "$KEY" ] && [ -n "$HOST" ] || { echo "Faltan los secrets HOSTINGER_SSH_KEY / HOSTINGER_SSH_HOST"; exit 1; }
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
@@ -45,8 +46,8 @@ jobs:
 
       - name: Ejecutar script en el servidor
         env:
-          HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
-          USER_SSH: ${{ secrets.HOSTINGER_SSH_USER }}
+          HOST: ${{ secrets.HOSTINGER_SSH_HOST || secrets.HOSTINGUER_SSH_HOST }}
+          USER_SSH: ${{ secrets.HOSTINGER_SSH_USER || secrets.HOSTINGUER_SSH_USER || 'u206357267' }}
           REF: ${{ inputs.ref }}
           SCRIPT: ${{ inputs.script }}
         run: |
