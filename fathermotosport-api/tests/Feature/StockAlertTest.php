@@ -105,4 +105,19 @@ class StockAlertTest extends TestCase
             ->assertSee('cliente@gmail.com')
             ->assertSee($p->name);
     }
+
+    public function test_la_migracion_agota_el_casco_agv_world_title(): void
+    {
+        $p = Product::factory()->create(['slug' => 'casco-agv-pista-gp-r-world-title-2002']);
+        $p->variants()->update(['stock' => 4]);
+        $antes = (int) $p->variants()->sum('stock');
+
+        $migracion = require database_path('migrations/2026_11_23_100002_agotar_casco_agv_pista_gp_r_world_title_2002.php');
+        $migracion->up();
+        $migracion->up(); // idempotente
+
+        $this->assertSame(0, (int) $p->variants()->sum('stock'));
+        $this->assertSame(1, $p->inventoryMovements()->count());
+        $this->assertSame(-$antes, $p->inventoryMovements()->first()->quantity);
+    }
 }
