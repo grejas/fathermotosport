@@ -120,4 +120,20 @@ class StockAlertTest extends TestCase
         $this->assertSame(1, $p->inventoryMovements()->count());
         $this->assertSame(-$antes, $p->inventoryMovements()->first()->quantity);
     }
+
+    public function test_la_migracion_deja_10_por_talla_en_el_world_title_2003(): void
+    {
+        $p = Product::factory()->create(['slug' => 'casco-agv-pista-gp-r-world-title-2003']);
+        $p->variants()->update(['stock' => 0]);
+        $p->variants()->first()->update(['stock' => 1]);
+        $tallas = $p->variants()->count();
+
+        $migracion = require database_path('migrations/2026_11_23_100003_stock_10_casco_agv_pista_gp_r_world_title_2003.php');
+        $migracion->up();
+        $migracion->up(); // idempotente
+
+        $this->assertSame([10], $p->variants()->pluck('stock')->unique()->values()->all());
+        $this->assertSame(1, $p->inventoryMovements()->count());
+        $this->assertSame(10 * $tallas - 1, $p->inventoryMovements()->first()->quantity);
+    }
 }
