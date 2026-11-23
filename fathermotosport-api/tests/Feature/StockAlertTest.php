@@ -149,4 +149,17 @@ class StockAlertTest extends TestCase
         $this->assertSame(0, (int) $p->variants()->sum('stock'));
         $this->assertSame(1, $p->inventoryMovements()->count());
     }
+
+    public function test_la_migracion_agota_el_ruroc_atlas_fenrir(): void
+    {
+        $p = Product::factory()->create(['slug' => 'casco-ruroc-atlas-40-fenrir']);
+        $p->variants()->update(['stock' => 3]);
+
+        $migracion = require database_path('migrations/2026_11_23_100005_agotar_casco_ruroc_atlas_40_fenrir.php');
+        $migracion->up();
+        $migracion->up(); // idempotente
+
+        $this->assertSame(0, (int) $p->variants()->sum('stock'));
+        $this->assertSame(1, $p->inventoryMovements()->count());
+    }
 }
