@@ -10,6 +10,7 @@ use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Filament\Forms\Components\Select;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -222,5 +223,25 @@ class StockAlertTest extends TestCase
 
         $this->assertContains('L', $opciones);
         $this->assertContains('XXL', $opciones);
+    }
+
+    public function test_la_migracion_agrega_el_video_de_la_supertech_air_primero_en_la_galeria(): void
+    {
+        Storage::fake('public');
+        $p = Product::factory()->create(['slug' => 'chaqueta-alpinestars-t-supertech-air-negro']);
+        $portada = $p->primary_image;
+
+        $migracion = require database_path('migrations/2026_11_23_100008_video_chaqueta_alpinestars_t_supertech_air_negro.php');
+        $migracion->up();
+        $migracion->up(); // idempotente
+
+        $galeria = $p->images()->orderBy('sort_order')->get();
+        $video = $galeria->first();
+        $this->assertSame(1, $p->images()->where('media_type', 'video')->count());
+        $this->assertSame('video', $video->media_type);
+        $this->assertSame('products/videos/supertech-air-negro-poster.jpg', $video->poster_url);
+        $this->assertFalse($video->with_sound);
+        Storage::disk('public')->assertExists('products/videos/supertech-air-negro.mp4');
+        $this->assertSame($portada, $p->fresh()->primary_image, 'La portada del catálogo no cambia');
     }
 }
