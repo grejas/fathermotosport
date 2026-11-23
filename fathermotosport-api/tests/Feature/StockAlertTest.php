@@ -162,4 +162,21 @@ class StockAlertTest extends TestCase
         $this->assertSame(0, (int) $p->variants()->sum('stock'));
         $this->assertSame(1, $p->inventoryMovements()->count());
     }
+
+    public function test_la_migracion_agrega_xxl_al_rossi_winter_test_2017(): void
+    {
+        $p = Product::factory()->create(['slug' => 'casco-agv-pista-gp-r-rossi-winter-test-2017-tavullia', 'sku' => 'FMS-AGV-CQMASX']);
+        $p->variants()->where('size', 'XXL')->delete();
+
+        $migracion = require database_path('migrations/2026_11_23_100006_xxl_casco_agv_pista_gp_r_rossi_winter_test_2017_tavullia.php');
+        $migracion->up();
+        $migracion->up(); // idempotente
+
+        $xxl = $p->variants()->where('size', 'XXL')->get();
+        $this->assertCount(1, $xxl);
+        $this->assertSame(5, $xxl->first()->stock);
+        $this->assertSame('FMS-AGV-CQMASX-XXL', $xxl->first()->sku);
+        $this->assertTrue($xxl->first()->is_active);
+        $this->assertSame(1, $p->inventoryMovements()->count());
+    }
 }
