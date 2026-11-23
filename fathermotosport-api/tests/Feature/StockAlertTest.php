@@ -136,4 +136,17 @@ class StockAlertTest extends TestCase
         $this->assertSame(1, $p->inventoryMovements()->count());
         $this->assertSame(10 * $tallas - 1, $p->inventoryMovements()->first()->quantity);
     }
+
+    public function test_la_migracion_agota_el_rossi_mugello_2019(): void
+    {
+        $p = Product::factory()->create(['slug' => 'casco-agv-pista-gp-r-rossi-mugello-2019']);
+        $p->variants()->update(['stock' => 5]);
+
+        $migracion = require database_path('migrations/2026_11_23_100004_agotar_casco_agv_pista_gp_r_rossi_mugello_2019.php');
+        $migracion->up();
+        $migracion->up(); // idempotente
+
+        $this->assertSame(0, (int) $p->variants()->sum('stock'));
+        $this->assertSame(1, $p->inventoryMovements()->count());
+    }
 }
