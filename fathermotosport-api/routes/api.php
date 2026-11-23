@@ -11,16 +11,17 @@ use App\Http\Controllers\Api\BrandController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CouponController;
-use App\Http\Controllers\Api\PopupLeadController;
 use App\Http\Controllers\Api\FlashPromoController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PerfilPendienteController;
+use App\Http\Controllers\Api\PopupLeadController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\ShippingController;
 use App\Http\Controllers\Api\ShippingReturnsController;
+use App\Http\Controllers\Api\StockAlertController;
 use App\Http\Controllers\Api\StoreSettingsController;
 use App\Http\Controllers\Api\UpsellController;
 use App\Http\Controllers\Api\UserController;
@@ -152,6 +153,9 @@ Route::prefix('v1')->group(function () {
 
     // Cupones
     Route::post('/coupons/validate', [CouponController::class, 'validate']);
+
+    // «Avísame cuando esté disponible» en productos agotados.
+    Route::post('/products/{slug}/stock-alert', [StockAlertController::class, 'store'])->middleware('throttle:6,1');
 
     // Popup de la web: email (+ WhatsApp) a cambio de un cupón de 10–25 %.
     Route::post('/popup/lead', [PopupLeadController::class, 'store'])->middleware('throttle:6,1');
