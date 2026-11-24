@@ -231,7 +231,11 @@ export interface OrderItem {
 export type OrderStatus = "pending" | "processing" | "shipped" | "delivered" | "cancelled";
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
 export type ShippingStatus = "pending" | "preparing" | "in_transit" | "delivered";
-export type PaymentMethod = "paypal" | "stripe" | "mercadopago" | ManualPaymentMethod;
+/**
+ * "stripe_wallet" existe solo en el checkout (Apple Pay, Google Pay, Amazon Pay): al
+ * crear el pedido se envía como "stripe", que es la pasarela.
+ */
+export type PaymentMethod = "paypal" | "stripe" | "stripe_wallet" | "mercadopago" | ManualPaymentMethod;
 
 /** Cobros que el cliente hace por fuera (banco o billetera) y el equipo confirma a mano. */
 export type ManualPaymentMethod = "sepa" | "us_bank" | "usdt_trc20" | "usdt_bep20" | "btc" | "btc_bep20" | "binance_pay";

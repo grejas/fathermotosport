@@ -38,6 +38,9 @@ class UpsellMejorasTest extends TestCase
     /** El intent del pago original guardó la tarjeta. */
     private bool $tarjetaGuardada = true;
 
+    /** Dónde guardó la tarjeta el intent original: 'card' (solo tarjeta) o 'intent' (a nivel del intent). */
+    private string $guardadaEn = 'card';
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -51,13 +54,27 @@ class UpsellMejorasTest extends TestCase
                 return Http::response(['id' => 'cus_test_1']);
             }
 
+            // Configuraciones de métodos de pago: la de la cuenta y, al crearla, "solo tarjeta".
+            if (str_contains($url, '/v1/payment_method_configurations')) {
+                return $request->method() === 'GET'
+                    ? Http::response(['data' => [[
+                        'id' => 'pmc_default', 'name' => 'Default', 'active' => true, 'is_default' => true,
+                        'card' => ['display_preference' => ['value' => 'on']],
+                        'apple_pay' => ['display_preference' => ['value' => 'on']],
+                        'link' => ['display_preference' => ['value' => 'on']],
+                        'amazon_pay' => ['display_preference' => ['value' => 'on']],
+                    ]]])
+                    : Http::response(['id' => 'pmc_solo_tarjeta', 'name' => 'FMS solo tarjeta', 'active' => true]);
+            }
+
             // Relectura del intent del pedido original (con el método de pago expandido).
             if ($request->method() === 'GET' && str_contains($url, 'pi_original')) {
                 return Http::response([
                     'id' => 'pi_original',
                     'status' => 'succeeded',
                     'customer' => 'cus_test_1',
-                    'payment_method_options' => ['card' => ['setup_future_usage' => $this->tarjetaGuardada ? 'on_session' : null]],
+                    'payment_method_options' => ['card' => ['setup_future_usage' => $this->tarjetaGuardada && $this->guardadaEn === 'card' ? 'on_session' : null]],
+                    'setup_future_usage' => $this->tarjetaGuardada && $this->guardadaEn === 'intent' ? 'on_session' : null,
                     'payment_method' => [
                         'id' => 'pm_test_1',
                         'type' => 'card',
@@ -308,6 +325,8 @@ class UpsellMejorasTest extends TestCase
             && $request['customer'] === 'cus_test_1'
             && $request['payment_method'] === 'pm_test_1'
             && $request['amount'] === 4000
+            && ($request->data()['automatic_payment_methods']['allow_redirects'] ?? null) === 'never'
+            && ! isset($request->data()['payment_method_types'])
             && $request->hasHeader('Idempotency-Key', "upsell-{$upsell->id}-4000"));
     }
 
@@ -502,5 +521,80 @@ class UpsellMejorasTest extends TestCase
 
         $this->assertEmpty($vistas->diff($rinoneras));
         $this->assertGreaterThan(1, $vistas->unique()->count(), 'Rota entre clientes.');
+    }
+
+    // ───────── Tarjeta y billetera por separado ─────────
+
+    public function test_card_mode_asks_stripe_for_card_only_and_wallet_mode_for_automatic_methods(): void
+    {
+        $casco = $this->producto();
+        $tarjeta = $this->pedido($casco, 'pending');
+        $billetera = $this->pedido($casco, 'pending');
+
+        $this->postJson('/api/v1/payments/stripe/intent', ['order_id' => $tarjeta->id, 'mode' => 'card'], $this->cabeceras($tarjeta))->assertOk();
+        $this->postJson('/api/v1/payments/stripe/intent', ['order_id' => $billetera->id, 'mode' => 'wallet'], $this->cabeceras($billetera))->assertOk();
+
+        // La cuenta no acepta payment_method_types: "solo tarjeta" es una configuración propia.
+        Http::assertSent(fn ($r) => $r->method() === 'POST' && str_contains($r->url(), '/v1/payment_method_configurations')
+            && ($r->data()['name'] ?? null) === 'FMS solo tarjeta'
+            && ($r->data()['card']['display_preference']['preference'] ?? null) === 'on'
+            && ($r->data()['apple_pay']['display_preference']['preference'] ?? null) === 'off'
+            && ($r->data()['link']['display_preference']['preference'] ?? null) === 'off');
+        Http::assertSent(fn ($r) => $r->method() === 'POST' && str_contains($r->url(), '/v1/payment_intents')
+            && ($r->data()['metadata']['order_id'] ?? null) === $tarjeta->id
+            && ($r->data()['payment_method_configuration'] ?? null) === 'pmc_solo_tarjeta'
+            && ! isset($r->data()['payment_method_types']));
+        Http::assertSent(fn ($r) => $r->method() === 'POST' && str_contains($r->url(), '/v1/payment_intents')
+            && ($r->data()['metadata']['order_id'] ?? null) === $billetera->id
+            && ($r->data()['automatic_payment_methods']['enabled'] ?? null) === 'true'
+            && ! isset($r->data()['payment_method_configuration'])
+            && ! isset($r->data()['payment_method_types']));
+        // Nunca se manda payment_method_types (Stripe lo rechaza con 400).
+        Http::assertNotSent(fn ($r) => isset($r->data()['payment_method_types']));
+    }
+
+    public function test_an_unknown_mode_is_refused(): void
+    {
+        $order = $this->pedido($this->producto(), 'pending');
+
+        $this->postJson('/api/v1/payments/stripe/intent', ['order_id' => $order->id, 'mode' => 'crypto'], $this->cabeceras($order))
+            ->assertStatus(422);
+    }
+
+    public function test_card_mode_saving_the_card_sets_it_on_the_whole_intent(): void
+    {
+        $order = $this->pedido($this->producto(), 'pending');
+
+        $this->postJson('/api/v1/payments/stripe/intent', ['order_id' => $order->id, 'mode' => 'card', 'save_card' => true], $this->cabeceras($order))
+            ->assertOk()
+            ->assertJsonStructure(['client_secret', 'payment_intent_id', 'setup_future_usage']);
+
+        // A nivel del intent, como lo precarga la web (Elements con setupFutureUsage).
+        Http::assertSent(fn ($r) => $r->method() === 'POST' && str_contains($r->url(), '/v1/payment_intents')
+            && ($r->data()['setup_future_usage'] ?? null) === 'on_session'
+            && ! isset($r->data()['payment_method_options'])
+            && ($r->data()['customer'] ?? null) === 'cus_test_1');
+    }
+
+    public function test_a_card_saved_at_intent_level_is_offered_for_one_tap(): void
+    {
+        $this->guardadaEn = 'intent';
+        $casco = $this->producto();
+        $this->regla($casco, $this->producto(50));
+        $order = $this->pedido($casco);
+
+        $this->getJson("/api/v1/orders/{$order->id}/upsell", $this->cabeceras($order))
+            ->assertJsonPath('saved_card.last4', '4242');
+    }
+
+    public function test_the_public_config_returns_the_card_only_configuration(): void
+    {
+        $this->getJson('/api/v1/payments/stripe/config')
+            ->assertOk()
+            ->assertExactJson(['card_configuration' => 'pmc_solo_tarjeta']);
+
+        // Se recuerda: la segunda vez no se le pregunta a Stripe.
+        $this->getJson('/api/v1/payments/stripe/config')->assertOk();
+        $this->assertCount(1, Http::recorded(fn ($r) => $r->method() === 'POST' && str_contains($r->url(), '/v1/payment_method_configurations')));
     }
 }

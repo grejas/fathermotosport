@@ -59,9 +59,23 @@ export async function capturePaypalOrder(
   return data;
 }
 
+/**
+ * Id de la configuración de Stripe "solo tarjeta" (null si no hay). Con él el formulario
+ * de tarjeta se precarga antes de crear el cobro.
+ */
+export async function getStripeCardConfig(): Promise<string | null> {
+  const { data } = await apiClient.get<{ card_configuration: string | null }>("/payments/stripe/config");
+  return data.card_configuration ?? null;
+}
+
+/** Cómo se cobra con Stripe: formulario de tarjeta o botones de billetera. */
+export type StripeMode = "card" | "wallet";
+
 export interface StripeIntentResponse {
   client_secret: string;
   payment_intent_id: string;
+  /** Si el cobro guarda la tarjeta: el formulario precargado tiene que coincidir. */
+  setup_future_usage?: "on_session" | "off_session" | null;
   /** true = se reutilizó el intent pendiente en vez de crear otro (evita cobro doble). */
   reused?: boolean;
 }
@@ -74,11 +88,13 @@ export async function createStripeIntent(
   orderId: string,
   accessToken?: string,
   /** Guardar la tarjeta para la oferta en un toque: solo donde el modal lo avisa. */
-  saveCard = false
+  saveCard = false,
+  /** "card": solo el formulario de tarjeta. "wallet": Apple Pay, Google Pay, Amazon Pay. */
+  mode?: StripeMode
 ): Promise<StripeIntentResponse> {
   const { data } = await apiClient.post<StripeIntentResponse>(
     "/payments/stripe/intent",
-    saveCard ? { order_id: orderId, save_card: true } : { order_id: orderId },
+    { order_id: orderId, ...(saveCard ? { save_card: true } : {}), ...(mode ? { mode } : {}) },
     orderAuth(accessToken)
   );
   return data;

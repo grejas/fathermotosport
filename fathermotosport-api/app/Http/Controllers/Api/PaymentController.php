@@ -461,7 +461,13 @@ class PaymentController extends Controller
 
     public function stripeIntent(Request $request): JsonResponse
     {
-        $datos = $request->validate(['order_id' => 'required|uuid', 'save_card' => 'sometimes|boolean']);
+        $datos = $request->validate([
+            'order_id' => 'required|uuid',
+            'save_card' => 'sometimes|boolean',
+            // card = solo el formulario de tarjeta; wallet = Apple Pay, Google Pay, Amazon Pay.
+            'mode' => 'sometimes|nullable|in:card,wallet',
+        ]);
+        $modo = $datos['mode'] ?? null;
         $order = Order::findOrFail($datos['order_id']);
 
         // Mismas guardas que paypalCreate: sin esto, conocer un UUID alcanzaba para
@@ -480,13 +486,13 @@ class PaymentController extends Controller
 
         // Reutiliza el intent creado hace menos de 30 minutos si Stripe lo sigue
         // aceptando: evita cobrar dos veces al cliente que recarga o vuelve atrás.
-        if ($reusado = $this->intentReutilizable($order)) {
+        if ($reusado = $this->intentReutilizable($order, $modo)) {
             return response()->json($reusado + ['reused' => true]);
         }
 
         try {
             // save_card: la web avisa que la tarjeta se guarda para la oferta en un toque.
-            $intent = $this->stripe->createPaymentIntent($order, (bool) ($datos['save_card'] ?? false));
+            $intent = $this->stripe->createPaymentIntent($order, (bool) ($datos['save_card'] ?? false), $modo);
         } catch (RequestException $e) {
             Log::error('Stripe rechazó la creación del PaymentIntent.', [
                 'order' => $order->id,
@@ -504,6 +510,8 @@ class PaymentController extends Controller
         return response()->json([
             'client_secret' => $intent['client_secret'],
             'payment_intent_id' => $intent['id'],
+            // Para que el formulario precargado coincida con el cobro (guarda o no la tarjeta).
+            'setup_future_usage' => $intent['raw']['setup_future_usage'] ?? null,
         ]);
     }
 
@@ -516,7 +524,7 @@ class PaymentController extends Controller
      *
      * @return array{client_secret: string, payment_intent_id: string}|null
      */
-    private function intentReutilizable(Order $order): ?array
+    private function intentReutilizable(Order $order, ?string $modo = null): ?array
     {
         $pendiente = Payment::where('order_id', $order->id)
             ->where('provider', 'stripe')
@@ -547,13 +555,20 @@ class PaymentController extends Controller
         // total cambió, reutilizarlo cobraría el importe viejo.
         $montoCoincide = (int) ($intent['amount'] ?? 0) === $this->stripe->montoEnCentavos($order);
 
-        if (! $pagable || ! $montoCoincide || blank($intent['client_secret'] ?? null)) {
+        // Tiene que ser del mismo tipo: un intent de solo tarjeta no sirve para la
+        // billetera, ni al revés.
+        $soloTarjeta = filled($intent['payment_method_configuration_details']['id'] ?? null)
+            && ($intent['payment_method_configuration_details']['id'] ?? null) === $this->stripe->configuracionSoloTarjeta();
+        $mismoModo = $modo === null || ($modo === 'card') === $soloTarjeta;
+
+        if (! $pagable || ! $montoCoincide || ! $mismoModo || blank($intent['client_secret'] ?? null)) {
             return null;
         }
 
         return [
             'client_secret' => $intent['client_secret'],
             'payment_intent_id' => $intent['id'],
+            'setup_future_usage' => $intent['setup_future_usage'] ?? null,
         ];
     }
 
@@ -677,6 +692,15 @@ class PaymentController extends Controller
             // Solo hace falta para completar la verificación del banco.
             'client_secret' => $intent['status'] === 'requires_action' ? $intent['client_secret'] : null,
         ]);
+    }
+
+    /**
+     * Configuración pública para la web: el id de "solo tarjeta", para precargar el
+     * formulario de tarjeta antes de crear el cobro. Null si no hay (se carga después).
+     */
+    public function stripeConfig(): JsonResponse
+    {
+        return response()->json(['card_configuration' => $this->stripe->configuracionSoloTarjeta()]);
     }
 
     // ─────────────────────── MercadoPago ───────────────────────

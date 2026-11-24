@@ -13,7 +13,7 @@ import { OrderSummary } from "./OrderSummary";
 import { useCartStore, cartWeightKg } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
 import { createOrder, createExpressOrder } from "@/lib/api/orders";
-import { createPaypalOrder, createStripeIntent } from "@/lib/api/payments";
+import { createPaypalOrder, createStripeIntent, getStripeCardConfig } from "@/lib/api/payments";
 import { validateCoupon } from "@/lib/api/coupons";
 import { useCartPricesOnShow, useSyncCartPrices } from "@/lib/hooks/useCartPrices";
 import { calculateShipping } from "@/lib/api/shipping";
@@ -80,7 +80,20 @@ export function CheckoutForm() {
     address_line: "",
     reference: "",
   });
-  const [method, setMethod] = useState<PaymentMethod>(ENABLED_PAYMENT_METHODS[0] ?? "paypal");
+  // Arranca en tarjeta; en un iPhone/Mac con Apple Pay listo, en la billetera (ver abajo).
+  const [method, setMethod] = useState<PaymentMethod>(
+    ENABLED_PAYMENT_METHODS.includes("stripe") ? "stripe" : ENABLED_PAYMENT_METHODS[0] ?? "paypal"
+  );
+  useEffect(() => {
+    try {
+      const applePay = (window as unknown as { ApplePaySession?: { canMakePayments?: () => boolean } }).ApplePaySession;
+      if (ENABLED_PAYMENT_METHODS.includes("stripe_wallet") && applePay?.canMakePayments?.()) {
+        setMethod((actual) => (actual === "stripe" ? "stripe_wallet" : actual));
+      }
+    } catch {
+      // Sin Apple Pay: queda tarjeta.
+    }
+  }, []);
   const [coupon, setCoupon] = useState("");
   const [discount, setDiscount] = useState(0);
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -94,6 +107,16 @@ export function CheckoutForm() {
   // Mientras haya client_secret el modal está abierto. El carrito NO se vacía hasta que
   // el pago esté confirmado: cerrar el modal no debe obligar a rearmar la compra.
   const [stripeSecret, setStripeSecret] = useState<string | null>(null);
+  const [stripeAbierto, setStripeAbierto] = useState(false);
+  // Monto con el que se precarga el formulario de tarjeta; al crearse el pedido, el real.
+  const [montoCobro, setMontoCobro] = useState<number | null>(null);
+  const [setupCobro, setSetupCobro] = useState<"on_session" | "off_session" | null | undefined>(undefined);
+  // Configuración "solo tarjeta": se pide al entrar al checkout para precargar el formulario.
+  const [configTarjeta, setConfigTarjeta] = useState<string | null>(null);
+  useEffect(() => {
+    if (!ENABLED_PAYMENT_METHODS.includes("stripe")) return;
+    getStripeCardConfig().then(setConfigTarjeta).catch(() => setConfigTarjeta(null));
+  }, []);
 
   // Lista fija de 40 destinos (América y Europa), con el nombre en el idioma activo
   // y ordenada según ese idioma. El registro sigue usando la lista completa del mundo.
@@ -117,7 +140,9 @@ export function CheckoutForm() {
   const methodEnabled = ENABLED_PAYMENT_METHODS.includes(method) || (isManual && manualDisponibles.includes(method));
   // PayPal no usa el formulario de datos: la dirección la elige el cliente en PayPal.
   const isPaypal = method === "paypal";
-  const isStripe = method === "stripe";
+  // Billetera y tarjeta son las dos Stripe; cambia solo qué se muestra para pagar.
+  const isStripe = method === "stripe" || method === "stripe_wallet";
+  const stripeModo = method === "stripe_wallet" ? "wallet" : "card";
 
   /**
    * URL absoluta de respaldo para Stripe, usada solo si el método elegido exige salir de
@@ -347,21 +372,37 @@ export function CheckoutForm() {
     }
 
     setLoading(true);
+    if (isStripe) {
+      // El formulario de pago se abre y empieza a cargar YA, en paralelo con la creación
+      // del pedido y del cobro: es lo que más tardaba. Con tarjeta se puede escribir
+      // enseguida; el cobro se usa recién al tocar "Pagar".
+      setSetupCobro(undefined);
+      setMontoCobro(
+        Math.max(0, useCartStore.getState().subtotal() - discount + (shippingCost ?? 0)) || null
+      );
+      setStripeAbierto(true);
+    }
     try {
       // Si ya se creó el pedido en un intento anterior que no llegó a pagarse, se reusa:
       // volver a apretar "Confirmar" no debe dejar dos pedidos por la misma compra.
       // El pedido de un intento con tarjeta no se reutiliza para transferencia / cripto:
       // tiene otro método y no trae cotización. Ese queda pendiente y vence solo.
       const previo = isManual ? null : pedidoEnCurso;
-      if (!previo && !(await preciosAlDia())) return;
+      if (!previo && !(await preciosAlDia())) {
+        setStripeAbierto(false);
+        return;
+      }
       const pedido = previo ?? (await crearPedido()).order;
       // El cupón se consume al crear el pedido: el que llegó por enlace ya no hace falta.
       if (!previo && coupon.trim() && coupon.trim().toUpperCase() === pendingCoupon) setPendingCoupon(null);
 
-      if (method === "stripe") {
+      if (isStripe) {
         setPedidoEnCurso(pedido);
+        // El monto real del pedido (con envío y cupón ya calculados por el servidor).
+        if ("total" in pedido && pedido.total) setMontoCobro(parseFloat(String(pedido.total)));
         // El cobro sigue en el modal; el carrito queda intacto hasta confirmarlo.
-        const intent = await createStripeIntent(pedido.id, pedido.access_token ?? undefined, true);
+        const intent = await createStripeIntent(pedido.id, pedido.access_token ?? undefined, true, stripeModo);
+        setSetupCobro(intent.setup_future_usage ?? null);
         setStripeSecret(intent.client_secret);
 
         return;
@@ -383,6 +424,8 @@ export function CheckoutForm() {
       toast.success(t("order_created"));
       irAExito(pedido);
     } catch (err: unknown) {
+      // Si falló al preparar el cobro, el modal no queda abierto en "Preparando…".
+      setStripeAbierto(false);
       if (await preciosCambiaronAlPedir(err)) return;
       const message =
         (err as { response?: { data?: { message?: string } } }).response?.data?.message ??
@@ -446,7 +489,8 @@ export function CheckoutForm() {
         address_line: form.address_line,
         reference: form.reference || undefined,
       },
-      payment_method: method,
+      // La billetera es Stripe: el backend solo conoce la pasarela.
+      payment_method: method === "stripe_wallet" ? "stripe" : method,
       shipping_option_id: selectedOption?.id,
       shipping_country_code: selectedOption ? form.country : undefined,
       coupon_code: coupon.trim() || undefined,
@@ -761,13 +805,21 @@ export function CheckoutForm() {
       {/* Cobro con tarjeta. Cerrarlo deja el pedido pendiente y el carrito intacto: se
           puede reintentar, y el intent se reutiliza en vez de cobrar de nuevo. */}
       <StripePaymentModal
-        open={stripeSecret !== null}
+        open={stripeAbierto}
         clientSecret={stripeSecret}
+        modo={stripeModo}
+        monto={stripeModo === "card" ? montoCobro : null}
+        setupFutureUsage={setupCobro}
+        configuracionTarjeta={configTarjeta}
         accessToken={pedidoEnCurso?.access_token ?? undefined}
         returnUrl={returnUrlStripe}
-        onClose={() => setStripeSecret(null)}
+        onClose={() => {
+          setStripeAbierto(false);
+          setStripeSecret(null);
+        }}
         onPaid={() => {
           clearCart();
+          setStripeAbierto(false);
           setStripeSecret(null);
           toast.success(t("order_created"));
           if (pedidoEnCurso) irAExito(pedidoEnCurso);

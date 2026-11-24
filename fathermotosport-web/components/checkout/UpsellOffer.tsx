@@ -368,7 +368,7 @@ export function UpsellOffer({ orderId, orderNumber, accessToken }: Props) {
     if (!pedido) return;
     setCreando(true);
     try {
-      const intent = await createStripeIntent(pedido.id, pedido.access_token ?? undefined);
+      const intent = await createStripeIntent(pedido.id, pedido.access_token ?? undefined, false, "card");
       setStripeSecret(intent.client_secret);
     } catch (err: unknown) {
       toast.error(mensajeDelError(err) ?? t("error"));
