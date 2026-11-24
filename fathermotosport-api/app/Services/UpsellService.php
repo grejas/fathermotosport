@@ -28,11 +28,10 @@ class UpsellService
 {
     /**
      * Cuántas ofertas entran en la pantalla de éxito. Es una decisión de diseño de esa
-     * pantalla y no un parámetro de negocio, así que vive en el código. Pocas y la
-     * primera ya elegida: el upsell vende con una oferta protagonista, no con un
-     * catálogo (playbook VTurb, oferta-y-embudo).
+     * pantalla y no un parámetro de negocio, así que vive en el código. La primera va
+     * ya elegida: el upsell vende con una oferta protagonista.
      */
-    public const MAX_OFERTAS = 3;
+    public const MAX_OFERTAS = 5;
 
     /**
      * Cuánto dura la oferta desde que se mostró por primera vez. Es una regla interna:
@@ -112,10 +111,41 @@ class UpsellService
             // el cliente lo compara. A igual descuento manda priority (ya está ordenado).
             ->sortByDesc('discount_percent')
             ->unique('offer_product_id')
+            // De cada grupo (las 6 riñoneras, por ejemplo) entra una sola.
+            ->pipe(fn (Collection $reglas) => $this->unaPorGrupo($reglas, $original))
             // Orden en pantalla: prioridad; a igual prioridad, el mejor descuento primero.
             ->sortBy([['priority', 'desc'], ['discount_percent', 'desc'], ['id', 'asc']])
             ->take(self::MAX_OFERTAS)
             ->values();
+    }
+
+    /**
+     * Deja una sola regla por grupo: entre las de mejor prioridad y descuento del grupo,
+     * una que rota según el pedido (así cada cliente ve una distinta, y el mismo cliente
+     * ve siempre la misma al recargar). Las reglas sin grupo pasan todas.
+     *
+     * @param  Collection<int, UpsellRule>  $reglas
+     * @return Collection<int, UpsellRule>
+     */
+    private function unaPorGrupo(Collection $reglas, Order $original): Collection
+    {
+        $elegidas = $reglas->whereNotNull('upsell_group')
+            ->groupBy('upsell_group')
+            ->map(function (Collection $grupo) use ($original) {
+                $mejor = $grupo->sortBy([['priority', 'desc'], ['discount_percent', 'desc']])->first();
+                $empatadas = $grupo->where('priority', $mejor->priority)
+                    ->where('discount_percent', $mejor->discount_percent)
+                    ->sortBy('id')
+                    ->values();
+
+                return $empatadas[crc32((string) $original->id) % $empatadas->count()];
+            })
+            ->map(fn (UpsellRule $r) => $r->id.'|'.$r->offer_product_id)
+            ->values()
+            ->all();
+
+        return $reglas->filter(fn (UpsellRule $r) => $r->upsell_group === null
+            || in_array($r->id.'|'.$r->offer_product_id, $elegidas, true));
     }
 
     /**
@@ -794,6 +824,7 @@ class UpsellService
             'trigger_product_id' => filled($datos['trigger_category_id'] ?? null) ? null : $datos['trigger_product_id'],
             'trigger_category_id' => filled($datos['trigger_category_id'] ?? null) ? (int) $datos['trigger_category_id'] : null,
             'last_chance_discount_percent' => $rebaja,
+            'upsell_group' => filled($datos['upsell_group'] ?? null) ? mb_substr(trim((string) $datos['upsell_group']), 0, 40) : null,
             'priority' => (int) ($datos['priority'] ?? 0),
             'is_active' => (bool) ($datos['is_active'] ?? true),
         ];

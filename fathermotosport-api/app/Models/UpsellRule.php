@@ -27,6 +27,7 @@ class UpsellRule extends Model
         'discount_percent',
         'last_chance_discount_percent',
         'priority',
+        'upsell_group',
         'is_active',
     ];
 

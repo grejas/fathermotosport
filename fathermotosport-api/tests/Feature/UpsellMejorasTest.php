@@ -121,7 +121,7 @@ class UpsellMejorasTest extends TestCase
         if ($pago === 'paid') {
             $modelo->update(['payment_status' => 'paid', 'status' => 'processing']);
             Payment::create([
-                'order_id' => $modelo->id, 'provider' => 'stripe', 'transaction_id' => 'pi_original',
+                'order_id' => $modelo->id, 'provider' => 'stripe', 'transaction_id' => 'pi_original_'.$modelo->id,
                 'currency' => 'USD', 'amount' => $modelo->total, 'status' => 'approved', 'paid_at' => now(),
             ]);
         }
@@ -181,7 +181,10 @@ class UpsellMejorasTest extends TestCase
     public function test_each_offer_says_what_it_goes_with_and_the_saved_card(): void
     {
         $casco = $this->producto(500, 'M', 'Casco AGV Pista GP R');
-        $this->regla($casco, $this->producto(50));
+        $casco->product->update(['category_id' => Category::where('slug', 'cascos')->value('id')]);
+        $mangas = $this->producto(50);
+        $mangas->product->update(['category_id' => Category::where('slug', 'accesorios')->value('id')]);
+        $this->regla($casco, $mangas);
         $order = $this->pedido($casco);
 
         $respuesta = $this->getJson("/api/v1/orders/{$order->id}/upsell", $this->cabeceras($order))->assertOk();
@@ -415,30 +418,84 @@ class UpsellMejorasTest extends TestCase
 
     // ───────── Reglas cargadas por migración ─────────
 
-    public function test_the_migration_loads_visor_sleeves_and_second_helmet_rules(): void
+    public function test_the_migration_loads_the_helmet_upsells(): void
     {
         $cascos = Category::where('slug', 'cascos')->firstOrFail();
+        $guantesCat = Category::where('slug', 'guantes')->firstOrFail();
         $pista = $this->producto(430, 'M', 'Casco AGV Pista GP R Soleluna');
         $pista->product->update(['category_id' => $cascos->id]);
         $shoei = $this->producto(430, 'M', 'Casco Shoei X-Fifteen');
         $shoei->product->update(['category_id' => $cascos->id]);
-        $visera = $this->producto(69.99, null, 'Visor Pista AGV GP R/GP RR/Corsa R');
-        $mangas = $this->producto(45, null, 'Manga Dainese Negro');
+        $visor = $this->producto(69.99, null, 'Visor Pista AGV GP R/GP RR/Corsa R');
+        $pinlock = $this->producto(30, null, 'Lente Pinlock 120 Max Vision AGV Pista GP R/ GP RR/ Corsa-R');
+        $guantes = $this->producto(159, 'L', 'Guantes Alpinestars SP X 7');
+        $guantes->product->update(['category_id' => $guantesCat->id]);
+        $rinoneras = collect(['Riñonera Kanga V2 Negra', ' Riñonera MM93 Roja', 'Riñonera Kanga V2 Blanca'])
+            ->map(fn ($n) => $this->producto(75, null, $n));
+        // La fábrica asigna categorías al azar: los accesorios van a la suya, para que
+        // ninguno caiga en Cascos o Guantes.
+        $accesorios = Category::where('slug', 'accesorios')->firstOrFail();
+        collect([$visor, $pinlock, ...$rinoneras])->each(fn ($v) => $v->product->update(['category_id' => $accesorios->id]));
 
-        $migracion = require database_path('migrations/2026_11_24_100002_reglas_upsell_visera_mangas_segundo_casco.php');
+        $migracion = require database_path('migrations/2026_11_24_100002_reglas_upsell_para_cascos.php');
         $migracion->up();
         $migracion->up(); // Idempotente.
 
-        $this->assertDatabaseHas('upsell_rules', ['trigger_product_id' => $pista->product_id, 'offer_product_id' => $visera->product_id, 'discount_percent' => 50]);
-        $this->assertDatabaseMissing('upsell_rules', ['trigger_product_id' => $shoei->product_id, 'offer_product_id' => $visera->product_id]);
-        $this->assertDatabaseHas('upsell_rules', ['trigger_category_id' => $cascos->id, 'offer_product_id' => $mangas->product_id, 'discount_percent' => 30]);
-        $this->assertDatabaseHas('upsell_rules', ['trigger_category_id' => $cascos->id, 'offer_category_id' => $cascos->id, 'discount_percent' => 20]);
-        $this->assertSame(1, UpsellRule::where('trigger_product_id', $pista->product_id)->count());
+        $this->assertDatabaseHas('upsell_rules', ['trigger_product_id' => $pista->product_id, 'offer_product_id' => $visor->product_id, 'discount_percent' => 25]);
+        $this->assertDatabaseHas('upsell_rules', ['trigger_product_id' => $pista->product_id, 'offer_product_id' => $pinlock->product_id, 'discount_percent' => 25]);
+        $this->assertDatabaseMissing('upsell_rules', ['trigger_product_id' => $shoei->product_id]);
+        $this->assertDatabaseHas('upsell_rules', ['trigger_category_id' => $cascos->id, 'offer_category_id' => $guantesCat->id, 'discount_percent' => 15]);
+        $this->assertSame(3, UpsellRule::where('upsell_group', 'riñoneras')->where('discount_percent', 10)->count());
+        $this->assertDatabaseHas('upsell_rules', ['trigger_category_id' => $cascos->id, 'offer_category_id' => $cascos->id, 'discount_percent' => 10]);
+        $this->assertSame(2, UpsellRule::where('trigger_product_id', $pista->product_id)->count());
 
-        // El comprador del Pista ve la visera primero, a mitad de precio.
+        // El comprador del Pista ve las 5, en orden, con UNA sola riñonera.
         $order = $this->pedido($pista);
+        $ofertas = $this->getJson("/api/v1/orders/{$order->id}/upsell", $this->cabeceras($order))
+            ->assertJsonCount(5, 'offers')
+            ->json('offers');
+
+        $this->assertSame($visor->product_id, $ofertas[0]['product']['id']);
+        $this->assertSame(25, $ofertas[0]['discount_percent']);
+        $this->assertSame($pinlock->product_id, $ofertas[1]['product']['id']);
+        $this->assertSame('22.50', $ofertas[1]['discounted_price']);
+        // Guantes: uno de la categoría, al 15 %.
+        $tercera = Product::findOrFail($ofertas[2]['product']['id']);
+        $this->assertSame($guantesCat->id, $tercera->category_id);
+        $this->assertSame(15, $ofertas[2]['discount_percent']);
+        $this->assertContains($ofertas[3]['product']['id'], $rinoneras->pluck('product_id')->all());
+        $this->assertSame('67.50', $ofertas[3]['discounted_price']);
+        // Segundo casco: otro casco, al 10 %.
+        $quinta = Product::findOrFail($ofertas[4]['product']['id']);
+        $this->assertSame($cascos->id, $quinta->category_id);
+        $this->assertNotSame($pista->product_id, $quinta->id);
+        $this->assertSame(10, $ofertas[4]['discount_percent']);
+
+        // El del Shoei no ve visor ni Pinlock: guantes, riñonera y segundo casco.
+        $order = $this->pedido($shoei);
         $this->getJson("/api/v1/orders/{$order->id}/upsell", $this->cabeceras($order))
-            ->assertJsonPath('offers.0.product.id', $visera->product_id)
-            ->assertJsonPath('offers.0.discounted_price', '35.00');
+            ->assertJsonCount(3, 'offers');
+    }
+
+    public function test_only_one_offer_per_group_and_it_rotates_between_orders(): void
+    {
+        $casco = $this->producto();
+        $rinoneras = collect(range(1, 4))->map(function () use ($casco) {
+            $r = $this->producto(75, null);
+            $this->regla($casco, $r, ['upsell_group' => 'riñoneras', 'discount_percent' => 10]);
+
+            return $r->product_id;
+        });
+
+        $vistas = collect(range(1, 12))->map(function () use ($casco) {
+            $order = $this->pedido($casco);
+
+            return $this->getJson("/api/v1/orders/{$order->id}/upsell", $this->cabeceras($order))
+                ->assertJsonCount(1, 'offers')
+                ->json('offers.0.product.id');
+        });
+
+        $this->assertEmpty($vistas->diff($rinoneras));
+        $this->assertGreaterThan(1, $vistas->unique()->count(), 'Rota entre clientes.');
     }
 }

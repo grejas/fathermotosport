@@ -128,6 +128,11 @@ class UpsellRuleResource extends Resource
                         ->minValue(1)
                         ->maxValue(90)
                         ->nullable(),
+                    Forms\Components\TextInput::make('upsell_group')
+                        ->label('Grupo (opcional)')
+                        ->helperText('De las reglas con el mismo grupo (ej. «riñoneras») se muestra una sola por pedido, rotando entre clientes.')
+                        ->maxLength(40)
+                        ->nullable(),
                     Forms\Components\Toggle::make('is_active')
                         ->label('Activa')
                         ->default(true)
@@ -201,6 +206,7 @@ class UpsellRuleResource extends Resource
             'last_chance_discount_percent' => filled($data['last_chance_discount_percent'] ?? null)
                 ? (int) $data['last_chance_discount_percent']
                 : null,
+            'upsell_group' => $data['upsell_group'] ?? null,
             'priority' => $data['priority'] ?? 0,
             'is_active' => (bool) ($data['is_active'] ?? true),
         ];
@@ -212,7 +218,7 @@ class UpsellRuleResource extends Resource
         return self::datosParaGuardar(collect([
             'trigger_tipo', 'trigger_product_id', 'trigger_category_id',
             'offer_tipo', 'offer_product_ids', 'offer_category_id',
-            'discount_percent', 'descuentos', 'last_chance_discount_percent', 'priority', 'is_active',
+            'discount_percent', 'descuentos', 'last_chance_discount_percent', 'upsell_group', 'priority', 'is_active',
         ])->mapWithKeys(fn (string $campo) => [$campo => $get($campo)])->all());
     }
 
