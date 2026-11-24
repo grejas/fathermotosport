@@ -65,6 +65,8 @@ export type StripeMode = "card" | "wallet";
 export interface StripeIntentResponse {
   client_secret: string;
   payment_intent_id: string;
+  /** Si el cobro guarda la tarjeta: el formulario precargado tiene que coincidir. */
+  setup_future_usage?: "on_session" | "off_session" | null;
   /** true = se reutilizó el intent pendiente en vez de crear otro (evita cobro doble). */
   reused?: boolean;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { loadStripe, type Appearance, type Stripe } from "@stripe/stripe-js";
 import {
   Elements,
@@ -60,6 +60,14 @@ interface Props {
    * Apple Pay, Google Pay y Amazon Pay. Separados cargan mucho más rápido que todo junto.
    */
   modo?: StripeMode;
+  /**
+   * Tarjeta precargada: con el monto (USD) el formulario se arma ANTES de que exista el
+   * cobro, así el cliente ya puede escribir la tarjeta mientras se crea el pedido. El
+   * client_secret llega después y se usa recién al pagar.
+   */
+  monto?: number | null;
+  /** setup_future_usage del cobro creado, para que el formulario coincida con él. */
+  setupFutureUsage?: "on_session" | "off_session" | null;
 }
 
 export function StripePaymentModal({
@@ -71,8 +79,39 @@ export function StripePaymentModal({
   onPaid,
   guardaTarjeta = true,
   modo = "card",
+  monto = null,
+  setupFutureUsage,
 }: Props) {
   const t = useTranslations("checkout");
+  const precargado = modo === "card" && monto !== null && monto > 0;
+  // Antes de que llegue el cobro se asume lo que pidió la web; después, lo que dice Stripe.
+  const guardar = setupFutureUsage !== undefined ? setupFutureUsage : guardaTarjeta ? "on_session" : null;
+
+  if (precargado && stripePromise) {
+    return (
+      <Modal open={open} onClose={onClose} title={t("stripe_title")}>
+        <Elements
+          stripe={stripePromise}
+          options={{
+            mode: "payment",
+            amount: Math.round(monto * 100),
+            currency: "usd",
+            paymentMethodTypes: ["card"],
+            ...(guardar ? { setupFutureUsage: guardar } : {}),
+            appearance,
+          }}
+        >
+          <StripeForm
+            accessToken={accessToken}
+            returnUrl={returnUrl}
+            onPaid={onPaid}
+            guardaTarjeta={guardaTarjeta}
+            clientSecret={clientSecret}
+          />
+        </Elements>
+      </Modal>
+    );
+  }
 
   return (
     <Modal open={open} onClose={onClose} title={modo === "wallet" ? t("wallet_title") : t("stripe_title")}>
@@ -99,12 +138,32 @@ function StripeForm({
   returnUrl,
   onPaid,
   guardaTarjeta,
-}: Pick<Props, "accessToken" | "returnUrl" | "onPaid" | "guardaTarjeta">) {
+  clientSecret,
+}: Pick<Props, "accessToken" | "returnUrl" | "onPaid" | "guardaTarjeta"> & {
+  /** Solo con el formulario precargado: el cobro, que puede llegar después. */
+  clientSecret?: string | null;
+}) {
   const stripe = useStripe();
   const elements = useElements();
   const t = useTranslations("checkout");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const precargado = clientSecret !== undefined;
+
+  // Si el cliente toca "Pagar" antes de que el cobro esté creado, se espera a que llegue.
+  const secretRef = useRef(clientSecret ?? null);
+  const esperando = useRef<((s: string) => void) | null>(null);
+  useEffect(() => {
+    secretRef.current = clientSecret ?? null;
+    if (clientSecret && esperando.current) {
+      esperando.current(clientSecret);
+      esperando.current = null;
+    }
+  }, [clientSecret]);
+  const secretListo = () =>
+    secretRef.current
+      ? Promise.resolve(secretRef.current)
+      : new Promise<string>((resolve) => (esperando.current = resolve));
 
   // No depende de ningún evento de submit: se dispara desde el onClick del botón, así el
   // cobro no puede quedar atado a un formulario (ni al que lo envuelva).
@@ -123,10 +182,23 @@ function StripeForm({
     setLoading(true);
     setError(null);
 
+    let secret: string | undefined;
+    if (precargado) {
+      // Precargado: primero se validan los datos de la tarjeta, después se espera el cobro.
+      const { error: datosError } = await elements.submit();
+      if (datosError) {
+        setError(datosError.message ?? t("stripe_error"));
+        setLoading(false);
+        return;
+      }
+      secret = await secretListo();
+    }
+
     // redirect: "if_required" cobra sin salir de la página. El return_url solo se usa
     // si el método elegido exige redirección (algunos wallets), y ahí Stripe se va sola.
     const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
       elements,
+      ...(secret ? { clientSecret: secret } : {}),
       confirmParams: { return_url: returnUrl },
       redirect: "if_required",
     });

@@ -108,6 +108,9 @@ export function CheckoutForm() {
   // el pago esté confirmado: cerrar el modal no debe obligar a rearmar la compra.
   const [stripeSecret, setStripeSecret] = useState<string | null>(null);
   const [stripeAbierto, setStripeAbierto] = useState(false);
+  // Monto con el que se precarga el formulario de tarjeta; al crearse el pedido, el real.
+  const [montoCobro, setMontoCobro] = useState<number | null>(null);
+  const [setupCobro, setSetupCobro] = useState<"on_session" | "off_session" | null | undefined>(undefined);
 
   // Lista fija de 40 destinos (América y Europa), con el nombre en el idioma activo
   // y ordenada según ese idioma. El registro sigue usando la lista completa del mundo.
@@ -363,24 +366,37 @@ export function CheckoutForm() {
     }
 
     setLoading(true);
+    if (isStripe) {
+      // El formulario de pago se abre y empieza a cargar YA, en paralelo con la creación
+      // del pedido y del cobro: es lo que más tardaba. Con tarjeta se puede escribir
+      // enseguida; el cobro se usa recién al tocar "Pagar".
+      setSetupCobro(undefined);
+      setMontoCobro(
+        Math.max(0, useCartStore.getState().subtotal() - discount + (shippingCost ?? 0)) || null
+      );
+      setStripeAbierto(true);
+    }
     try {
       // Si ya se creó el pedido en un intento anterior que no llegó a pagarse, se reusa:
       // volver a apretar "Confirmar" no debe dejar dos pedidos por la misma compra.
       // El pedido de un intento con tarjeta no se reutiliza para transferencia / cripto:
       // tiene otro método y no trae cotización. Ese queda pendiente y vence solo.
       const previo = isManual ? null : pedidoEnCurso;
-      if (!previo && !(await preciosAlDia())) return;
+      if (!previo && !(await preciosAlDia())) {
+        setStripeAbierto(false);
+        return;
+      }
       const pedido = previo ?? (await crearPedido()).order;
       // El cupón se consume al crear el pedido: el que llegó por enlace ya no hace falta.
       if (!previo && coupon.trim() && coupon.trim().toUpperCase() === pendingCoupon) setPendingCoupon(null);
 
       if (isStripe) {
         setPedidoEnCurso(pedido);
-        // El modal se abre ya, con "Preparando el pago…", mientras se crea el cobro: el
-        // cliente ve que algo pasa en vez de esperar con el botón girando.
-        setStripeAbierto(true);
+        // El monto real del pedido (con envío y cupón ya calculados por el servidor).
+        if ("total" in pedido && pedido.total) setMontoCobro(parseFloat(String(pedido.total)));
         // El cobro sigue en el modal; el carrito queda intacto hasta confirmarlo.
         const intent = await createStripeIntent(pedido.id, pedido.access_token ?? undefined, true, stripeModo);
+        setSetupCobro(intent.setup_future_usage ?? null);
         setStripeSecret(intent.client_secret);
 
         return;
@@ -786,6 +802,8 @@ export function CheckoutForm() {
         open={stripeAbierto}
         clientSecret={stripeSecret}
         modo={stripeModo}
+        monto={stripeModo === "card" ? montoCobro : null}
+        setupFutureUsage={setupCobro}
         accessToken={pedidoEnCurso?.access_token ?? undefined}
         returnUrl={returnUrlStripe}
         onClose={() => {

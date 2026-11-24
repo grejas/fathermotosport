@@ -67,7 +67,13 @@ class StripeService
         // guardarse. Si Stripe no crea el Customer, se cobra igual, sin guardar nada.
         if ($guardarTarjeta && ! $order->esUpsell() && ($cliente = $this->crearCliente($order))) {
             $datos['customer'] = $cliente;
-            $datos['payment_method_options'] = ['card' => ['setup_future_usage' => 'on_session']];
+            // Solo tarjeta: a nivel del intent (así coincide con el formulario que la web
+            // ya precargó). Con métodos automáticos, solo para la tarjeta.
+            if ($modo === 'card') {
+                $datos['setup_future_usage'] = 'on_session';
+            } else {
+                $datos['payment_method_options'] = ['card' => ['setup_future_usage' => 'on_session']];
+            }
         }
 
         $response = $this->client()->post('/v1/payment_intents', $datos)->throw()->json();
@@ -138,7 +144,8 @@ class StripeService
 
         $customer = $intent['customer'] ?? null;
         $metodo = $intent['payment_method'] ?? null;
-        $guardada = ($intent['payment_method_options']['card']['setup_future_usage'] ?? null) !== null;
+        $guardada = ($intent['payment_method_options']['card']['setup_future_usage'] ?? null) !== null
+            || ($intent['setup_future_usage'] ?? null) !== null;
 
         if (($intent['status'] ?? null) !== 'succeeded' || ! $guardada || ! is_string($customer)
             || ! is_array($metodo) || ($metodo['type'] ?? null) !== 'card' || ($metodo['customer'] ?? null) !== $customer) {

@@ -38,6 +38,9 @@ class UpsellMejorasTest extends TestCase
     /** El intent del pago original guardó la tarjeta. */
     private bool $tarjetaGuardada = true;
 
+    /** Dónde guardó la tarjeta el intent original: 'card' (solo tarjeta) o 'intent' (a nivel del intent). */
+    private string $guardadaEn = 'card';
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -57,7 +60,8 @@ class UpsellMejorasTest extends TestCase
                     'id' => 'pi_original',
                     'status' => 'succeeded',
                     'customer' => 'cus_test_1',
-                    'payment_method_options' => ['card' => ['setup_future_usage' => $this->tarjetaGuardada ? 'on_session' : null]],
+                    'payment_method_options' => ['card' => ['setup_future_usage' => $this->tarjetaGuardada && $this->guardadaEn === 'card' ? 'on_session' : null]],
+                    'setup_future_usage' => $this->tarjetaGuardada && $this->guardadaEn === 'intent' ? 'on_session' : null,
                     'payment_method' => [
                         'id' => 'pm_test_1',
                         'type' => 'card',
@@ -531,5 +535,31 @@ class UpsellMejorasTest extends TestCase
 
         $this->postJson('/api/v1/payments/stripe/intent', ['order_id' => $order->id, 'mode' => 'crypto'], $this->cabeceras($order))
             ->assertStatus(422);
+    }
+
+    public function test_card_mode_saving_the_card_sets_it_on_the_whole_intent(): void
+    {
+        $order = $this->pedido($this->producto(), 'pending');
+
+        $this->postJson('/api/v1/payments/stripe/intent', ['order_id' => $order->id, 'mode' => 'card', 'save_card' => true], $this->cabeceras($order))
+            ->assertOk()
+            ->assertJsonStructure(['client_secret', 'payment_intent_id', 'setup_future_usage']);
+
+        // A nivel del intent, como lo precarga la web (Elements con setupFutureUsage).
+        Http::assertSent(fn ($r) => $r->method() === 'POST' && str_contains($r->url(), '/v1/payment_intents')
+            && ($r->data()['setup_future_usage'] ?? null) === 'on_session'
+            && ! isset($r->data()['payment_method_options'])
+            && ($r->data()['customer'] ?? null) === 'cus_test_1');
+    }
+
+    public function test_a_card_saved_at_intent_level_is_offered_for_one_tap(): void
+    {
+        $this->guardadaEn = 'intent';
+        $casco = $this->producto();
+        $this->regla($casco, $this->producto(50));
+        $order = $this->pedido($casco);
+
+        $this->getJson("/api/v1/orders/{$order->id}/upsell", $this->cabeceras($order))
+            ->assertJsonPath('saved_card.last4', '4242');
     }
 }

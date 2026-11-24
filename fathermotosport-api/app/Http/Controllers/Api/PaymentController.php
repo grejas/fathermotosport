@@ -510,6 +510,8 @@ class PaymentController extends Controller
         return response()->json([
             'client_secret' => $intent['client_secret'],
             'payment_intent_id' => $intent['id'],
+            // Para que el formulario precargado coincida con el cobro (guarda o no la tarjeta).
+            'setup_future_usage' => $intent['raw']['setup_future_usage'] ?? null,
         ]);
     }
 
@@ -565,6 +567,7 @@ class PaymentController extends Controller
         return [
             'client_secret' => $intent['client_secret'],
             'payment_intent_id' => $intent['id'],
+            'setup_future_usage' => $intent['setup_future_usage'] ?? null,
         ];
     }
 
