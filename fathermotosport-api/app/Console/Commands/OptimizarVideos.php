@@ -64,8 +64,11 @@ class OptimizarVideos extends Command
 
                 $antes = filesize($archivo);
 
-                if ($antes > self::MINIMO_BYTES) {
-                    $this->comprimir($ffmpeg, $archivo, $relativo);
+                // Si ffmpeg falla no se registra: se reintenta en la próxima corrida.
+                if ($antes > self::MINIMO_BYTES && ! $this->comprimir($ffmpeg, $archivo, $relativo)) {
+                    $procesados++;
+
+                    continue;
                 }
 
                 $this->poster($ffmpeg, $archivo, $relativo);
@@ -84,7 +87,8 @@ class OptimizarVideos extends Command
         return self::SUCCESS;
     }
 
-    private function comprimir(string $ffmpeg, string $archivo, string $relativo): void
+    /** true si quedó resuelto (comprimido o no valía la pena); false si ffmpeg falló. */
+    private function comprimir(string $ffmpeg, string $archivo, string $relativo): bool
     {
         $salida = $archivo.'.opt.mp4';
 
@@ -92,7 +96,10 @@ class OptimizarVideos extends Command
             $ffmpeg, '-y', '-hide_banner', '-loglevel', 'error', '-i', $archivo,
             // El lado corto a 720 px como máximo (sirve para verticales y horizontales).
             '-vf', "scale='if(gt(iw,ih),-2,min(720,iw))':'if(gt(iw,ih),min(720,ih),-2)'",
-            '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '28', '-maxrate', '1800k', '-bufsize', '3600k',
+            // Pocos hilos: el hosting compartido limita los procesos y x264, con todos los
+            // núcleos, no llega a abrir el codificador.
+            '-threads', '2', '-filter_threads', '1',
+            '-c:v', 'libx264', '-x264-params', 'threads=2', '-preset', 'veryfast', '-crf', '28', '-maxrate', '1800k', '-bufsize', '3600k',
             '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '96k', '-movflags', '+faststart', $salida,
         ]);
         $proceso->setTimeout(900);
@@ -100,22 +107,24 @@ class OptimizarVideos extends Command
 
         if (! $proceso->isSuccessful() || ! is_file($salida) || filesize($salida) < 10240) {
             @unlink($salida);
-            $this->warn("{$relativo}: ffmpeg falló, se deja el original. ".trim($proceso->getErrorOutput()));
+            $this->warn("{$relativo}: ffmpeg falló, se deja el original. ".mb_substr(trim($proceso->getErrorOutput()), 0, 300));
 
-            return;
+            return false;
         }
 
         // Solo vale la pena si baja al menos un 20 %.
         if (filesize($salida) > filesize($archivo) * 0.8) {
             @unlink($salida);
 
-            return;
+            return true;
         }
 
         $respaldo = storage_path('app/originales/'.$relativo);
         File::ensureDirectoryExists(dirname($respaldo));
         copy($archivo, $respaldo);
         rename($salida, $archivo);
+
+        return true;
     }
 
     /** Póster JPG del primer segundo para los videos que no tienen uno. */
@@ -133,7 +142,7 @@ class OptimizarVideos extends Command
         $destino = storage_path('app/public/'.$poster);
         File::ensureDirectoryExists(dirname($destino));
 
-        $proceso = new Process([$ffmpeg, '-y', '-hide_banner', '-loglevel', 'error', '-ss', '0.5', '-i', $archivo,
+        $proceso = new Process([$ffmpeg, '-y', '-hide_banner', '-loglevel', 'error', '-threads', '1', '-ss', '0.5', '-i', $archivo,
             '-frames:v', '1', '-vf', "scale='min(1080,iw)':-2", '-q:v', '4', $destino]);
         $proceso->setTimeout(120);
         $proceso->run();
