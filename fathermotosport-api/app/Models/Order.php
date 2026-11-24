@@ -117,6 +117,21 @@ class Order extends Model
                 $order->access_token = Str::random(48);
             }
         });
+
+        // Compra a Meta desde el servidor, con cualquier método de pago (también los que se
+        // confirman a mano en el panel). Después de responder, para no demorar a nadie.
+        static::updated(function (Order $order) {
+            if ($order->wasChanged('payment_status') && $order->payment_status === 'paid'
+                && \App\Services\MetaConversions::enabled()) {
+                $id = $order->id;
+                dispatch(function () use ($id) {
+                    $pedido = Order::find($id);
+                    if ($pedido) {
+                        app(\App\Services\MetaConversions::class)->sendPurchase($pedido);
+                    }
+                })->afterResponse();
+            }
+        });
     }
 
     /**
