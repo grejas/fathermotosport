@@ -4,7 +4,7 @@ import { MessageCircle } from "lucide-react";
 import { TrackedWhatsappLink } from "@/components/analytics/TrackedWhatsappLink";
 import { categoryHref, categoryLabel, type MenuCategory } from "@/lib/api/categories";
 import { safeSocialUrl, whatsappUrl, type SocialNetwork, type StoreSettings } from "@/lib/api/storeSettings";
-import { WalletLogos } from "@/components/ui/WalletLogos";
+import { PaymentLogos } from "@/components/ui/WalletLogos";
 
 // Redes sociales: el enlace sale del panel ("Configuración de la tienda"). Íconos de marca en SVG.
 const socialIcons: { network: SocialNetwork; label: string; path: string }[] = [
@@ -77,18 +77,7 @@ export function Footer({ categories, settings }: { categories: MenuCategory[]; s
 
         <div>
           <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-brand-white">{t("payments")}</h4>
-          <WalletLogos className="mb-2" />
-          <div className="flex flex-wrap gap-2">
-            {["PayPal", "Visa", "MasterCard", "Amex", "MercadoPago", "IBAN · SEPA", "USDT", "Bitcoin", "Binance Pay"].map((m) => (
-              <span
-                key={m}
-                translate="no"
-                className="rounded-md border border-white/10 bg-brand-card px-2.5 py-1 text-xs text-brand-muted"
-              >
-                {m}
-              </span>
-            ))}
-          </div>
+          <PaymentLogos />
         </div>
 
         <div>
