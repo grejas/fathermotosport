@@ -1,46 +1,117 @@
 import { faAmazonPay, faApplePay, faGooglePay } from "@fortawesome/free-brands-svg-icons";
 import type { IconDefinition } from "@fortawesome/free-brands-svg-icons";
+import {
+  siAmericanexpress,
+  siBinance,
+  siBitcoin,
+  siMastercard,
+  siMercadopago,
+  siPaypal,
+  siSepa,
+  siTether,
+  siVisa,
+} from "simple-icons";
+import type { SimpleIcon } from "simple-icons";
 import { cn } from "@/lib/utils";
 
 /**
- * Marcas de las billeteras que cobra Stripe (Apple Pay, Google Pay, Amazon Pay).
- * Los trazos vienen del paquete de marcas de Font Awesome (CC BY 4.0): no se dibujan a
- * mano, y solo se importan estos tres iconos, así que no suma peso al bundle.
+ * Marcas de los medios de pago. No se dibujan a mano: los trazos vienen de paquetes
+ * de marcas (Font Awesome Brands, CC BY 4.0, para las billeteras; Simple Icons, CC0,
+ * para el resto) y solo se importan los iconos usados, así que el bundle no crece.
  */
-const WALLETS: { id: "apple_pay" | "google_pay" | "amazon_pay"; name: string; icon: IconDefinition }[] = [
-  { id: "apple_pay", name: "Apple Pay", icon: faApplePay },
-  { id: "google_pay", name: "Google Pay", icon: faGooglePay },
-  { id: "amazon_pay", name: "Amazon Pay", icon: faAmazonPay },
+
+type Marca = {
+  id: string;
+  name: string;
+  /** Trazo de Font Awesome (viewBox propio) o de Simple Icons (24×24). */
+  fa?: IconDefinition;
+  si?: SimpleIcon;
+  /** Texto junto al símbolo cuando el logo solo no se reconoce (p. ej. la "P" de PayPal). */
+  label?: string;
+  /** Logo que ya es un logotipo ancho: se dibuja más grande y sin texto. */
+  wide?: boolean;
+};
+
+const BILLETERAS: Marca[] = [
+  { id: "apple_pay", name: "Apple Pay", fa: faApplePay },
+  { id: "google_pay", name: "Google Pay", fa: faGooglePay },
+  { id: "amazon_pay", name: "Amazon Pay", fa: faAmazonPay },
 ];
 
-function BrandSvg({ icon, title, className }: { icon: IconDefinition; title: string; className?: string }) {
-  const [width, height, , , path] = icon.icon;
+const RESTO: Marca[] = [
+  { id: "paypal", name: "PayPal", si: siPaypal, label: "PayPal" },
+  { id: "visa", name: "Visa", si: siVisa, wide: true },
+  { id: "mastercard", name: "Mastercard", si: siMastercard, label: "Mastercard" },
+  { id: "amex", name: "American Express", si: siAmericanexpress, wide: true },
+  { id: "mercadopago", name: "Mercado Pago", si: siMercadopago, label: "Mercado Pago" },
+  { id: "sepa", name: "IBAN · SEPA", si: siSepa, label: "IBAN" },
+  { id: "usdt", name: "USDT (Tether)", si: siTether, label: "USDT" },
+  { id: "bitcoin", name: "Bitcoin", si: siBitcoin, label: "Bitcoin" },
+  { id: "binance_pay", name: "Binance Pay", si: siBinance, label: "Binance Pay" },
+];
+
+function Simbolo({ marca, className }: { marca: Marca; className?: string }) {
+  if (marca.fa) {
+    const [width, height, , , path] = marca.fa.icon;
+    return (
+      <svg viewBox={`0 0 ${width} ${height}`} aria-hidden="true" fill="currentColor" className={className}>
+        {Array.isArray(path) ? path.map((d) => <path key={d} d={d} />) : <path d={path} />}
+      </svg>
+    );
+  }
+  if (marca.si) {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill={`#${marca.si.hex}`} className={className}>
+        <path d={marca.si.path} />
+      </svg>
+    );
+  }
+  return null;
+}
+
+/** Tarjetita blanca con el logo a color, como las que se ven en las tiendas grandes. */
+function Chip({ marca }: { marca: Marca }) {
   return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      role="img"
-      aria-label={title}
-      fill="currentColor"
-      className={className}
+    <li
+      title={marca.name}
+      aria-label={marca.name}
+      className="flex h-8 items-center gap-1.5 rounded-md bg-white px-2.5 text-[#1A1A1A] shadow-sm ring-1 ring-black/5"
     >
-      <title>{title}</title>
-      {Array.isArray(path) ? path.map((d) => <path key={d} d={d} />) : <path d={path} />}
-    </svg>
+      <Simbolo
+        marca={marca}
+        className={marca.fa ? "h-7 w-auto" : marca.wide ? "h-8 w-8" : "h-[18px] w-[18px] shrink-0"}
+      />
+      {marca.label && <span className="whitespace-nowrap text-[11px] font-semibold tracking-tight">{marca.label}</span>}
+    </li>
+  );
+}
+
+/** Todos los medios de pago (footer). */
+export function PaymentLogos({ className }: { className?: string }) {
+  return (
+    <ul className={cn("flex flex-wrap gap-2", className)} translate="no" aria-label="Medios de pago">
+      {[...BILLETERAS, ...RESTO].map((m) => (
+        <Chip key={m.id} marca={m} />
+      ))}
+    </ul>
   );
 }
 
 interface Props {
-  /** "chip": tarjetitas blancas (footer). "inline": solo los logos, para dentro de una opción. */
+  /** "chip": tarjetitas blancas. "inline": solo los logos, para dentro de una opción. */
   variant?: "chip" | "inline";
   className?: string;
 }
 
+/** Solo las billeteras de Stripe (opción "Tarjeta o billetera digital" del checkout). */
 export function WalletLogos({ variant = "chip", className }: Props) {
   if (variant === "inline") {
     return (
       <span className={cn("flex items-center gap-2 text-brand-white/80", className)} translate="no">
-        {WALLETS.map((w) => (
-          <BrandSvg key={w.id} icon={w.icon} title={w.name} className="h-6 w-auto" />
+        {BILLETERAS.map((w) => (
+          <span key={w.id} role="img" aria-label={w.name} title={w.name}>
+            <Simbolo marca={w} className="h-6 w-auto" />
+          </span>
         ))}
       </span>
     );
@@ -48,14 +119,8 @@ export function WalletLogos({ variant = "chip", className }: Props) {
 
   return (
     <ul className={cn("flex flex-wrap gap-2", className)} translate="no">
-      {WALLETS.map((w) => (
-        <li
-          key={w.id}
-          className="flex h-8 items-center justify-center rounded-md bg-white px-2.5 text-[#111]"
-          title={w.name}
-        >
-          <BrandSvg icon={w.icon} title={w.name} className="h-7 w-auto" />
-        </li>
+      {BILLETERAS.map((m) => (
+        <Chip key={m.id} marca={m} />
       ))}
     </ul>
   );
