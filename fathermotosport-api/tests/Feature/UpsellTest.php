@@ -140,7 +140,7 @@ class UpsellTest extends TestCase
         $casco = $this->producto();
         $order = $this->pedidoPagado($casco);
 
-        // Seis candidatas para cinco lugares.
+        // Seis candidatas para tres lugares.
         $esperadas = [];
         foreach ([5, 30, 20, 10, 1, 15] as $prioridad) {
             $ofrecido = $this->producto(50, 2, null);
@@ -150,15 +150,16 @@ class UpsellTest extends TestCase
 
         $respuesta = $this->getJson("/api/v1/orders/{$order->id}/upsell", $this->cabeceras($order))
             ->assertOk()
-            ->assertJsonCount(5, 'offers');
+            ->assertJsonCount(3, 'offers');
 
         $ids = collect($respuesta->json('offers'))->pluck('product.id')->all();
-        $this->assertSame([$esperadas[30], $esperadas[20], $esperadas[15], $esperadas[10], $esperadas[5]], $ids);
+        $this->assertSame([$esperadas[30], $esperadas[20], $esperadas[15]], $ids);
     }
 
-    public function test_the_cap_is_five_offers(): void
+    public function test_the_cap_is_three_offers(): void
     {
-        $this->assertSame(5, UpsellService::MAX_OFERTAS);
+        // Una oferta protagonista y pocas más: el upsell no es un catálogo.
+        $this->assertSame(3, UpsellService::MAX_OFERTAS);
     }
 
     public function test_at_equal_priority_the_best_discount_goes_first(): void

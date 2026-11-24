@@ -49,6 +49,11 @@ class StripePaymentTest extends TestCase
         // el stub anterior, lo encola, y seguiría respondiendo el primero. Para cambiar
         // la respuesta a mitad del test se mutan las propiedades de arriba.
         Http::fake(function ($request) {
+            // Customer de Stripe para guardar la tarjeta (pedido normal).
+            if (str_contains($request->url(), '/v1/customers')) {
+                return Http::response(['id' => 'cus_test_1', 'object' => 'customer']);
+            }
+
             if ($request->method() === 'POST') {
                 $this->montoCreado = (int) $request['amount'];
 

@@ -156,22 +156,22 @@ class UpsellRuleFormTest extends TestCase
         $this->assertSame(0, UpsellRule::count());
     }
 
-    public function test_it_warns_when_the_trigger_would_have_more_than_five_offers(): void
+    public function test_it_warns_when_the_trigger_would_have_more_offers_than_fit(): void
     {
         $casco = $this->producto('Casco');
-        foreach (['A', 'B', 'C', 'D'] as $nombre) {
+        foreach (['A', 'B'] as $nombre) {
             $this->regla($casco, $this->producto($nombre));
         }
         $nuevas = [$this->producto('E')->id];
 
-        // 4 + 1 = 5: justo el tope.
+        // 2 + 1 = 3: justo el tope.
         $this->formulario(['trigger_product_id' => $casco->id, 'offer_product_ids' => $nuevas])
             ->assertDontSee('quedará con');
 
         $nuevas[] = $this->producto('F')->id;
 
         $this->formulario(['trigger_product_id' => $casco->id, 'offer_product_ids' => $nuevas])
-            ->assertSee('Nota: este disparador quedará con 6 ofertas activas.');
+            ->assertSee('Nota: este disparador quedará con 4 ofertas activas.');
     }
 
     public function test_editing_keeps_the_rule_and_adds_one_rule_per_new_product(): void

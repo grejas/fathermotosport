@@ -97,3 +97,25 @@ export async function confirmStripePayment(
   );
   return data;
 }
+
+export interface SavedCardPaymentResponse extends PaymentStatusResponse {
+  payment_intent_id: string;
+  /** Solo si el banco pide 3-D Secure: con él el navegador completa la verificación. */
+  client_secret: string | null;
+}
+
+/**
+ * Cobra un pedido de venta cruzada con la tarjeta del pedido original, sin volver a
+ * pedirla. Un 402/409 con `sin_tarjeta` significa: pagar con otro medio.
+ */
+export async function payUpsellWithSavedCard(
+  orderId: string,
+  accessToken?: string
+): Promise<SavedCardPaymentResponse> {
+  const { data } = await apiClient.post<SavedCardPaymentResponse>(
+    "/payments/stripe/saved-card",
+    { order_id: orderId },
+    orderAuth(accessToken)
+  );
+  return data;
+}

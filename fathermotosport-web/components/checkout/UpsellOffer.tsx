@@ -19,7 +19,8 @@ import { AnimatePresence, motion, useIsPresent, useReducedMotion } from "framer-
 import { Check, ChevronLeft, ChevronRight, Truck, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
-import { StripePaymentModal } from "./StripePaymentModal";
+import { StripePaymentModal, stripePromise } from "./StripePaymentModal";
+import { OrderConversionTracker } from "./OrderConversionTracker";
 import { PaypalButton } from "./PaypalButton";
 import {
   getUpsellOffers,
@@ -27,7 +28,12 @@ import {
   dismissUpsell,
   type UpsellOfferItem,
 } from "@/lib/api/upsell";
-import { createStripeIntent, createPaypalOrder } from "@/lib/api/payments";
+import {
+  confirmStripePayment,
+  createStripeIntent,
+  createPaypalOrder,
+  payUpsellWithSavedCard,
+} from "@/lib/api/payments";
 import { ENABLED_PAYMENT_METHODS } from "@/lib/data/paymentMethods";
 import { trackUpsell } from "@/lib/analytics/upsellEvents";
 import { cn, formatPrice, getImageUrl } from "@/lib/utils";
@@ -59,10 +65,25 @@ type Paso = "oferta" | "confirmar1" | "confirmar2" | "agregado";
 const DEMORA_APERTURA_MS = 1500;
 const DURACION_AGREGADO_MS = 2600;
 
+/**
+ * Vuelta de 3-D Secure: el pago puede figurar pendiente unos segundos, hasta que llega
+ * el webhook. Se reintenta cada 3 s, hasta 12 veces (unos 36 s).
+ */
+const MAX_INTENTOS_PENDIENTE = 12;
+const INTERVALO_PENDIENTE_MS = 3000;
+
 const SELECTOR_ENFOCABLES =
   'a[href], button:not([disabled]), select:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 const ahorroDe = (o: UpsellOfferItem) => parseFloat(o.price) - parseFloat(o.discounted_price);
+
+/** Precio del último aviso: la rebaja si la regla la tiene; si no, el de siempre. */
+const precioAviso = (o: UpsellOfferItem) => parseFloat(o.last_chance_price ?? o.discounted_price);
+
+/** "Visa •••• 4242". La marca viene en minúsculas de Stripe ("visa", "mastercard"). */
+const MARCAS: Record<string, string> = { visa: "Visa", mastercard: "Mastercard", amex: "Amex", discover: "Discover" };
+const nombreTarjeta = (marca: string | null, ultimos: string | null) =>
+  `${(marca && MARCAS[marca]) ?? "tarjeta"}${ultimos ? ` •••• ${ultimos}` : ""}`;
 
 /**
  * Colores de texto medidos sobre el vidrio al 72% con una página BLANCA detrás, el peor
@@ -112,6 +133,13 @@ export function UpsellOffer({ orderId, orderNumber, accessToken }: Props) {
   const [creando, setCreando] = useState(false);
   const [pedido, setPedido] = useState<PedidoUpsell | null>(null);
   const [stripeSecret, setStripeSecret] = useState<string | null>(null);
+  // La tarjeta guardada falló (rechazo, sin tarjeta): se paga con los otros medios.
+  const [sinTarjeta, setSinTarjeta] = useState(false);
+  // Pedido de venta cruzada ya pagado: monta su registro de conversión (Purchase).
+  const [pagado, setPagado] = useState<PedidoUpsell | null>(null);
+  // La primera oferta va elegida al abrir, una sola vez: si el cliente la desmarca,
+  // no se le vuelve a marcar.
+  const preseleccionado = useRef(false);
 
   const panelRef = useRef<HTMLDivElement>(null);
   const focoPrevio = useRef<HTMLElement | null>(null);
@@ -120,7 +148,7 @@ export function UpsellOffer({ orderId, orderNumber, accessToken }: Props) {
 
   useEffect(() => setMontado(true), []);
 
-  const { data: ofertas } = useQuery({
+  const { data: respuesta } = useQuery({
     queryKey: ["upsell", orderId],
     queryFn: () => getUpsellOffers(orderId, accessToken),
     // Un pedido sin ofertas es lo normal: no tiene sentido reintentar.
@@ -129,18 +157,35 @@ export function UpsellOffer({ orderId, orderNumber, accessToken }: Props) {
     // Una vez abierto, no se vuelve a pedir solo: el modal trabaja con lo que mostró.
     staleTime: Infinity,
     refetchOnWindowFocus: false,
+    // Salvo que el pago figure pendiente (vuelta de 3-D Secure antes del webhook):
+    // ahí se reintenta unos segundos hasta que aparezca como pagado.
+    refetchInterval: (query) => {
+      const { data, dataUpdateCount } = query.state;
+      return data?.pending && dataUpdateCount < MAX_INTENTOS_PENDIENTE ? INTERVALO_PENDIENTE_MS : false;
+    },
   });
 
-  const lista = useMemo(() => ofertas ?? [], [ofertas]);
+  const lista = useMemo(() => respuesta?.offers ?? [], [respuesta]);
+  const tarjeta = respuesta?.saved_card ?? null;
+  // Un toque: hay tarjeta guardada y no falló.
+  const unToque = Boolean(tarjeta) && !sinTarjeta;
+
+  // La oferta protagonista (la de más prioridad) arranca elegida: un solo toque compra.
+  useEffect(() => {
+    if (preseleccionado.current || lista.length === 0) return;
+    preseleccionado.current = true;
+    setElegidos(new Set([lista[0].rule_id]));
+  }, [lista]);
 
   // Se abre solo, un momento después de la confirmación, y solo si hay algo que ofrecer.
   useEffect(() => {
     if (omitir || lista.length === 0) return;
     const id = window.setTimeout(() => {
       setAbierto(true);
-      trackUpsell("modal_visto", { orderId, ofertas: lista.length });
+      trackUpsell("modal_visto", { orderId, ofertas: lista.length, un_toque: Boolean(tarjeta) });
     }, DEMORA_APERTURA_MS);
     return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [omitir, lista.length, orderId]);
 
   const seleccionados = useMemo(() => lista.filter((o) => elegidos.has(o.rule_id)), [lista, elegidos]);
@@ -149,6 +194,13 @@ export function UpsellOffer({ orderId, orderNumber, accessToken }: Props) {
   const indiceVisible = Math.min(indice, Math.max(lista.length - 1, 0));
   // La que protagonizan los avisos de cierre: la primera elegida, o la que estaba viendo.
   const destacada = seleccionados[0] ?? lista[indiceVisible];
+  // Lo que se compra desde un aviso: lo elegido o, si no eligió nada, la destacada.
+  const lineasAviso = seleccionados.length > 0 ? seleccionados : destacada ? [destacada] : [];
+  const hayRebaja = lineasAviso.some((o) => o.last_chance_price !== null);
+  const totalAviso = lineasAviso.reduce((suma, o) => suma + precioAviso(o), 0);
+  // Lo que la rebaja baja ADEMÁS del descuento normal: "te lo dejamos $X más barato".
+  const normalAviso = lineasAviso.reduce((suma, o) => suma + parseFloat(o.discounted_price), 0);
+  const rebajaExtra = normalAviso - totalAviso;
 
   /**
    * Pasa a otra oferta. Sin paso cíclico: en los extremos la flecha se deshabilita,
@@ -209,11 +261,11 @@ export function UpsellOffer({ orderId, orderNumber, accessToken }: Props) {
       return setPaso("confirmar1");
     }
     if (paso === "confirmar1") {
-      trackUpsell("cierre_paso_2", { orderId });
+      trackUpsell("cierre_paso_2", { orderId, rebaja: hayRebaja });
       return setPaso("confirmar2");
     }
     void descartar();
-  }, [creando, paso, orderId, cerrarDelTodo, descartar]);
+  }, [creando, paso, orderId, hayRebaja, cerrarDelTodo, descartar]);
 
   /** Esc y clic fuera: solo en el primer paso. */
   const intentarCerrarSuave = useCallback(() => {
@@ -226,33 +278,90 @@ export function UpsellOffer({ orderId, orderNumber, accessToken }: Props) {
     cerrarDelTodo();
   }, [t, cerrarDelTodo]);
 
-  const comprar = async (lineas: UpsellOfferItem[]) => {
+  /** Pagado: se agradece, se registra la conversión y el modal se cierra solo. */
+  const alPagar = (pagadoAhora: PedidoUpsell, metodo: string) => {
+    setStripeSecret(null);
+    setPagado(pagadoAhora);
+    trackUpsell("agregado", { orderId, metodo, total: parseFloat(pagadoAhora.total) });
+    setPaso("agregado");
+  };
+
+  /**
+   * Cobro en un toque con la tarjeta del pedido original. Si el banco pide 3-D Secure,
+   * Stripe lo resuelve en su ventana y después se confirma contra el backend. Si algo
+   * falla, se ofrecen los otros medios de pago con el pedido intacto.
+   */
+  const cobrarConTarjetaGuardada = async (nuevo: PedidoUpsell) => {
+    setCreando(true);
+    try {
+      const token = nuevo.access_token ?? undefined;
+      const res = await payUpsellWithSavedCard(nuevo.id, token);
+      let pagadoOk = res.order?.payment_status === "paid";
+
+      if (!pagadoOk && res.client_secret) {
+        const stripe = await stripePromise;
+        if (!stripe) throw new Error("Stripe no disponible");
+        const { error } = await stripe.handleNextAction({ clientSecret: res.client_secret });
+        if (error) throw error;
+        const confirmado = await confirmStripePayment(res.payment_intent_id, token);
+        pagadoOk = confirmado.order?.payment_status === "paid";
+      }
+
+      if (!pagadoOk) throw new Error("pago no confirmado");
+      alPagar(nuevo, "tarjeta_guardada");
+    } catch (err: unknown) {
+      trackUpsell("pago_fallido", { orderId, metodo: "tarjeta_guardada" });
+      setSinTarjeta(true);
+      setPaso("oferta");
+      toast.error(mensajeDelError(err) ?? t("saved_card_failed"));
+    } finally {
+      setCreando(false);
+    }
+  };
+
+  /**
+   * Crea el pedido con lo elegido y, si hay tarjeta guardada, lo cobra en el mismo
+   * toque. Sin tarjeta, quedan a la vista PayPal y tarjeta para pagarlo.
+   */
+  const comprar = async (lineas: UpsellOfferItem[], ultimaOportunidad = false) => {
     if (lineas.length === 0) return;
     setCreando(true);
+    let nuevo: PedidoUpsell | null = null;
     try {
       const { order } = await createUpsellOrder(
         orderId,
         lineas.map((o) => ({ rule_id: o.rule_id, variant_id: tallaDe(o) })),
-        accessToken
+        accessToken,
+        ultimaOportunidad
       );
       // El pedido existe pero sin pagar. El intent de Stripe se pide al elegir
       // tarjeta, para no crear uno si paga con PayPal.
+      nuevo = order;
       setPedido(order);
-      setPaso("oferta");
+      trackUpsell("pedido_creado", { orderId, total: parseFloat(order.total), rebaja: ultimaOportunidad });
     } catch (err: unknown) {
       if (estadoDelError(err) === 409) return ofertaNoDisponible();
       toast.error(mensajeDelError(err) ?? t("error"));
     } finally {
       setCreando(false);
     }
+
+    if (!nuevo) return;
+    if (unToque) return cobrarConTarjetaGuardada(nuevo);
+    setPaso("oferta");
   };
 
   /** "Sí, agregarlo" desde un aviso: compra lo elegido, o la oferta que estaba viendo. */
   const agregarDesdeAviso = () => {
-    if (pedido) return setPaso("oferta");
-    const lineas = seleccionados.length > 0 ? seleccionados : destacada ? [destacada] : [];
-    if (lineas.length !== seleccionados.length) setElegidos(new Set(lineas.map((o) => o.rule_id)));
-    void comprar(lineas);
+    const rebaja = paso === "confirmar2" && hayRebaja;
+    // Con el pedido ya armado al precio normal, solo falta cobrarlo. Con rebaja se
+    // rehace: el backend reutiliza el pedido pendiente con los precios nuevos.
+    if (pedido && !rebaja) {
+      if (unToque) return void cobrarConTarjetaGuardada(pedido);
+      return setPaso("oferta");
+    }
+    if (lineasAviso.length !== seleccionados.length) setElegidos(new Set(lineasAviso.map((o) => o.rule_id)));
+    void comprar(lineasAviso, rebaja);
   };
 
   const pagarConTarjeta = async () => {
@@ -276,18 +385,12 @@ export function UpsellOffer({ orderId, orderNumber, accessToken }: Props) {
       if (!approval_url) throw new Error("sin approval_url");
       trackUpsell("agregado", { orderId, metodo: "paypal", pagoPendiente: true });
       // Al volver de PayPal la página de éxito es la del pedido nuevo, que no genera
-      // más ofertas: no hace falta marcar nada acá.
+      // más ofertas y registra su propia conversión: no hace falta marcar nada acá.
       window.location.href = approval_url;
     } catch {
       toast.error(t("error"));
       setCreando(false);
     }
-  };
-
-  const alPagar = () => {
-    setStripeSecret(null);
-    trackUpsell("agregado", { orderId, metodo: "stripe", total });
-    setPaso("agregado");
   };
 
   // "Agregado a tu pedido" se ve un momento y el modal se cierra solo.
@@ -397,8 +500,9 @@ export function UpsellOffer({ orderId, orderNumber, accessToken }: Props) {
                 aria-modal="true"
                 aria-labelledby={tituloId}
                 className={cn(
-                  // Centrado siempre: en móvil, el ancho de la pantalla menos 16px por lado.
-                  "relative z-10 flex max-h-[85vh] w-[calc(100vw-32px)] max-w-[460px] flex-col overflow-hidden rounded-3xl",
+                  // Centrado siempre: en móvil, el ancho de la pantalla menos 16px por lado. Alto en
+                  // dvh: en Safari de iPhone, vh cuenta la barra de direcciones y cortaba el botón.
+                  "relative z-10 flex max-h-[92dvh] w-[calc(100vw-32px)] max-w-[460px] flex-col overflow-hidden rounded-3xl",
                   "border border-white/[0.14] shadow-[0_24px_64px_rgba(0,0,0,0.55)]",
                   // Vidrio al 72% con blur de 10px. Sin backdrop-filter, al 94%: el texto
                   // nunca queda sobre la página nítida.
@@ -445,6 +549,8 @@ export function UpsellOffer({ orderId, orderNumber, accessToken }: Props) {
                     cantidad={seleccionados.length}
                     creando={creando}
                     pedido={pedido}
+                    mostrarPago={Boolean(pedido) && !unToque}
+                    tarjeta={unToque && tarjeta ? nombreTarjeta(tarjeta.brand, tarjeta.last4) : null}
                     onComprar={() => comprar(seleccionados)}
                     onTarjeta={pagarConTarjeta}
                     onPaypal={pagarConPaypal}
@@ -455,22 +561,16 @@ export function UpsellOffer({ orderId, orderNumber, accessToken }: Props) {
                 <div className="min-h-0 overflow-y-auto overscroll-contain px-5 pb-6 pt-4 sm:px-7">
                   {paso === "confirmar1" && destacada && (
                     <div className="pb-1 pt-6 text-center">
-                      <span className="relative mx-auto block h-24 w-24 overflow-hidden rounded-2xl bg-white/[0.04] ring-1 ring-white/10">
-                        <Image
-                          src={getImageUrl(destacada.product.primary_image)}
-                          alt={destacada.product.name}
-                          fill
-                          sizes="96px"
-                          className="object-contain p-2"
-                        />
-                      </span>
+                      <MiniaturaAviso oferta={destacada} />
                       <h2 id={tituloId} className="mt-5 text-xl font-extrabold text-white">
                         {t("confirm1_title")}
                       </h2>
                       <div className="mt-3 flex justify-center">
                         <InsigniaAhorro grande ahorro={ahorroTotal > 0 ? ahorroTotal : ahorroDe(destacada)} />
                       </div>
-                      <p className={cn("mt-2 text-sm", TEXTO_SECUNDARIO)}>{t("confirm1_body")}</p>
+                      <p className={cn("mt-3 text-sm", TEXTO_SECUNDARIO)}>
+                        {t("confirm1_body", { number: orderNumber })}
+                      </p>
                       <div className="mt-3 flex justify-center">
                         <EnvioGratis discreta />
                       </div>
@@ -496,17 +596,38 @@ export function UpsellOffer({ orderId, orderNumber, accessToken }: Props) {
                     </div>
                   )}
 
-                  {paso === "confirmar2" && (
-                    <div className="pb-1 pt-8 text-center">
-                      <h2 id={tituloId} className="text-xl font-extrabold text-white">
-                        {t("confirm2_title", { number: orderNumber })}
-                      </h2>
-                      <p className={cn("mt-2 text-sm", TEXTO_SECUNDARIO)}>{t("confirm2_body")}</p>
-                      {destacada && (
-                        <div className="mt-4 flex justify-center">
-                          <InsigniaAhorro grande ahorro={ahorroTotal > 0 ? ahorroTotal : ahorroDe(destacada)} />
-                        </div>
+                  {/* Último aviso. Con rebaja configurada en la regla, ofrece ese precio
+                      (lo calcula y lo valida el servidor); sin rebaja, repite la oferta. */}
+                  {paso === "confirmar2" && destacada && (
+                    <div className="pb-1 pt-6 text-center">
+                      <MiniaturaAviso oferta={destacada} />
+                      {hayRebaja ? (
+                        <>
+                          <p className={cn("mt-5 text-[11px] font-bold uppercase tracking-[0.18em]", ROJO_TEXTO)}>
+                            {t("confirm2_lc_kicker")}
+                          </p>
+                          <h2 id={tituloId} className="mt-1 text-xl font-extrabold text-white">
+                            {t("confirm2_lc_title", { amount: formatPrice(rebajaExtra) })}
+                          </h2>
+                          <p className="mt-3 flex items-baseline justify-center gap-2">
+                            <span className="text-sm font-semibold tabular-nums text-[#d4d4d4] line-through decoration-brand-red decoration-2">
+                              <span className="sr-only">{t("was")} </span>
+                              {formatPrice(normalAviso)}
+                            </span>
+                            <span className="text-3xl font-black tabular-nums text-white">{formatPrice(totalAviso)}</span>
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <h2 id={tituloId} className="mt-5 text-xl font-extrabold text-white">
+                            {t("confirm2_title", { number: orderNumber })}
+                          </h2>
+                          <div className="mt-3 flex justify-center">
+                            <InsigniaAhorro grande ahorro={ahorroTotal > 0 ? ahorroTotal : ahorroDe(destacada)} />
+                          </div>
+                        </>
                       )}
+                      <p className={cn("mt-3 text-sm", TEXTO_SECUNDARIO)}>{t("confirm2_body")}</p>
                       <div className="mt-3 flex justify-center">
                         <EnvioGratis discreta />
                       </div>
@@ -519,7 +640,7 @@ export function UpsellOffer({ orderId, orderNumber, accessToken }: Props) {
                           onClick={agregarDesdeAviso}
                           data-autofocus
                         >
-                          {t("confirm2_add")}
+                          {hayRebaja ? t("confirm2_lc_add", { total: formatPrice(totalAviso) }) : t("confirm2_add")}
                         </Button>
                         <button
                           type="button"
@@ -543,7 +664,8 @@ export function UpsellOffer({ orderId, orderNumber, accessToken }: Props) {
                         <Check size={32} className="text-cat-boots" strokeWidth={3} />
                       </motion.span>
                       <h2 id={tituloId} className="mt-5 text-xl font-extrabold text-white">
-                        {t("added", { number: orderNumber })}
+                        {/* Guion que no corta: "FMS-0123" no se parte en dos renglones. */}
+                        {t("added", { number: orderNumber.replace(/-/g, "\u2011") })}
                       </h2>
                       <p className={cn("mt-2 text-sm", TEXTO_SECUNDARIO)}>
                         {t("ships_together", { number: orderNumber })}
@@ -566,8 +688,19 @@ export function UpsellOffer({ orderId, orderNumber, accessToken }: Props) {
         returnUrl={typeof window !== "undefined" ? window.location.href : ""}
         // Cancelar la tarjeta vuelve al modal de la oferta, con el pedido intacto.
         onClose={() => setStripeSecret(null)}
-        onPaid={alPagar}
+        onPaid={() => pedido && alPagar(pedido, "tarjeta_nueva")}
+        guardaTarjeta={false}
       />
+
+      {/* Compra del upsell pagado en la página: Purchase en TikTok, Meta y GA4, igual
+          que cualquier pedido. Queda montado aunque el modal se cierre. */}
+      {pagado && (
+        <OrderConversionTracker
+          orderId={pagado.id}
+          accessToken={pagado.access_token ?? undefined}
+          isAuth={!pagado.access_token}
+        />
+      )}
     </>
   );
 }
@@ -592,6 +725,10 @@ interface PantallaOfertaProps {
   cantidad: number;
   creando: boolean;
   pedido: PedidoUpsell | null;
+  /** El pedido existe y se paga con PayPal o tarjeta nueva (sin un toque, o falló). */
+  mostrarPago: boolean;
+  /** "Visa •••• 4242" si se cobra en un toque; null si no. */
+  tarjeta: string | null;
   onComprar: () => void;
   onTarjeta: () => void;
   onPaypal: () => void;
@@ -617,6 +754,8 @@ function PantallaOferta({
   cantidad,
   creando,
   pedido,
+  mostrarPago,
+  tarjeta,
   onComprar,
   onTarjeta,
   onPaypal,
@@ -643,8 +782,8 @@ function PantallaOferta({
 
   return (
     <>
-      <header className="shrink-0 px-5 pb-3 pt-4 sm:px-6">
-        <p className={cn("pr-10 text-[11px] font-bold uppercase tracking-[0.18em]", ROJO_TEXTO)}>
+      <header className="shrink-0 px-5 pb-2 pt-4 sm:px-6">
+        <p className={cn("pr-10 text-[11px] font-bold uppercase tracking-[0.14em]", ROJO_TEXTO)}>
           {t("context")}
         </p>
         <h2 id={tituloId} className="mt-1 pr-10 text-xl font-extrabold uppercase tracking-tight text-white">
@@ -669,9 +808,9 @@ function PantallaOferta({
         >
           {/* Alto fijo: cambiar de oferta no mueve nada de lo que está debajo. Las
               dos tarjetas se superponen durante la transición. Es el alto del caso más
-              alto (nombre de 2 líneas + fila de tallas) más el padding y el borde: 326px
-              con la miniatura de 112px; bajo 400px de ancho, 96px y 310px. */}
-          <div className="relative h-[310px] overflow-hidden rounded-2xl min-[400px]:h-[326px]">
+              alto (motivo + nombre de 2 líneas + fila de tallas) más el padding y el
+              borde: 338px con la miniatura de 112px; bajo 400px de ancho, 96px y 322px. */}
+          <div className="relative h-[322px] overflow-hidden rounded-2xl min-[400px]:h-[338px]">
             <AnimatePresence initial={false} custom={direccion}>
               <Diapositiva
                 key={actual.rule_id}
@@ -738,15 +877,17 @@ function PantallaOferta({
       </div>
 
       <footer className="shrink-0 border-t border-white/10 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 sm:px-6">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        {/* Envío gratis y "va en la misma caja" en una sola línea: es el beneficio, no
+            un párrafo aparte. */}
+        <p className={cn("flex flex-wrap items-center gap-x-2 gap-y-1 text-xs", TEXTO_SECUNDARIO)}>
           <EnvioGratis discreta />
-          <p className={cn("text-xs", TEXTO_SECUNDARIO)}>{t("ships_together", { number: orderNumber })}</p>
-        </div>
+          <span>{t("ships_together", { number: orderNumber })}</span>
+        </p>
 
         <div className="mt-3">
-        {!pedido ? (
+        {!mostrarPago ? (
           <>
-            {/* Con una sola elegida el bloque de arriba ya lo dice, y el botón lleva el total. */}
+            {/* Con una sola elegida la tarjeta ya lo dice, y el botón lleva el total. */}
             <div aria-live="polite">
               {cantidad > 1 && (
                 <p className="mb-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
@@ -767,22 +908,28 @@ function PantallaOferta({
               className="w-full py-3.5 text-base font-black tracking-wide"
               loading={creando}
               disabled={cantidad === 0}
-              aria-describedby={cantidad === 0 ? pistaId : undefined}
+              aria-describedby={cantidad === 0 ? pistaId : tarjeta ? `${pistaId}-tarjeta` : undefined}
               onClick={onComprar}
             >
-              {cantidad === 0 ? t("select_one") : `${t("buy_now")} · ${formatPrice(total)}`}
+              {cantidad === 0 ? t("select_one") : t("buy_now", { total: formatPrice(total) })}
             </Button>
-            {cantidad === 0 && (
+            {cantidad === 0 ? (
               <p id={pistaId} className={cn("mt-2 text-center text-xs", TEXTO_SECUNDARIO)}>
                 {t("select_hint")}
               </p>
+            ) : (
+              tarjeta && (
+                <p id={`${pistaId}-tarjeta`} className={cn("mt-2 text-center text-xs", TEXTO_SECUNDARIO)}>
+                  {t("one_tap_note", { card: tarjeta })}
+                </p>
+              )
             )}
           </>
         ) : (
           // El pedido ya existe: solo falta cobrarlo.
           <div className="space-y-3">
             <p className={cn("text-sm", TEXTO_SECUNDARIO)}>
-              {t("pay_prompt", { total: formatPrice(pedido.total) })}
+              {t("pay_prompt", { total: formatPrice(pedido ? parseFloat(pedido.total) : total) })}
             </p>
             {ENABLED_PAYMENT_METHODS.includes("paypal") && (
               <PaypalButton label={t("pay_with")} ariaLabel={t("pay_with")} loading={creando} onClick={onPaypal} />
@@ -890,10 +1037,18 @@ const Diapositiva = forwardRef<HTMLDivElement, DiapositivaProps>(function Diapos
           </span>
         </span>
 
+        {/* Por qué se ofrece: lo que acaba de comprar. Una línea, siempre reservada
+            para que todas las tarjetas midan lo mismo. */}
+        <p className={cn("mt-2 h-4 max-w-full truncate text-[11px] font-semibold leading-4", VERDE_TEXTO)}>
+          {oferta.pairs_with
+            ? t(oferta.same_kind ? "pairs_same_kind" : "pairs_with", { name: oferta.pairs_with })
+            : ""}
+        </p>
+
         <h3
           id={nombreId}
           title={oferta.product.name}
-          className="mt-2 line-clamp-2 max-w-full text-sm font-bold leading-5 text-white"
+          className="mt-0.5 line-clamp-2 max-w-full text-sm font-bold leading-5 text-white"
         >
           {oferta.product.name}
         </h3>
@@ -1029,6 +1184,26 @@ function FlechaCarrusel({
     >
       <Icono size={18} aria-hidden />
     </button>
+  );
+}
+
+/** Foto y nombre del producto en los avisos de cierre: que se vea qué se pierde. */
+function MiniaturaAviso({ oferta }: { oferta: UpsellOfferItem }) {
+  return (
+    <>
+      <span className="relative mx-auto block h-24 w-24 overflow-hidden rounded-2xl bg-white ring-1 ring-white/10">
+        <Image
+          src={getImageUrl(oferta.product.primary_image)}
+          alt=""
+          fill
+          sizes="96px"
+          className="object-cover"
+        />
+      </span>
+      <p className="mx-auto mt-2 line-clamp-2 max-w-[18rem] text-sm font-semibold text-[#d4d4d4]">
+        {oferta.product.name}
+      </p>
+    </>
   );
 }
 
