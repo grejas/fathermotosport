@@ -2,7 +2,7 @@
 # Checkout: tarjeta y billetera separadas (mode=card|wallet en /payments/stripe/intent).
 # Solo pisa los archivos si el servidor tiene exactamente la versión desplegada del #48.
 set -u
-COMMIT="491b9a2413744a48e55f8a69b4741232afdf8956"
+COMMIT="3a47827da8265aa8804d0ebe4caeadd545ce13d5"
 RAW="https://raw.githubusercontent.com/grejas/fathermotosport/$COMMIT/fathermotosport-api"
 APP="/home/u206357267/domains/fathermotosport.com/api"
 PHP="/opt/alt/php82/usr/bin/php"
