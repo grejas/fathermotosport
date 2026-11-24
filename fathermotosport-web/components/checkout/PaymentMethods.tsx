@@ -46,6 +46,8 @@ export function PaymentMethods({ value, onChange, enabled, manual = [], comingSo
     <div className="space-y-3">
       {PASARELAS.map((m) => {
         const disponible = !enabled || enabled.includes(m.id);
+        // Una pasarela apagada no se muestra: un botón gris en el checkout solo distrae.
+        if (!disponible) return null;
         return (
           <Opcion
             key={m.id}

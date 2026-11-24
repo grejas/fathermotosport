@@ -8,7 +8,10 @@ import type { ManualPaymentMethod, PaymentMethod } from "@/lib/types";
  * post-compra: duplicar la lista haría que deshabilitar una pasarela en un lado la
  * dejara activa en el otro.
  */
-export const ENABLED_PAYMENT_METHODS: readonly PaymentMethod[] = ["paypal", "stripe"];
+// PayPal oculto (24-nov-2026): la cuenta conectada es boliviana y PayPal rechaza todos los
+// cobros con PAYEE_ACCOUNT_RESTRICTED. Volver a agregar "paypal" cuando estén cargadas las
+// credenciales de la PayPal de FATHERSON IMP LLC.
+export const ENABLED_PAYMENT_METHODS: readonly PaymentMethod[] = ["stripe"];
 
 /**
  * Transferencia SEPA, transferencia en EE.UU. (ACH / wire, cuenta Mercury) y cripto. Se ofrecen solo si el panel tiene sus datos completos
