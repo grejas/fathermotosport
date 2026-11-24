@@ -81,4 +81,11 @@ return [
         'secret' => env('REVALIDATE_SECRET'),
     ],
 
+
+    // ffmpeg para comprimir los videos (media:optimizar-videos). En Hostinger, el binario
+    // estático que instala scripts/deploy-web-rapida.sh.
+    'ffmpeg' => [
+        'path' => env('FFMPEG_PATH', env('HOME') ? env('HOME').'/bin/ffmpeg' : ''),
+    ],
+
 ];

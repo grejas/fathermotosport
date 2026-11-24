@@ -56,3 +56,9 @@ Schedule::command('campanas:enviar')
 Schedule::command('popup:correos')
     ->everyFiveMinutes()
     ->withoutOverlapping();
+
+// Videos nuevos del panel: se comprimen y se les saca póster (ver media:optimizar-videos).
+Schedule::command('media:optimizar-videos --limite=3')
+    ->hourly()
+    ->withoutOverlapping(60)
+    ->runInBackground();

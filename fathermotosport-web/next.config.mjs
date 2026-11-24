@@ -8,16 +8,13 @@ const nextConfig = {
   images: {
     // El optimizador de Vercel devolvía 402 (OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED)
     // con 208K imágenes sobre una cuota de 100K, y ninguna imagen del sitio cargaba.
-    // Sin optimizador cada <Image> apunta a su URL original (api.fathermotosport.com),
-    // que sirve los archivos sin límite de cuota.
-    //
-    // A cambio se pierde el redimensionado: el navegador descarga el archivo original
-    // (200-700 KB por imagen del catálogo) aunque lo muestre en una ficha chica. Si eso
-    // pesa en la carga, la salida es comprimir en origen al subir, no volver a pagar
-    // por optimizar en cada visita.
-    unoptimized: true,
-    // `formats` y `remotePatterns` quedan inertes mientras unoptimized siga en true:
-    // se conservan para no tener que reconstruirlos si algún día se reactiva.
+    // Ahora se optimiza en origen: el loader pide a la API una versión WebP al ancho
+    // justo (/storage/v/{ancho}/...), que se genera una vez y queda como archivo
+    // estático. Sin cuota y sin pagar por visita.
+    loader: "custom",
+    loaderFile: "./lib/imageLoader.ts",
+    // `formats` y `remotePatterns` no aplican con loader propio: se conservan por si
+    // algún día se vuelve al optimizador de Next.
     formats: ["image/webp", "image/avif"],
     remotePatterns: [
       // Desarrollo local: imágenes servidas desde el storage de Laravel (:8000)
