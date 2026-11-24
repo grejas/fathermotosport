@@ -461,7 +461,8 @@ class PaymentController extends Controller
 
     public function stripeIntent(Request $request): JsonResponse
     {
-        $order = Order::findOrFail($request->validate(['order_id' => 'required|uuid'])['order_id']);
+        $datos = $request->validate(['order_id' => 'required|uuid', 'save_card' => 'sometimes|boolean']);
+        $order = Order::findOrFail($datos['order_id']);
 
         // Mismas guardas que paypalCreate: sin esto, conocer un UUID alcanzaba para
         // generar cobros sobre el pedido de otra persona.
@@ -484,7 +485,8 @@ class PaymentController extends Controller
         }
 
         try {
-            $intent = $this->stripe->createPaymentIntent($order);
+            // save_card: la web avisa que la tarjeta se guarda para la oferta en un toque.
+            $intent = $this->stripe->createPaymentIntent($order, (bool) ($datos['save_card'] ?? false));
         } catch (RequestException $e) {
             Log::error('Stripe rechazó la creación del PaymentIntent.', [
                 'order' => $order->id,

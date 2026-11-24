@@ -361,7 +361,7 @@ export function CheckoutForm() {
       if (method === "stripe") {
         setPedidoEnCurso(pedido);
         // El cobro sigue en el modal; el carrito queda intacto hasta confirmarlo.
-        const intent = await createStripeIntent(pedido.id, pedido.access_token ?? undefined);
+        const intent = await createStripeIntent(pedido.id, pedido.access_token ?? undefined, true);
         setStripeSecret(intent.client_secret);
 
         return;

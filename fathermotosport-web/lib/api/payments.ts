@@ -72,11 +72,13 @@ export interface StripeIntentResponse {
  */
 export async function createStripeIntent(
   orderId: string,
-  accessToken?: string
+  accessToken?: string,
+  /** Guardar la tarjeta para la oferta en un toque: solo donde el modal lo avisa. */
+  saveCard = false
 ): Promise<StripeIntentResponse> {
   const { data } = await apiClient.post<StripeIntentResponse>(
     "/payments/stripe/intent",
-    { order_id: orderId },
+    saveCard ? { order_id: orderId, save_card: true } : { order_id: orderId },
     orderAuth(accessToken)
   );
   return data;

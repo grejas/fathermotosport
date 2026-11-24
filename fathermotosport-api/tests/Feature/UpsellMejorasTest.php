@@ -396,16 +396,21 @@ class UpsellMejorasTest extends TestCase
         $regla = $this->regla($casco, $mangas);
         $normal = $this->pedido($casco, 'pending');
 
+        // Sin save_card (la web vieja, que no avisa): no se guarda nada.
         $this->postJson('/api/v1/payments/stripe/intent', ['order_id' => $normal->id], $this->cabeceras($normal))->assertOk();
+        $this->assertCount(0, Http::recorded(fn ($request) => str_contains($request->url(), '/v1/customers')));
+        \App\Models\Payment::where('order_id', $normal->id)->delete();
+
+        $this->postJson('/api/v1/payments/stripe/intent', ['order_id' => $normal->id, 'save_card' => true], $this->cabeceras($normal))->assertOk();
 
         Http::assertSent(fn ($request) => str_contains($request->url(), '/v1/payment_intents')
             && $request->method() === 'POST'
-            && $request['customer'] === 'cus_test_1'
-            && ($request['payment_method_options']['card']['setup_future_usage'] ?? null) === 'on_session');
+            && ($request->data()['customer'] ?? null) === 'cus_test_1'
+            && ($request->data()['payment_method_options']['card']['setup_future_usage'] ?? null) === 'on_session');
 
         $original = $this->pedido($casco);
         $upsell = $this->upsell($original, $regla, $mangas);
-        $this->postJson('/api/v1/payments/stripe/intent', ['order_id' => $upsell->id], $this->cabeceras($upsell))->assertOk();
+        $this->postJson('/api/v1/payments/stripe/intent', ['order_id' => $upsell->id, 'save_card' => true], $this->cabeceras($upsell))->assertOk();
 
         // El intent del upsell (pagado con tarjeta nueva) no crea Customer ni guarda nada.
         Http::assertSent(fn ($request) => str_contains($request->url(), '/v1/payment_intents')

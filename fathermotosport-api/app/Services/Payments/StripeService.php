@@ -37,7 +37,7 @@ class StripeService
      *
      * @return array{id: string, client_secret: string, raw: array}
      */
-    public function createPaymentIntent(Order $order): array
+    public function createPaymentIntent(Order $order, bool $guardarTarjeta = false): array
     {
         $datos = [
             'amount' => $this->montoEnCentavos($order),
@@ -50,12 +50,12 @@ class StripeService
             'automatic_payment_methods' => ['enabled' => 'true'],
         ];
 
-        // Pedido normal: la tarjeta queda guardada en un Customer de Stripe para que la
-        // venta cruzada se cobre en un toque, sin volver a escribirla. Solo la tarjeta
-        // (incluye Apple Pay y Google Pay): ponerlo a nivel del intent ocultaría los
-        // métodos que no admiten guardarse. Si Stripe no crea el Customer, se cobra
-        // igual, sin guardar nada.
-        if (! $order->esUpsell() && ($cliente = $this->crearCliente($order))) {
+        // Pedido normal, y solo si la web lo pide (es la que muestra el aviso al cliente):
+        // la tarjeta queda guardada en un Customer de Stripe para que la venta cruzada se
+        // cobre en un toque, sin volver a escribirla. Solo la tarjeta (incluye Apple Pay
+        // y Google Pay): ponerlo a nivel del intent ocultaría los métodos que no admiten
+        // guardarse. Si Stripe no crea el Customer, se cobra igual, sin guardar nada.
+        if ($guardarTarjeta && ! $order->esUpsell() && ($cliente = $this->crearCliente($order))) {
             $datos['customer'] = $cliente;
             $datos['payment_method_options'] = ['card' => ['setup_future_usage' => 'on_session']];
         }
