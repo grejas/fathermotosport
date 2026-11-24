@@ -35,6 +35,13 @@ return [
         ],
     ],
 
+    // API de Conversiones de Meta (compras desde el servidor). Ver App\Services\MetaConversions.
+    'meta' => [
+        'pixel_id' => env('META_PIXEL_ID', '3627895500705570'),
+        'capi_token' => env('META_CAPI_TOKEN'),
+        'test_event_code' => env('META_CAPI_TEST_CODE'),
+    ],
+
     'paypal' => [
         'mode' => env('PAYPAL_MODE', 'sandbox'), // sandbox | live
         'client_id' => env('PAYPAL_CLIENT_ID'),
