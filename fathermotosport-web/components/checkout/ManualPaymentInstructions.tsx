@@ -84,7 +84,14 @@ export function ManualPaymentInstructions({ order, pago }: { order: Order; pago:
           <div className="space-y-3">
             {esSepa ? (
               <>
-                <Dato label={t("beneficiary")} valor={pago.beneficiary} />
+                <div>
+                  <Dato label={t("beneficiary")} valor={pago.beneficiary} />
+                  {/* El titular es la empresa del almacén europeo: se aclara para dar confianza. */}
+                  <p className="mt-1 flex items-start gap-1.5 text-xs leading-relaxed text-brand-muted">
+                    <ShieldCheck size={13} className="mt-0.5 shrink-0 text-emerald-400" />
+                    {t("sepa_holder_note")}
+                  </p>
+                </div>
                 <Dato label="IBAN" valor={pago.iban} mono copiarComo={pago.iban?.replace(/\s/g, "")} />
                 <Dato label="BIC / SWIFT" valor={pago.bic} mono />
                 <Dato label={t("bank")} valor={pago.bank_name} />

@@ -691,6 +691,7 @@
     "address": "Deposit address",
     "qr_sepa": "Scan with your banking app to fill in the details",
     "qr_crypto": "Scan with your wallet",
+    "sepa_holder_note": "This is the account of our European logistics center, which receives FatherMotoSport's euro payments.",
     "warning_sepa": "Use {reference} as the payment reference: that's how we identify your payment. SEPA transfers take up to 1 business day (instant with SEPA Instant).",
     "warning_crypto": "Send only {currency} on the {network} network. Funds sent on another network or in another coin are lost and cannot be recovered. If your exchange charges a withdrawal fee, add it so the full amount arrives.",
     "step_1": "Send {amount} using the details above.",

@@ -691,6 +691,7 @@
     "address": "Endereço de depósito",
     "qr_sepa": "Escaneie com o app do seu banco para preencher os dados",
     "qr_crypto": "Escaneie com sua carteira",
+    "sepa_holder_note": "É a conta do nosso centro logístico na Europa, que recebe os pagamentos em euros da FatherMotoSport.",
     "warning_sepa": "Use {reference} como referência: é assim que identificamos seu pagamento. Transferências SEPA levam até 1 dia útil (na hora com SEPA Instant).",
     "warning_crypto": "Envie apenas {currency} pela rede {network}. Envios por outra rede ou em outra moeda se perdem e não podem ser recuperados. Se sua exchange cobra taxa de saque, some-a para que chegue o valor completo.",
     "step_1": "Envie {amount} com os dados acima.",

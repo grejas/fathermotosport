@@ -16,6 +16,7 @@
       <div class="row"><span class="row-k">Monto exacto</span><span class="row-v"><strong>{{ $pago['amount'] }} {{ $pago['currency'] }}</strong></span></div>
       @if($pago['method'] === 'sepa')
         <div class="row"><span class="row-k">Titular</span><span class="row-v">{{ $pago['beneficiary'] }}</span></div>
+        <div class="row"><span class="row-k"></span><span class="row-v" style="font-size:12px;color:#888">Cuenta de nuestro centro logístico en Europa, que recibe los pagos en euros de FatherMotoSport.</span></div>
         <div class="row"><span class="row-k">IBAN</span><span class="row-v" style="font-family:monospace">{{ $pago['iban'] }}</span></div>
         @if(!empty($pago['bic']))
           <div class="row"><span class="row-k">BIC / SWIFT</span><span class="row-v" style="font-family:monospace">{{ $pago['bic'] }}</span></div>
