@@ -103,6 +103,17 @@ interface Props {
   className?: string;
 }
 
+/** Logos de tarjeta (Visa, Mastercard, Amex), para la opción de tarjeta del checkout. */
+export function CardLogos({ className }: { className?: string }) {
+  return (
+    <ul className={cn("flex flex-wrap gap-1.5", className)} translate="no" aria-label="Visa, Mastercard, American Express">
+      {RESTO.filter((m) => ["visa", "mastercard", "amex"].includes(m.id)).map((m) => (
+        <Chip key={m.id} marca={m} />
+      ))}
+    </ul>
+  );
+}
+
 /** Solo las billeteras de Stripe (opción "Tarjeta o billetera digital" del checkout). */
 export function WalletLogos({ variant = "chip", className }: Props) {
   if (variant === "inline") {

@@ -37,7 +37,12 @@ class StripeService
      *
      * @return array{id: string, client_secret: string, raw: array}
      */
-    public function createPaymentIntent(Order $order, bool $guardarTarjeta = false): array
+    /**
+     * @param  string|null  $modo  'card' = solo tarjeta (formulario de tarjeta, carga más
+     *                             rápido); 'wallet' o null = métodos automáticos (Apple
+     *                             Pay, Google Pay, Amazon Pay y tarjeta).
+     */
+    public function createPaymentIntent(Order $order, bool $guardarTarjeta = false, ?string $modo = null): array
     {
         $datos = [
             'amount' => $this->montoEnCentavos($order),
@@ -47,8 +52,13 @@ class StripeService
                 'order_id' => $order->id,
                 'order_number' => $order->order_number,
             ],
-            'automatic_payment_methods' => ['enabled' => 'true'],
         ];
+
+        if ($modo === 'card') {
+            $datos['payment_method_types'] = ['card'];
+        } else {
+            $datos['automatic_payment_methods'] = ['enabled' => 'true'];
+        }
 
         // Pedido normal, y solo si la web lo pide (es la que muestra el aviso al cliente):
         // la tarjeta queda guardada en un Customer de Stripe para que la venta cruzada se

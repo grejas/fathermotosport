@@ -80,7 +80,20 @@ export function CheckoutForm() {
     address_line: "",
     reference: "",
   });
-  const [method, setMethod] = useState<PaymentMethod>(ENABLED_PAYMENT_METHODS[0] ?? "paypal");
+  // Arranca en tarjeta; en un iPhone/Mac con Apple Pay listo, en la billetera (ver abajo).
+  const [method, setMethod] = useState<PaymentMethod>(
+    ENABLED_PAYMENT_METHODS.includes("stripe") ? "stripe" : ENABLED_PAYMENT_METHODS[0] ?? "paypal"
+  );
+  useEffect(() => {
+    try {
+      const applePay = (window as unknown as { ApplePaySession?: { canMakePayments?: () => boolean } }).ApplePaySession;
+      if (ENABLED_PAYMENT_METHODS.includes("stripe_wallet") && applePay?.canMakePayments?.()) {
+        setMethod((actual) => (actual === "stripe" ? "stripe_wallet" : actual));
+      }
+    } catch {
+      // Sin Apple Pay: queda tarjeta.
+    }
+  }, []);
   const [coupon, setCoupon] = useState("");
   const [discount, setDiscount] = useState(0);
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -94,6 +107,7 @@ export function CheckoutForm() {
   // Mientras haya client_secret el modal está abierto. El carrito NO se vacía hasta que
   // el pago esté confirmado: cerrar el modal no debe obligar a rearmar la compra.
   const [stripeSecret, setStripeSecret] = useState<string | null>(null);
+  const [stripeAbierto, setStripeAbierto] = useState(false);
 
   // Lista fija de 40 destinos (América y Europa), con el nombre en el idioma activo
   // y ordenada según ese idioma. El registro sigue usando la lista completa del mundo.
@@ -117,7 +131,9 @@ export function CheckoutForm() {
   const methodEnabled = ENABLED_PAYMENT_METHODS.includes(method) || (isManual && manualDisponibles.includes(method));
   // PayPal no usa el formulario de datos: la dirección la elige el cliente en PayPal.
   const isPaypal = method === "paypal";
-  const isStripe = method === "stripe";
+  // Billetera y tarjeta son las dos Stripe; cambia solo qué se muestra para pagar.
+  const isStripe = method === "stripe" || method === "stripe_wallet";
+  const stripeModo = method === "stripe_wallet" ? "wallet" : "card";
 
   /**
    * URL absoluta de respaldo para Stripe, usada solo si el método elegido exige salir de
@@ -358,10 +374,13 @@ export function CheckoutForm() {
       // El cupón se consume al crear el pedido: el que llegó por enlace ya no hace falta.
       if (!previo && coupon.trim() && coupon.trim().toUpperCase() === pendingCoupon) setPendingCoupon(null);
 
-      if (method === "stripe") {
+      if (isStripe) {
         setPedidoEnCurso(pedido);
+        // El modal se abre ya, con "Preparando el pago…", mientras se crea el cobro: el
+        // cliente ve que algo pasa en vez de esperar con el botón girando.
+        setStripeAbierto(true);
         // El cobro sigue en el modal; el carrito queda intacto hasta confirmarlo.
-        const intent = await createStripeIntent(pedido.id, pedido.access_token ?? undefined, true);
+        const intent = await createStripeIntent(pedido.id, pedido.access_token ?? undefined, true, stripeModo);
         setStripeSecret(intent.client_secret);
 
         return;
@@ -383,6 +402,8 @@ export function CheckoutForm() {
       toast.success(t("order_created"));
       irAExito(pedido);
     } catch (err: unknown) {
+      // Si falló al preparar el cobro, el modal no queda abierto en "Preparando…".
+      setStripeAbierto(false);
       if (await preciosCambiaronAlPedir(err)) return;
       const message =
         (err as { response?: { data?: { message?: string } } }).response?.data?.message ??
@@ -446,7 +467,8 @@ export function CheckoutForm() {
         address_line: form.address_line,
         reference: form.reference || undefined,
       },
-      payment_method: method,
+      // La billetera es Stripe: el backend solo conoce la pasarela.
+      payment_method: method === "stripe_wallet" ? "stripe" : method,
       shipping_option_id: selectedOption?.id,
       shipping_country_code: selectedOption ? form.country : undefined,
       coupon_code: coupon.trim() || undefined,
@@ -761,13 +783,18 @@ export function CheckoutForm() {
       {/* Cobro con tarjeta. Cerrarlo deja el pedido pendiente y el carrito intacto: se
           puede reintentar, y el intent se reutiliza en vez de cobrar de nuevo. */}
       <StripePaymentModal
-        open={stripeSecret !== null}
+        open={stripeAbierto}
         clientSecret={stripeSecret}
+        modo={stripeModo}
         accessToken={pedidoEnCurso?.access_token ?? undefined}
         returnUrl={returnUrlStripe}
-        onClose={() => setStripeSecret(null)}
+        onClose={() => {
+          setStripeAbierto(false);
+          setStripeSecret(null);
+        }}
         onPaid={() => {
           clearCart();
+          setStripeAbierto(false);
           setStripeSecret(null);
           toast.success(t("order_created"));
           if (pedidoEnCurso) irAExito(pedidoEnCurso);

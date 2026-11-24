@@ -59,6 +59,9 @@ export async function capturePaypalOrder(
   return data;
 }
 
+/** Cómo se cobra con Stripe: formulario de tarjeta o botones de billetera. */
+export type StripeMode = "card" | "wallet";
+
 export interface StripeIntentResponse {
   client_secret: string;
   payment_intent_id: string;
@@ -74,11 +77,13 @@ export async function createStripeIntent(
   orderId: string,
   accessToken?: string,
   /** Guardar la tarjeta para la oferta en un toque: solo donde el modal lo avisa. */
-  saveCard = false
+  saveCard = false,
+  /** "card": solo el formulario de tarjeta. "wallet": Apple Pay, Google Pay, Amazon Pay. */
+  mode?: StripeMode
 ): Promise<StripeIntentResponse> {
   const { data } = await apiClient.post<StripeIntentResponse>(
     "/payments/stripe/intent",
-    saveCard ? { order_id: orderId, save_card: true } : { order_id: orderId },
+    { order_id: orderId, ...(saveCard ? { save_card: true } : {}), ...(mode ? { mode } : {}) },
     orderAuth(accessToken)
   );
   return data;

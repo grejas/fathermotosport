@@ -11,7 +11,9 @@ import type { ManualPaymentMethod, PaymentMethod } from "@/lib/types";
 // PayPal oculto (24-nov-2026): la cuenta conectada es boliviana y PayPal rechaza todos los
 // cobros con PAYEE_ACCOUNT_RESTRICTED. Volver a agregar "paypal" cuando estén cargadas las
 // credenciales de la PayPal de FATHERSON IMP LLC.
-export const ENABLED_PAYMENT_METHODS: readonly PaymentMethod[] = ["stripe"];
+// Billeteras (Apple Pay, Google Pay, Amazon Pay) y tarjeta van en recuadros separados,
+// las dos por Stripe.
+export const ENABLED_PAYMENT_METHODS: readonly PaymentMethod[] = ["stripe_wallet", "stripe"];
 
 /**
  * Transferencia SEPA, transferencia en EE.UU. (ACH / wire, cuenta Mercury) y cripto. Se ofrecen solo si el panel tiene sus datos completos

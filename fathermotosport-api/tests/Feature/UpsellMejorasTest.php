@@ -503,4 +503,33 @@ class UpsellMejorasTest extends TestCase
         $this->assertEmpty($vistas->diff($rinoneras));
         $this->assertGreaterThan(1, $vistas->unique()->count(), 'Rota entre clientes.');
     }
+
+    // ───────── Tarjeta y billetera por separado ─────────
+
+    public function test_card_mode_asks_stripe_for_card_only_and_wallet_mode_for_automatic_methods(): void
+    {
+        $casco = $this->producto();
+        $tarjeta = $this->pedido($casco, 'pending');
+        $billetera = $this->pedido($casco, 'pending');
+
+        $this->postJson('/api/v1/payments/stripe/intent', ['order_id' => $tarjeta->id, 'mode' => 'card'], $this->cabeceras($tarjeta))->assertOk();
+        $this->postJson('/api/v1/payments/stripe/intent', ['order_id' => $billetera->id, 'mode' => 'wallet'], $this->cabeceras($billetera))->assertOk();
+
+        Http::assertSent(fn ($r) => $r->method() === 'POST' && str_contains($r->url(), '/v1/payment_intents')
+            && ($r->data()['metadata']['order_id'] ?? null) === $tarjeta->id
+            && ($r->data()['payment_method_types'] ?? null) === ['card']
+            && ! isset($r->data()['automatic_payment_methods']));
+        Http::assertSent(fn ($r) => $r->method() === 'POST' && str_contains($r->url(), '/v1/payment_intents')
+            && ($r->data()['metadata']['order_id'] ?? null) === $billetera->id
+            && ($r->data()['automatic_payment_methods']['enabled'] ?? null) === 'true'
+            && ! isset($r->data()['payment_method_types']));
+    }
+
+    public function test_an_unknown_mode_is_refused(): void
+    {
+        $order = $this->pedido($this->producto(), 'pending');
+
+        $this->postJson('/api/v1/payments/stripe/intent', ['order_id' => $order->id, 'mode' => 'crypto'], $this->cabeceras($order))
+            ->assertStatus(422);
+    }
 }

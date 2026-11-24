@@ -1,17 +1,19 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Bitcoin, CreditCard, Landmark, Wallet } from "lucide-react";
+import { Bitcoin, CreditCard, Landmark, Smartphone, Wallet } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { CRYPTO_PAYMENT_METHODS, isManualPaymentMethod } from "@/lib/data/paymentMethods";
 import type { ManualPaymentMethod, PaymentMethod } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { WalletLogos } from "@/components/ui/WalletLogos";
+import { CardLogos, WalletLogos } from "@/components/ui/WalletLogos";
 
-type Pasarela = "paypal" | "stripe" | "mercadopago";
+type Pasarela = "paypal" | "stripe_wallet" | "stripe" | "mercadopago";
 
 const PASARELAS: { id: Pasarela; icon: typeof Wallet }[] = [
   { id: "paypal", icon: Wallet },
+  // Billeteras primero: en el celular es el pago más rápido (un toque con Face ID).
+  { id: "stripe_wallet", icon: Smartphone },
   { id: "stripe", icon: CreditCard },
   { id: "mercadopago", icon: Wallet },
 ];
@@ -58,8 +60,14 @@ export function PaymentMethods({ value, onChange, enabled, manual = [], comingSo
             disabled={!disponible}
             // PayPal conserva su amarillo también cuando está elegido.
             iconClass={m.id === "paypal" ? "bg-[#FFC439] text-[#003087]" : undefined}
-            // Tarjeta va por Stripe, que además cobra con Apple Pay, Google Pay y Amazon Pay.
-            extra={m.id === "stripe" && disponible ? <WalletLogos variant="inline" className="mt-1.5" /> : undefined}
+            // Billeteras y tarjeta van separadas, cada una con sus logos.
+            extra={
+              m.id === "stripe_wallet" ? (
+                <WalletLogos variant="inline" className="mt-1.5" />
+              ) : m.id === "stripe" ? (
+                <CardLogos className="mt-1.5" />
+              ) : undefined
+            }
             onClick={() => onChange(m.id)}
           />
         );

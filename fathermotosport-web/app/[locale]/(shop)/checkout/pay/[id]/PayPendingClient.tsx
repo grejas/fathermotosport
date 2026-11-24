@@ -120,7 +120,7 @@ export function PayPendingClient({ id }: { id: string }) {
   const pagarConTarjeta = async () => {
     setPagando("stripe");
     try {
-      const intent = await createStripeIntent(id, token, true);
+      const intent = await createStripeIntent(id, token, true, "card");
       setStripeSecret(intent.client_secret);
     } catch (err) {
       await fallo(err);

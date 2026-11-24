@@ -2,12 +2,19 @@
 
 import { useState } from "react";
 import { loadStripe, type Appearance, type Stripe } from "@stripe/stripe-js";
-import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
+import {
+  Elements,
+  ExpressCheckoutElement,
+  PaymentElement,
+  useElements,
+  useStripe,
+} from "@stripe/react-stripe-js";
+import type { StripeExpressCheckoutElementReadyEvent } from "@stripe/stripe-js";
 import { useTranslations } from "next-intl";
 import { ShieldCheck } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui";
-import { confirmStripePayment, type PaymentStatusResponse } from "@/lib/api/payments";
+import { confirmStripePayment, type PaymentStatusResponse, type StripeMode } from "@/lib/api/payments";
 
 /**
  * El SDK se carga una sola vez a nivel de módulo, no en cada render: es lo que
@@ -48,6 +55,11 @@ interface Props {
    * avisarlo. En la venta cruzada no se guarda nada: false.
    */
   guardaTarjeta?: boolean;
+  /**
+   * "card": solo el formulario de tarjeta (débito o crédito). "wallet": los botones de
+   * Apple Pay, Google Pay y Amazon Pay. Separados cargan mucho más rápido que todo junto.
+   */
+  modo?: StripeMode;
 }
 
 export function StripePaymentModal({
@@ -58,18 +70,23 @@ export function StripePaymentModal({
   onClose,
   onPaid,
   guardaTarjeta = true,
+  modo = "card",
 }: Props) {
   const t = useTranslations("checkout");
 
   return (
-    <Modal open={open} onClose={onClose} title={t("stripe_title")}>
+    <Modal open={open} onClose={onClose} title={modo === "wallet" ? t("wallet_title") : t("stripe_title")}>
       {!stripePromise ? (
         <p className="text-sm text-brand-muted">{t("stripe_unavailable")}</p>
       ) : !clientSecret ? (
         <p className="text-sm text-brand-muted">{t("stripe_preparing")}</p>
       ) : (
         <Elements stripe={stripePromise} options={{ clientSecret, appearance }}>
-          <StripeForm accessToken={accessToken} returnUrl={returnUrl} onPaid={onPaid} guardaTarjeta={guardaTarjeta} />
+          {modo === "wallet" ? (
+            <WalletForm accessToken={accessToken} returnUrl={returnUrl} onPaid={onPaid} guardaTarjeta={guardaTarjeta} />
+          ) : (
+            <StripeForm accessToken={accessToken} returnUrl={returnUrl} onPaid={onPaid} guardaTarjeta={guardaTarjeta} />
+          )}
         </Elements>
       )}
     </Modal>
@@ -150,11 +167,13 @@ function StripeForm({
     <div className="space-y-4">
       {/* Billeteras primero: en Safari/iPhone sale Apple Pay, en Chrome Google Pay, y
           Amazon Pay donde aplique. Stripe solo muestra las que el dispositivo admite. */}
+      {/* Solo tarjeta: las billeteras tienen su propio recuadro en el checkout. Sin
+          ellas el formulario no consulta Apple Pay / Google Pay y aparece al instante. */}
       <PaymentElement
         options={{
           layout: { type: "tabs", defaultCollapsed: false },
-          paymentMethodOrder: ["apple_pay", "google_pay", "amazon_pay", "card"],
-          wallets: { applePay: "auto", googlePay: "auto" },
+          paymentMethodOrder: ["card"],
+          wallets: { applePay: "never", googlePay: "never" },
         }}
       />
 
@@ -174,6 +193,95 @@ function StripeForm({
 
       {/* Aviso obligatorio al guardar la tarjeta: se usa solo para la oferta posterior a
           la compra, con el cliente presente y tocando él el botón. */}
+      {guardaTarjeta && (
+        <p className="text-center text-[11px] leading-snug text-brand-muted">{t("stripe_save_card")}</p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Billeteras: los botones de Apple Pay, Google Pay y Amazon Pay (Express Checkout de
+ * Stripe). Un toque y Face ID / huella; el cobro se confirma igual que con tarjeta.
+ */
+function WalletForm({
+  accessToken,
+  returnUrl,
+  onPaid,
+  guardaTarjeta,
+}: Pick<Props, "accessToken" | "returnUrl" | "onPaid" | "guardaTarjeta">) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const t = useTranslations("checkout");
+  const [estado, setEstado] = useState<"cargando" | "listo" | "sin_billetera">("cargando");
+  const [error, setError] = useState<string | null>(null);
+
+  const alEstarListo = (e: StripeExpressCheckoutElementReadyEvent) => {
+    // Sin ninguna billetera en este dispositivo/navegador, se dice claro y se sugiere tarjeta.
+    setEstado(e.availablePaymentMethods ? "listo" : "sin_billetera");
+  };
+
+  const confirmar = async () => {
+    if (!stripe || !elements) {
+      setError(t("stripe_error"));
+      return;
+    }
+    setError(null);
+
+    const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      confirmParams: { return_url: returnUrl },
+      redirect: "if_required",
+    });
+
+    if (stripeError || !paymentIntent) {
+      setError(stripeError?.message ?? t("stripe_error"));
+      return;
+    }
+
+    try {
+      const result = await confirmStripePayment(paymentIntent.id, accessToken);
+      if (result.order?.payment_status === "paid") {
+        onPaid(result);
+        return;
+      }
+      setError(t("stripe_not_completed", { status: result.status ?? paymentIntent.status }));
+    } catch (err: unknown) {
+      const message = (err as { response?: { data?: { message?: string } } }).response?.data?.message;
+      setError(message ?? t("stripe_error"));
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {estado === "cargando" && <p className="text-sm text-brand-muted">{t("stripe_preparing")}</p>}
+
+      {estado === "sin_billetera" && (
+        <p className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-brand-white">
+          {t("wallet_unavailable")}
+        </p>
+      )}
+
+      <ExpressCheckoutElement
+        onReady={alEstarListo}
+        onConfirm={() => void confirmar()}
+        options={{
+          paymentMethodOrder: ["apple_pay", "google_pay", "amazon_pay"],
+          // Solo billeteras: PayPal y Link no van en este recuadro.
+          paymentMethods: { applePay: "always", googlePay: "always", amazonPay: "auto", link: "never", paypal: "never" },
+          buttonHeight: 48,
+          buttonType: { applePay: "buy", googlePay: "buy" },
+        }}
+      />
+
+      {error && (
+        <p className="rounded-xl border border-brand-red/40 bg-brand-red/10 p-3 text-sm text-brand-white">{error}</p>
+      )}
+
+      <p className="flex items-center justify-center gap-1.5 text-xs text-brand-muted">
+        <ShieldCheck size={14} className="text-cat-boots" /> {t("ssl_secure")}
+      </p>
+
       {guardaTarjeta && (
         <p className="text-center text-[11px] leading-snug text-brand-muted">{t("stripe_save_card")}</p>
       )}

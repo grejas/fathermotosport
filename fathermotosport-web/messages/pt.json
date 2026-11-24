@@ -240,8 +240,8 @@
     "account_skip": "Agora não, ver meu pedido",
     "pm_paypal": "PayPal",
     "pm_paypal_desc": "Pague com sua conta PayPal",
-    "pm_stripe": "Cartão ou carteira digital",
-    "pm_stripe_desc": "Visa, MasterCard, Amex, Apple Pay, Google Pay e Amazon Pay",
+    "pm_stripe": "Cartão de débito ou crédito",
+    "pm_stripe_desc": "Visa, Mastercard e American Express",
     "pm_mercadopago": "MercadoPago",
     "pm_mercadopago_desc": "Cartão, QR ou saldo",
     "pm_sepa": "Transferência bancária (Europa)",
@@ -257,7 +257,11 @@
     "pm_binance_note": "Ao confirmar, você verá o valor, nosso QR do Binance Pay e um botão para abrir o app. Você pode pagar com USDT, USDC ou BTC. Você tem 24 horas.",
     "pm_us_bank": "Transferência bancária (EUA)",
     "pm_us_bank_desc": "ACH ou wire em dólares, de qualquer banco dos Estados Unidos",
-    "pm_us_bank_note": "Ao confirmar, você verá o valor exato em USD, o número da conta, o routing e a referência. Você tem 96 horas para transferir; preparamos seu pedido quando o pagamento for creditado."
+    "pm_us_bank_note": "Ao confirmar, você verá o valor exato em USD, o número da conta, o routing e a referência. Você tem 96 horas para transferir; preparamos seu pedido quando o pagamento for creditado.",
+    "pm_stripe_wallet": "Carteira digital",
+    "pm_stripe_wallet_desc": "Apple Pay, Google Pay ou Amazon Pay: pague com um toque",
+    "wallet_title": "Pagar com carteira digital",
+    "wallet_unavailable": "Este dispositivo não tem Apple Pay, Google Pay nem Amazon Pay configurados. Feche e escolha «Cartão de débito ou crédito»."
   },
   "pay_pending": {
     "title": "Conclua o pagamento do seu pedido",

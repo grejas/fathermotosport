@@ -461,7 +461,13 @@ class PaymentController extends Controller
 
     public function stripeIntent(Request $request): JsonResponse
     {
-        $datos = $request->validate(['order_id' => 'required|uuid', 'save_card' => 'sometimes|boolean']);
+        $datos = $request->validate([
+            'order_id' => 'required|uuid',
+            'save_card' => 'sometimes|boolean',
+            // card = solo el formulario de tarjeta; wallet = Apple Pay, Google Pay, Amazon Pay.
+            'mode' => 'sometimes|nullable|in:card,wallet',
+        ]);
+        $modo = $datos['mode'] ?? null;
         $order = Order::findOrFail($datos['order_id']);
 
         // Mismas guardas que paypalCreate: sin esto, conocer un UUID alcanzaba para
@@ -480,13 +486,13 @@ class PaymentController extends Controller
 
         // Reutiliza el intent creado hace menos de 30 minutos si Stripe lo sigue
         // aceptando: evita cobrar dos veces al cliente que recarga o vuelve atrás.
-        if ($reusado = $this->intentReutilizable($order)) {
+        if ($reusado = $this->intentReutilizable($order, $modo)) {
             return response()->json($reusado + ['reused' => true]);
         }
 
         try {
             // save_card: la web avisa que la tarjeta se guarda para la oferta en un toque.
-            $intent = $this->stripe->createPaymentIntent($order, (bool) ($datos['save_card'] ?? false));
+            $intent = $this->stripe->createPaymentIntent($order, (bool) ($datos['save_card'] ?? false), $modo);
         } catch (RequestException $e) {
             Log::error('Stripe rechazó la creación del PaymentIntent.', [
                 'order' => $order->id,
@@ -516,7 +522,7 @@ class PaymentController extends Controller
      *
      * @return array{client_secret: string, payment_intent_id: string}|null
      */
-    private function intentReutilizable(Order $order): ?array
+    private function intentReutilizable(Order $order, ?string $modo = null): ?array
     {
         $pendiente = Payment::where('order_id', $order->id)
             ->where('provider', 'stripe')
@@ -547,7 +553,12 @@ class PaymentController extends Controller
         // total cambió, reutilizarlo cobraría el importe viejo.
         $montoCoincide = (int) ($intent['amount'] ?? 0) === $this->stripe->montoEnCentavos($order);
 
-        if (! $pagable || ! $montoCoincide || blank($intent['client_secret'] ?? null)) {
+        // Tiene que ser del mismo tipo: un intent de solo tarjeta no sirve para la
+        // billetera, ni al revés.
+        $soloTarjeta = ($intent['payment_method_types'] ?? null) === ['card'];
+        $mismoModo = $modo === null || ($modo === 'card') === $soloTarjeta;
+
+        if (! $pagable || ! $montoCoincide || ! $mismoModo || blank($intent['client_secret'] ?? null)) {
             return null;
         }
 
