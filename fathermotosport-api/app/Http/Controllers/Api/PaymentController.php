@@ -557,7 +557,8 @@ class PaymentController extends Controller
 
         // Tiene que ser del mismo tipo: un intent de solo tarjeta no sirve para la
         // billetera, ni al revés.
-        $soloTarjeta = ($intent['payment_method_types'] ?? null) === ['card'];
+        $soloTarjeta = filled($intent['payment_method_configuration_details']['id'] ?? null)
+            && ($intent['payment_method_configuration_details']['id'] ?? null) === $this->stripe->configuracionSoloTarjeta();
         $mismoModo = $modo === null || ($modo === 'card') === $soloTarjeta;
 
         if (! $pagable || ! $montoCoincide || ! $mismoModo || blank($intent['client_secret'] ?? null)) {
@@ -691,6 +692,15 @@ class PaymentController extends Controller
             // Solo hace falta para completar la verificación del banco.
             'client_secret' => $intent['status'] === 'requires_action' ? $intent['client_secret'] : null,
         ]);
+    }
+
+    /**
+     * Configuración pública para la web: el id de "solo tarjeta", para precargar el
+     * formulario de tarjeta antes de crear el cobro. Null si no hay (se carga después).
+     */
+    public function stripeConfig(): JsonResponse
+    {
+        return response()->json(['card_configuration' => $this->stripe->configuracionSoloTarjeta()]);
     }
 
     // ─────────────────────── MercadoPago ───────────────────────

@@ -59,6 +59,15 @@ export async function capturePaypalOrder(
   return data;
 }
 
+/**
+ * Id de la configuración de Stripe "solo tarjeta" (null si no hay). Con él el formulario
+ * de tarjeta se precarga antes de crear el cobro.
+ */
+export async function getStripeCardConfig(): Promise<string | null> {
+  const { data } = await apiClient.get<{ card_configuration: string | null }>("/payments/stripe/config");
+  return data.card_configuration ?? null;
+}
+
 /** Cómo se cobra con Stripe: formulario de tarjeta o botones de billetera. */
 export type StripeMode = "card" | "wallet";
 

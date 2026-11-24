@@ -54,6 +54,19 @@ class UpsellMejorasTest extends TestCase
                 return Http::response(['id' => 'cus_test_1']);
             }
 
+            // Configuraciones de métodos de pago: la de la cuenta y, al crearla, "solo tarjeta".
+            if (str_contains($url, '/v1/payment_method_configurations')) {
+                return $request->method() === 'GET'
+                    ? Http::response(['data' => [[
+                        'id' => 'pmc_default', 'name' => 'Default', 'active' => true, 'is_default' => true,
+                        'card' => ['display_preference' => ['value' => 'on']],
+                        'apple_pay' => ['display_preference' => ['value' => 'on']],
+                        'link' => ['display_preference' => ['value' => 'on']],
+                        'amazon_pay' => ['display_preference' => ['value' => 'on']],
+                    ]]])
+                    : Http::response(['id' => 'pmc_solo_tarjeta', 'name' => 'FMS solo tarjeta', 'active' => true]);
+            }
+
             // Relectura del intent del pedido original (con el método de pago expandido).
             if ($request->method() === 'GET' && str_contains($url, 'pi_original')) {
                 return Http::response([
@@ -312,6 +325,8 @@ class UpsellMejorasTest extends TestCase
             && $request['customer'] === 'cus_test_1'
             && $request['payment_method'] === 'pm_test_1'
             && $request['amount'] === 4000
+            && ($request->data()['automatic_payment_methods']['allow_redirects'] ?? null) === 'never'
+            && ! isset($request->data()['payment_method_types'])
             && $request->hasHeader('Idempotency-Key', "upsell-{$upsell->id}-4000"));
     }
 
@@ -519,14 +534,23 @@ class UpsellMejorasTest extends TestCase
         $this->postJson('/api/v1/payments/stripe/intent', ['order_id' => $tarjeta->id, 'mode' => 'card'], $this->cabeceras($tarjeta))->assertOk();
         $this->postJson('/api/v1/payments/stripe/intent', ['order_id' => $billetera->id, 'mode' => 'wallet'], $this->cabeceras($billetera))->assertOk();
 
+        // La cuenta no acepta payment_method_types: "solo tarjeta" es una configuración propia.
+        Http::assertSent(fn ($r) => $r->method() === 'POST' && str_contains($r->url(), '/v1/payment_method_configurations')
+            && ($r->data()['name'] ?? null) === 'FMS solo tarjeta'
+            && ($r->data()['card']['display_preference']['preference'] ?? null) === 'on'
+            && ($r->data()['apple_pay']['display_preference']['preference'] ?? null) === 'off'
+            && ($r->data()['link']['display_preference']['preference'] ?? null) === 'off');
         Http::assertSent(fn ($r) => $r->method() === 'POST' && str_contains($r->url(), '/v1/payment_intents')
             && ($r->data()['metadata']['order_id'] ?? null) === $tarjeta->id
-            && ($r->data()['payment_method_types'] ?? null) === ['card']
-            && ! isset($r->data()['automatic_payment_methods']));
+            && ($r->data()['payment_method_configuration'] ?? null) === 'pmc_solo_tarjeta'
+            && ! isset($r->data()['payment_method_types']));
         Http::assertSent(fn ($r) => $r->method() === 'POST' && str_contains($r->url(), '/v1/payment_intents')
             && ($r->data()['metadata']['order_id'] ?? null) === $billetera->id
             && ($r->data()['automatic_payment_methods']['enabled'] ?? null) === 'true'
+            && ! isset($r->data()['payment_method_configuration'])
             && ! isset($r->data()['payment_method_types']));
+        // Nunca se manda payment_method_types (Stripe lo rechaza con 400).
+        Http::assertNotSent(fn ($r) => isset($r->data()['payment_method_types']));
     }
 
     public function test_an_unknown_mode_is_refused(): void
@@ -561,5 +585,16 @@ class UpsellMejorasTest extends TestCase
 
         $this->getJson("/api/v1/orders/{$order->id}/upsell", $this->cabeceras($order))
             ->assertJsonPath('saved_card.last4', '4242');
+    }
+
+    public function test_the_public_config_returns_the_card_only_configuration(): void
+    {
+        $this->getJson('/api/v1/payments/stripe/config')
+            ->assertOk()
+            ->assertExactJson(['card_configuration' => 'pmc_solo_tarjeta']);
+
+        // Se recuerda: la segunda vez no se le pregunta a Stripe.
+        $this->getJson('/api/v1/payments/stripe/config')->assertOk();
+        $this->assertCount(1, Http::recorded(fn ($r) => $r->method() === 'POST' && str_contains($r->url(), '/v1/payment_method_configurations')));
     }
 }

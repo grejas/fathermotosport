@@ -13,7 +13,7 @@ import { OrderSummary } from "./OrderSummary";
 import { useCartStore, cartWeightKg } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
 import { createOrder, createExpressOrder } from "@/lib/api/orders";
-import { createPaypalOrder, createStripeIntent } from "@/lib/api/payments";
+import { createPaypalOrder, createStripeIntent, getStripeCardConfig } from "@/lib/api/payments";
 import { validateCoupon } from "@/lib/api/coupons";
 import { useCartPricesOnShow, useSyncCartPrices } from "@/lib/hooks/useCartPrices";
 import { calculateShipping } from "@/lib/api/shipping";
@@ -111,6 +111,12 @@ export function CheckoutForm() {
   // Monto con el que se precarga el formulario de tarjeta; al crearse el pedido, el real.
   const [montoCobro, setMontoCobro] = useState<number | null>(null);
   const [setupCobro, setSetupCobro] = useState<"on_session" | "off_session" | null | undefined>(undefined);
+  // Configuración "solo tarjeta": se pide al entrar al checkout para precargar el formulario.
+  const [configTarjeta, setConfigTarjeta] = useState<string | null>(null);
+  useEffect(() => {
+    if (!ENABLED_PAYMENT_METHODS.includes("stripe")) return;
+    getStripeCardConfig().then(setConfigTarjeta).catch(() => setConfigTarjeta(null));
+  }, []);
 
   // Lista fija de 40 destinos (América y Europa), con el nombre en el idioma activo
   // y ordenada según ese idioma. El registro sigue usando la lista completa del mundo.
@@ -804,6 +810,7 @@ export function CheckoutForm() {
         modo={stripeModo}
         monto={stripeModo === "card" ? montoCobro : null}
         setupFutureUsage={setupCobro}
+        configuracionTarjeta={configTarjeta}
         accessToken={pedidoEnCurso?.access_token ?? undefined}
         returnUrl={returnUrlStripe}
         onClose={() => {

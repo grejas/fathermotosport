@@ -138,6 +138,8 @@ Route::prefix('v1')->group(function () {
         Route::post('/payments/stripe/confirm', [PaymentController::class, 'stripeConfirm']);
         // Venta cruzada en un toque, con la tarjeta del pedido original.
         Route::post('/payments/stripe/saved-card', [PaymentController::class, 'stripeSavedCard']);
+        // Id de la configuración "solo tarjeta" (pública: precarga del formulario).
+        Route::get('/payments/stripe/config', [PaymentController::class, 'stripeConfig']);
     });
 
     // Resto de pagos (mercadopago) — DESHABILITADOS hasta contar con credenciales.

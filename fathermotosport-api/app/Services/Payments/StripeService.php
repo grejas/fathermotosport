@@ -5,6 +5,7 @@ namespace App\Services\Payments;
 use App\Models\Order;
 use App\Models\Payment;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -54,10 +55,12 @@ class StripeService
             ],
         ];
 
-        if ($modo === 'card') {
-            $datos['payment_method_types'] = ['card'];
-        } else {
-            $datos['automatic_payment_methods'] = ['enabled' => 'true'];
+        // Esta cuenta de Stripe ya no acepta payment_method_types: los métodos salen de una
+        // configuración. Para "solo tarjeta" se usa una propia (ver configuracionSoloTarjeta).
+        $datos['automatic_payment_methods'] = ['enabled' => 'true'];
+        $soloTarjeta = $modo === 'card' ? $this->configuracionSoloTarjeta() : null;
+        if ($soloTarjeta) {
+            $datos['payment_method_configuration'] = $soloTarjeta;
         }
 
         // Pedido normal, y solo si la web lo pide (es la que muestra el aviso al cliente):
@@ -69,7 +72,7 @@ class StripeService
             $datos['customer'] = $cliente;
             // Solo tarjeta: a nivel del intent (así coincide con el formulario que la web
             // ya precargó). Con métodos automáticos, solo para la tarjeta.
-            if ($modo === 'card') {
+            if ($soloTarjeta) {
                 $datos['setup_future_usage'] = 'on_session';
             } else {
                 $datos['payment_method_options'] = ['card' => ['setup_future_usage' => 'on_session']];
@@ -83,6 +86,59 @@ class StripeService
             'client_secret' => $response['client_secret'],
             'raw' => $response,
         ];
+    }
+
+    /** Nombre de la configuración de métodos de pago "solo tarjeta" que crea la tienda. */
+    public const CONFIG_SOLO_TARJETA = 'FMS solo tarjeta';
+
+    /**
+     * Id de una configuración de métodos de pago con SOLO tarjeta (sin Apple Pay, Google
+     * Pay, Link, Amazon Pay ni bancos). El formulario de tarjeta carga mucho más rápido
+     * así. Se busca por nombre y, si no existe, se crea copiando la de la cuenta con todo
+     * apagado salvo la tarjeta. Se recuerda un día. Null si Stripe no lo permite: entonces
+     * se cobra con la configuración normal.
+     */
+    public function configuracionSoloTarjeta(): ?string
+    {
+        $id = Cache::get('stripe_config_solo_tarjeta');
+        if (is_string($id) && $id !== '') {
+            return $id;
+        }
+
+        try {
+            $lista = $this->client()->get('/v1/payment_method_configurations', ['limit' => 100])->throw()->json('data') ?? [];
+
+            $existente = collect($lista)->first(fn ($c) => ($c['name'] ?? null) === self::CONFIG_SOLO_TARJETA && ($c['active'] ?? false));
+            $id = $existente['id'] ?? null;
+
+            if (! $id) {
+                $base = collect($lista)->first(fn ($c) => $c['is_default'] ?? false) ?? [];
+                $datos = ['name' => self::CONFIG_SOLO_TARJETA, 'card' => ['display_preference' => ['preference' => 'on']]];
+
+                foreach ($base as $metodo => $valor) {
+                    if ($metodo !== 'card' && is_array($valor) && isset($valor['display_preference'])) {
+                        $datos[$metodo] = ['display_preference' => ['preference' => 'off']];
+                    }
+                }
+
+                $id = $this->client()->post('/v1/payment_method_configurations', $datos)->throw()->json('id');
+            }
+        } catch (RequestException $e) {
+            Log::warning('Stripe: no se pudo obtener la configuración "solo tarjeta"; se usa la normal.', [
+                'status' => $e->response->status(),
+                'error' => $e->response->json('error.message'),
+            ]);
+
+            return null;
+        }
+
+        if (! is_string($id) || ! str_starts_with($id, 'pmc_')) {
+            return null;
+        }
+
+        Cache::put('stripe_config_solo_tarjeta', $id, now()->addDay());
+
+        return $id;
     }
 
     /** Customer de Stripe para el comprador del pedido; null si Stripe lo rechaza. */
@@ -186,8 +242,9 @@ class StripeService
             ],
             'customer' => $tarjeta['customer'],
             'payment_method' => $tarjeta['payment_method'],
-            // Solo tarjeta: así confirmar en el servidor no exige una return_url.
-            'payment_method_types' => ['card'],
+            // Sin redirecciones: así confirmar en el servidor no exige una return_url (y esta
+            // cuenta ya no acepta payment_method_types).
+            'automatic_payment_methods' => ['enabled' => 'true', 'allow_redirects' => 'never'],
             'confirm' => 'true',
         ])->throw()->json();
 

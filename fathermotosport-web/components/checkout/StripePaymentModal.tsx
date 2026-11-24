@@ -68,6 +68,8 @@ interface Props {
   monto?: number | null;
   /** setup_future_usage del cobro creado, para que el formulario coincida con él. */
   setupFutureUsage?: "on_session" | "off_session" | null;
+  /** Configuración "solo tarjeta" de Stripe: sin ella no se precarga. */
+  configuracionTarjeta?: string | null;
 }
 
 export function StripePaymentModal({
@@ -81,9 +83,10 @@ export function StripePaymentModal({
   modo = "card",
   monto = null,
   setupFutureUsage,
+  configuracionTarjeta = null,
 }: Props) {
   const t = useTranslations("checkout");
-  const precargado = modo === "card" && monto !== null && monto > 0;
+  const precargado = modo === "card" && monto !== null && monto > 0 && Boolean(configuracionTarjeta);
   // Antes de que llegue el cobro se asume lo que pidió la web; después, lo que dice Stripe.
   const guardar = setupFutureUsage !== undefined ? setupFutureUsage : guardaTarjeta ? "on_session" : null;
 
@@ -96,7 +99,8 @@ export function StripePaymentModal({
             mode: "payment",
             amount: Math.round(monto * 100),
             currency: "usd",
-            paymentMethodTypes: ["card"],
+            // La misma configuración "solo tarjeta" con la que el servidor crea el cobro.
+            paymentMethodConfiguration: configuracionTarjeta ?? undefined,
             ...(guardar ? { setupFutureUsage: guardar } : {}),
             appearance,
           }}
