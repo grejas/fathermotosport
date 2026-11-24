@@ -25,12 +25,15 @@ class UpsellRule extends Model
         'offer_product_id',
         'offer_category_id',
         'discount_percent',
+        'last_chance_discount_percent',
         'priority',
+        'upsell_group',
         'is_active',
     ];
 
     protected $casts = [
         'discount_percent' => 'integer',
+        'last_chance_discount_percent' => 'integer',
         'priority' => 'integer',
         'is_active' => 'boolean',
     ];
@@ -93,9 +96,27 @@ class UpsellRule extends Model
     }
 
     /** Precio vigente del producto ofrecido, ya con el descuento de la regla aplicado. */
-    public function precioConDescuento(): float
+    public function precioConDescuento(bool $ultimaOportunidad = false): float
     {
-        return round($this->precioBase() * (1 - $this->discount_percent / 100), 2);
+        return round($this->precioBase() * (1 - $this->porcentaje($ultimaOportunidad) / 100), 2);
+    }
+
+    /**
+     * ¿Tiene rebaja de último aviso? Solo si es mayor que el descuento normal: una
+     * "rebaja" igual o menor no tendría sentido mostrarla.
+     */
+    public function tieneUltimaOportunidad(): bool
+    {
+        return $this->last_chance_discount_percent !== null
+            && $this->last_chance_discount_percent > $this->discount_percent;
+    }
+
+    /** Porcentaje que se aplica: el normal o, en el último aviso, la rebaja (si hay). */
+    public function porcentaje(bool $ultimaOportunidad = false): int
+    {
+        return $ultimaOportunidad && $this->tieneUltimaOportunidad()
+            ? (int) $this->last_chance_discount_percent
+            : (int) $this->discount_percent;
     }
 
     /**

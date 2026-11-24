@@ -19,6 +19,8 @@ class StoreUpsellRequest extends FormRequest
             'items' => ['required', 'array', 'min:1', 'max:'.UpsellService::MAX_OFERTAS],
             'items.*.rule_id' => ['required', 'integer'],
             'items.*.variant_id' => ['required', 'uuid'],
+            // Compra desde el último aviso: el servidor aplica la rebaja si la regla la tiene.
+            'last_chance' => ['sometimes', 'boolean'],
         ];
     }
 

@@ -72,11 +72,13 @@ export interface StripeIntentResponse {
  */
 export async function createStripeIntent(
   orderId: string,
-  accessToken?: string
+  accessToken?: string,
+  /** Guardar la tarjeta para la oferta en un toque: solo donde el modal lo avisa. */
+  saveCard = false
 ): Promise<StripeIntentResponse> {
   const { data } = await apiClient.post<StripeIntentResponse>(
     "/payments/stripe/intent",
-    { order_id: orderId },
+    saveCard ? { order_id: orderId, save_card: true } : { order_id: orderId },
     orderAuth(accessToken)
   );
   return data;
@@ -93,6 +95,28 @@ export async function confirmStripePayment(
   const { data } = await apiClient.post<PaymentStatusResponse>(
     "/payments/stripe/confirm",
     { payment_intent_id: paymentIntentId },
+    orderAuth(accessToken)
+  );
+  return data;
+}
+
+export interface SavedCardPaymentResponse extends PaymentStatusResponse {
+  payment_intent_id: string;
+  /** Solo si el banco pide 3-D Secure: con él el navegador completa la verificación. */
+  client_secret: string | null;
+}
+
+/**
+ * Cobra un pedido de venta cruzada con la tarjeta del pedido original, sin volver a
+ * pedirla. Un 402/409 con `sin_tarjeta` significa: pagar con otro medio.
+ */
+export async function payUpsellWithSavedCard(
+  orderId: string,
+  accessToken?: string
+): Promise<SavedCardPaymentResponse> {
+  const { data } = await apiClient.post<SavedCardPaymentResponse>(
+    "/payments/stripe/saved-card",
+    { order_id: orderId },
     orderAuth(accessToken)
   );
   return data;

@@ -15,7 +15,7 @@ import { confirmStripePayment, type PaymentStatusResponse } from "@/lib/api/paym
  * null y el modal lo dice en vez de romperse en silencio.
  */
 const publishableKey = process.env.NEXT_PUBLIC_STRIPE_KEY;
-const stripePromise: Promise<Stripe | null> | null = publishableKey
+export const stripePromise: Promise<Stripe | null> | null = publishableKey
   ? loadStripe(publishableKey)
   : null;
 
@@ -43,6 +43,11 @@ interface Props {
   returnUrl: string;
   onClose: () => void;
   onPaid: (result: PaymentStatusResponse) => void;
+  /**
+   * El pago guarda la tarjeta (pedido normal, para la oferta en un toque) y hay que
+   * avisarlo. En la venta cruzada no se guarda nada: false.
+   */
+  guardaTarjeta?: boolean;
 }
 
 export function StripePaymentModal({
@@ -52,6 +57,7 @@ export function StripePaymentModal({
   returnUrl,
   onClose,
   onPaid,
+  guardaTarjeta = true,
 }: Props) {
   const t = useTranslations("checkout");
 
@@ -63,7 +69,7 @@ export function StripePaymentModal({
         <p className="text-sm text-brand-muted">{t("stripe_preparing")}</p>
       ) : (
         <Elements stripe={stripePromise} options={{ clientSecret, appearance }}>
-          <StripeForm accessToken={accessToken} returnUrl={returnUrl} onPaid={onPaid} />
+          <StripeForm accessToken={accessToken} returnUrl={returnUrl} onPaid={onPaid} guardaTarjeta={guardaTarjeta} />
         </Elements>
       )}
     </Modal>
@@ -75,7 +81,8 @@ function StripeForm({
   accessToken,
   returnUrl,
   onPaid,
-}: Pick<Props, "accessToken" | "returnUrl" | "onPaid">) {
+  guardaTarjeta,
+}: Pick<Props, "accessToken" | "returnUrl" | "onPaid" | "guardaTarjeta">) {
   const stripe = useStripe();
   const elements = useElements();
   const t = useTranslations("checkout");
@@ -164,6 +171,12 @@ function StripeForm({
       <p className="flex items-center justify-center gap-1.5 text-xs text-brand-muted">
         <ShieldCheck size={14} className="text-cat-boots" /> {t("ssl_secure")}
       </p>
+
+      {/* Aviso obligatorio al guardar la tarjeta: se usa solo para la oferta posterior a
+          la compra, con el cliente presente y tocando él el botón. */}
+      {guardaTarjeta && (
+        <p className="text-center text-[11px] leading-snug text-brand-muted">{t("stripe_save_card")}</p>
+      )}
     </div>
   );
 }

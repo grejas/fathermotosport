@@ -461,7 +461,8 @@ class PaymentController extends Controller
 
     public function stripeIntent(Request $request): JsonResponse
     {
-        $order = Order::findOrFail($request->validate(['order_id' => 'required|uuid'])['order_id']);
+        $datos = $request->validate(['order_id' => 'required|uuid', 'save_card' => 'sometimes|boolean']);
+        $order = Order::findOrFail($datos['order_id']);
 
         // Mismas guardas que paypalCreate: sin esto, conocer un UUID alcanzaba para
         // generar cobros sobre el pedido de otra persona.
@@ -484,7 +485,8 @@ class PaymentController extends Controller
         }
 
         try {
-            $intent = $this->stripe->createPaymentIntent($order);
+            // save_card: la web avisa que la tarjeta se guarda para la oferta en un toque.
+            $intent = $this->stripe->createPaymentIntent($order, (bool) ($datos['save_card'] ?? false));
         } catch (RequestException $e) {
             Log::error('Stripe rechazó la creación del PaymentIntent.', [
                 'order' => $order->id,
@@ -599,6 +601,82 @@ class PaymentController extends Controller
         // Respuesta acotada (el mismo helper que usa PayPal): antes devolvía el modelo
         // Order completo, y con él el access_token del pedido, las notas y la dirección.
         return $this->estadoDelPago($intent['status'] ?? null, $order->fresh(['address']));
+    }
+
+    /**
+     * Venta cruzada en un toque: cobra el pedido de upsell con la tarjeta con la que se
+     * pagó el pedido original, sin volver a pedirla. Solo para upsells; el pedido
+     * original tiene que estar pagado con una tarjeta guardada en Stripe.
+     *
+     * Si el banco pide 3-D Secure, devuelve el client_secret para que el navegador
+     * complete la verificación y después confirme por /payments/stripe/confirm.
+     */
+    public function stripeSavedCard(Request $request): JsonResponse
+    {
+        $order = Order::findOrFail($request->validate(['order_id' => 'required|uuid'])['order_id']);
+
+        if (! $order->isAccessibleBy($request->user('sanctum'), Order::tokenFromRequest($request))) {
+            abort(403, 'No puedes pagar este pedido.');
+        }
+
+        if (! $order->esUpsell()) {
+            return response()->json(['message' => 'Solo se puede pagar así un producto agregado a un pedido.'], 422);
+        }
+
+        if ($order->payment_status === 'paid') {
+            return response()->json(['message' => 'Este pedido ya fue pagado.'], 409);
+        }
+
+        if (in_array($order->status, ['cancelled', 'refunded'], true)) {
+            return response()->json(['message' => 'Este pedido ya no se puede pagar.'], 409);
+        }
+
+        $original = $order->upsellOf;
+        $tarjeta = $original && $original->payment_status === 'paid'
+            ? $this->stripe->tarjetaDelPedido($original)
+            : null;
+
+        if (! $tarjeta) {
+            return response()->json(['message' => 'No hay una tarjeta guardada para este pedido.', 'sin_tarjeta' => true], 409);
+        }
+
+        try {
+            $intent = $this->stripe->cobrarConTarjetaGuardada($order, $tarjeta);
+        } catch (RequestException $e) {
+            // 402: el banco rechazó la tarjeta. El cliente puede pagar con otro medio.
+            $rechazada = $e->response->status() === 402;
+
+            Log::warning('Stripe no cobró la venta cruzada con la tarjeta guardada.', [
+                'order' => $order->id,
+                'status' => $e->response->status(),
+                'code' => $e->response->json('error.code'),
+            ]);
+
+            if ($rechazada) {
+                $this->registrarPagoFallido($order, 'stripe', (string) $e->response->json('error.decline_code', $e->response->json('error.code', 'card_declined')));
+            }
+
+            return response()->json([
+                'message' => $rechazada
+                    ? 'Tu banco rechazó el cobro. Prueba con otra tarjeta o con PayPal.'
+                    : 'No pudimos cobrar con tu tarjeta. Prueba con otro medio de pago.',
+                'sin_tarjeta' => true,
+            ], $rechazada ? 402 : 502);
+        }
+
+        $payment = $this->recordPayment($order, 'stripe', $intent['id'], strtoupper((string) config('services.stripe.currency', 'usd')));
+
+        if ($intent['status'] === 'succeeded') {
+            $this->markPaid($payment, $intent['raw']);
+        }
+
+        $respuesta = $this->estadoDelPago($intent['status'], $order->fresh(['address']))->getData(true);
+
+        return response()->json($respuesta + [
+            'payment_intent_id' => $intent['id'],
+            // Solo hace falta para completar la verificación del banco.
+            'client_secret' => $intent['status'] === 'requires_action' ? $intent['client_secret'] : null,
+        ]);
     }
 
     // ─────────────────────── MercadoPago ───────────────────────

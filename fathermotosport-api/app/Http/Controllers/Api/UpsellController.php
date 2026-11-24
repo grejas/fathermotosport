@@ -7,6 +7,7 @@ use App\Http\Requests\Order\StoreUpsellRequest;
 use App\Models\Order;
 use App\Models\ProductVariant;
 use App\Models\UpsellRule;
+use App\Services\Payments\StripeService;
 use App\Services\UpsellService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,7 +19,7 @@ use Illuminate\Http\Request;
  */
 class UpsellController extends Controller
 {
-    public function __construct(private UpsellService $upsell)
+    public function __construct(private UpsellService $upsell, private StripeService $stripe)
     {
     }
 
@@ -28,6 +29,13 @@ class UpsellController extends Controller
         $order = Order::findOrFail($orderId);
 
         $this->autorizar($request, $order);
+
+        // Pago todavía sin confirmar (vuelta de 3-D Secure antes que el webhook): el
+        // navegador reintenta en unos segundos en vez de darse por vencido.
+        if ($order->payment_status === 'pending' && ! $order->esUpsell()
+            && ! in_array($order->status, ['cancelled', 'refunded'], true)) {
+            return response()->json(['offers' => [], 'pending' => true]);
+        }
 
         $reglas = $this->upsell->ofertasPara($order);
 
@@ -42,6 +50,16 @@ class UpsellController extends Controller
             'discount_percent' => $regla->discount_percent,
             'price' => number_format($regla->precioBase(), 2, '.', ''),
             'discounted_price' => number_format($regla->precioConDescuento(), 2, '.', ''),
+            // Rebaja del último aviso, si la regla la tiene (si no, null).
+            'last_chance_percent' => $regla->tieneUltimaOportunidad() ? $regla->porcentaje(true) : null,
+            'last_chance_price' => $regla->tieneUltimaOportunidad()
+                ? number_format($regla->precioConDescuento(true), 2, '.', '')
+                : null,
+            // "Combina con tu …": el producto comprado que dispara la oferta, y si lo
+            // ofrecido es del mismo tipo ("tu segundo casco").
+            ...(fn (array $m) => ['pairs_with' => $m['producto'], 'same_kind' => $m['mismo_tipo']])(
+                $this->upsell->motivo($regla, $order)
+            ),
             'product' => [
                 'id' => $regla->offerProduct->id,
                 'name' => $regla->offerProduct->name,
@@ -58,7 +76,14 @@ class UpsellController extends Controller
             ],
         ])->values();
 
-        return response()->json(['offers' => $ofertas]);
+        // Tarjeta guardada del pago original: con ella el upsell se cobra en un toque.
+        // Solo marca y últimos 4 dígitos; los ids de Stripe no salen del servidor.
+        $tarjeta = $ofertas->isNotEmpty() ? $this->stripe->tarjetaDelPedido($order) : null;
+
+        return response()->json([
+            'offers' => $ofertas,
+            'saved_card' => $tarjeta ? ['brand' => $tarjeta['brand'], 'last4' => $tarjeta['last4']] : null,
+        ]);
     }
 
     /** Crea (o rehace) el pedido de venta cruzada con lo que el cliente eligió. */
@@ -68,7 +93,8 @@ class UpsellController extends Controller
 
         $this->autorizar($request, $order);
 
-        $upsell = $this->upsell->crearPedido($order, $request->validated()['items']);
+        $datos = $request->validated();
+        $upsell = $this->upsell->crearPedido($order, $datos['items'], (bool) ($datos['last_chance'] ?? false));
 
         return response()->json([
             'message' => 'Pedido creado correctamente.',

@@ -6,6 +6,7 @@ use App\Models\EmailVerificationCode;
 use App\Models\Order;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\ResolverMx;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -41,6 +42,16 @@ class ReclaimUnverifiedAccountTest extends TestCase
         $this->seed(DatabaseSeeder::class);
         Mail::fake();
         Http::fake(['www.google.com/recaptcha/*' => Http::response(['success' => true])]);
+
+        // Sin red: el chequeo de MX del correo no puede depender del DNS real (fallaba en
+        // cualquier entorno sin salida a internet). Igual que RegistroRemarketingTest.
+        $this->app->instance(ResolverMx::class, new class extends ResolverMx
+        {
+            public function tieneMx(string $dominio): bool
+            {
+                return true;
+            }
+        });
     }
 
     /** Como queda tras registerFromOrder con un pedido de tarjeta: sin verificar. */

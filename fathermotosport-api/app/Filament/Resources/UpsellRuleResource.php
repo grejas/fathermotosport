@@ -119,6 +119,20 @@ class UpsellRuleResource extends Resource
                         ->minValue(0)
                         ->live(debounce: 400)
                         ->helperText('Gana la más alta; a igual prioridad, el mejor descuento. Solo entran '.UpsellService::MAX_OFERTAS.' ofertas por pantalla.'),
+                    Forms\Components\TextInput::make('last_chance_discount_percent')
+                        ->label('Rebaja del último aviso (opcional)')
+                        ->helperText('Si el cliente cierra la oferta dos veces, el último aviso le ofrece este descuento. Tiene que ser mayor que el normal. Vacío = sin rebaja.')
+                        ->numeric()
+                        ->integer()
+                        ->suffix('%')
+                        ->minValue(1)
+                        ->maxValue(90)
+                        ->nullable(),
+                    Forms\Components\TextInput::make('upsell_group')
+                        ->label('Grupo (opcional)')
+                        ->helperText('De las reglas con el mismo grupo (ej. «riñoneras») se muestra una sola por pedido, rotando entre clientes.')
+                        ->maxLength(40)
+                        ->nullable(),
                     Forms\Components\Toggle::make('is_active')
                         ->label('Activa')
                         ->default(true)
@@ -189,6 +203,10 @@ class UpsellRuleResource extends Resource
                 ->filter(fn (array $d) => filled($d['offer_product_id'] ?? null))
                 ->mapWithKeys(fn (array $d) => [$d['offer_product_id'] => (int) $d['discount_percent']])
                 ->all(),
+            'last_chance_discount_percent' => filled($data['last_chance_discount_percent'] ?? null)
+                ? (int) $data['last_chance_discount_percent']
+                : null,
+            'upsell_group' => $data['upsell_group'] ?? null,
             'priority' => $data['priority'] ?? 0,
             'is_active' => (bool) ($data['is_active'] ?? true),
         ];
@@ -200,7 +218,7 @@ class UpsellRuleResource extends Resource
         return self::datosParaGuardar(collect([
             'trigger_tipo', 'trigger_product_id', 'trigger_category_id',
             'offer_tipo', 'offer_product_ids', 'offer_category_id',
-            'discount_percent', 'descuentos', 'priority', 'is_active',
+            'discount_percent', 'descuentos', 'last_chance_discount_percent', 'upsell_group', 'priority', 'is_active',
         ])->mapWithKeys(fn (string $campo) => [$campo => $get($campo)])->all());
     }
 
@@ -299,7 +317,9 @@ class UpsellRuleResource extends Resource
                     ->label('Descuento')
                     ->badge()
                     ->color('success')
-                    ->formatStateUsing(fn (int $state) => "−{$state}%"),
+                    ->formatStateUsing(fn (int $state, UpsellRule $record) => $record->tieneUltimaOportunidad()
+                        ? "−{$state}% · último aviso −{$record->last_chance_discount_percent}%"
+                        : "−{$state}%"),
                 Tables\Columns\TextColumn::make('precio')
                     ->label('Queda en')
                     // Una categoría no tiene un precio único: depende del producto.

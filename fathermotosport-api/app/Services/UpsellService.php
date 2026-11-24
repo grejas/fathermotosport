@@ -28,7 +28,8 @@ class UpsellService
 {
     /**
      * Cuántas ofertas entran en la pantalla de éxito. Es una decisión de diseño de esa
-     * pantalla y no un parámetro de negocio, así que vive en el código.
+     * pantalla y no un parámetro de negocio, así que vive en el código. La primera va
+     * ya elegida: el upsell vende con una oferta protagonista.
      */
     public const MAX_OFERTAS = 5;
 
@@ -110,10 +111,70 @@ class UpsellService
             // el cliente lo compara. A igual descuento manda priority (ya está ordenado).
             ->sortByDesc('discount_percent')
             ->unique('offer_product_id')
+            // De cada grupo (las 6 riñoneras, por ejemplo) entra una sola.
+            ->pipe(fn (Collection $reglas) => $this->unaPorGrupo($reglas, $original))
             // Orden en pantalla: prioridad; a igual prioridad, el mejor descuento primero.
             ->sortBy([['priority', 'desc'], ['discount_percent', 'desc'], ['id', 'asc']])
             ->take(self::MAX_OFERTAS)
             ->values();
+    }
+
+    /**
+     * Deja una sola regla por grupo: entre las de mejor prioridad y descuento del grupo,
+     * una que rota según el pedido (así cada cliente ve una distinta, y el mismo cliente
+     * ve siempre la misma al recargar). Las reglas sin grupo pasan todas.
+     *
+     * @param  Collection<int, UpsellRule>  $reglas
+     * @return Collection<int, UpsellRule>
+     */
+    private function unaPorGrupo(Collection $reglas, Order $original): Collection
+    {
+        $elegidas = $reglas->whereNotNull('upsell_group')
+            ->groupBy('upsell_group')
+            ->map(function (Collection $grupo) use ($original) {
+                $mejor = $grupo->sortBy([['priority', 'desc'], ['discount_percent', 'desc']])->first();
+                $empatadas = $grupo->where('priority', $mejor->priority)
+                    ->where('discount_percent', $mejor->discount_percent)
+                    ->sortBy('id')
+                    ->values();
+
+                return $empatadas[crc32((string) $original->id) % $empatadas->count()];
+            })
+            ->map(fn (UpsellRule $r) => $r->id.'|'.$r->offer_product_id)
+            ->values()
+            ->all();
+
+        return $reglas->filter(fn (UpsellRule $r) => $r->upsell_group === null
+            || in_array($r->id.'|'.$r->offer_product_id, $elegidas, true));
+    }
+
+    /**
+     * Por qué se ofrece: el producto comprado que dispara la oferta ("Combina con tu …")
+     * y si lo ofrecido es de su mismo tipo (misma categoría: "un segundo casco"). El
+     * disparador es el de la regla si es por producto, o el primero del pedido que cae
+     * en la categoría disparadora.
+     *
+     * @return array{producto: string|null, mismo_tipo: bool}
+     */
+    public function motivo(UpsellRule $regla, Order $original): array
+    {
+        $productos = Product::whereIn('id', $this->productosDelPedido($original))->get(['id', 'name', 'category_id']);
+
+        $disparador = match (true) {
+            $regla->trigger_product_id !== null => $productos->firstWhere('id', $regla->trigger_product_id),
+            $regla->trigger_category_id !== null => $productos->first(fn (Product $p) => in_array(
+                $p->category_id,
+                $this->categoriaConDescendientes((int) $regla->trigger_category_id)
+            )),
+            default => null,
+        };
+
+        return [
+            'producto' => $disparador?->name,
+            'mismo_tipo' => $disparador !== null
+                && $disparador->category_id !== null
+                && $disparador->category_id === $regla->offerProduct?->category_id,
+        ];
     }
 
     /**
@@ -189,10 +250,12 @@ class UpsellService
      * Crea (o rehace) el pedido de venta cruzada con lo que el cliente eligió.
      *
      * @param  array<int, array{rule_id: int|string, variant_id: string}>  $seleccion
+     * @param  bool  $ultimaOportunidad  Compra desde el último aviso: aplica la rebaja de
+     *                                    las reglas que la tengan.
      *
      * @throws ValidationException
      */
-    public function crearPedido(Order $original, array $seleccion): Order
+    public function crearPedido(Order $original, array $seleccion, bool $ultimaOportunidad = false): Order
     {
         if ($original->payment_status !== 'paid') {
             throw ValidationException::withMessages([
@@ -207,7 +270,7 @@ class UpsellService
         }
 
         $comprados = $this->productosDelPedido($original);
-        $lineas = $this->validarSeleccion($seleccion, $comprados, $this->categoriasDelPedido($comprados));
+        $lineas = $this->validarSeleccion($seleccion, $comprados, $this->categoriasDelPedido($comprados), $ultimaOportunidad);
 
         return DB::transaction(function () use ($original, $lineas) {
             // Reutiliza el pedido pendiente si el cliente ya había elegido antes y no
@@ -286,7 +349,7 @@ class UpsellService
      *
      * @throws ValidationException
      */
-    private function validarSeleccion(array $seleccion, Collection $comprados, array $categorias): array
+    private function validarSeleccion(array $seleccion, Collection $comprados, array $categorias, bool $ultimaOportunidad = false): array
     {
         $lineas = [];
         $ofrecidos = [];
@@ -347,7 +410,7 @@ class UpsellService
             }
 
             $precio = $regla->precioBase();
-            $conDescuento = $regla->precioConDescuento();
+            $conDescuento = $regla->precioConDescuento($ultimaOportunidad);
 
             $ofrecidos[] = $regla->offer_product_id;
             $lineas[] = [
@@ -697,7 +760,7 @@ class UpsellService
      * existen con ese disparador se omiten y se informan. Al editar, la regla editada
      * conserva su producto si sigue elegido (si no, toma el primero) y el resto se crea.
      *
-     * @param  array{trigger_product_id?: ?string, trigger_category_id?: int|string|null, offer_category_id?: int|string|null, offer_product_ids?: array<int, string>, discount_percent: int|string, descuentos?: array<string, int|string>, priority?: int|string|null, is_active?: bool}  $datos
+     * @param  array{trigger_product_id?: ?string, trigger_category_id?: int|string|null, offer_category_id?: int|string|null, offer_product_ids?: array<int, string>, discount_percent: int|string, descuentos?: array<string, int|string>, last_chance_discount_percent?: int|string|null, priority?: int|string|null, is_active?: bool}  $datos
      * @return array{regla: UpsellRule, creadas: Collection<int, string>, omitidas: Collection<int, string>}
      *               Las listas, con el nombre de lo ofrecido.
      *
@@ -732,6 +795,14 @@ class UpsellService
             }
         }
 
+        $rebaja = filled($datos['last_chance_discount_percent'] ?? null) ? (int) $datos['last_chance_discount_percent'] : null;
+
+        if ($rebaja !== null && ($rebaja > 90 || $rebaja <= max([$descuento, ...array_values($descuentos)]))) {
+            throw ValidationException::withMessages([
+                'last_chance_discount_percent' => 'La rebaja del último aviso tiene que ser mayor que el descuento normal (y hasta 90%).',
+            ]);
+        }
+
         if (array_diff(array_keys($descuentos), $ofertas->all())) {
             throw ValidationException::withMessages([
                 'descuentos' => 'Hay descuentos propios para productos que no están entre los ofrecidos.',
@@ -752,6 +823,8 @@ class UpsellService
         $base = [
             'trigger_product_id' => filled($datos['trigger_category_id'] ?? null) ? null : $datos['trigger_product_id'],
             'trigger_category_id' => filled($datos['trigger_category_id'] ?? null) ? (int) $datos['trigger_category_id'] : null,
+            'last_chance_discount_percent' => $rebaja,
+            'upsell_group' => filled($datos['upsell_group'] ?? null) ? mb_substr(trim((string) $datos['upsell_group']), 0, 40) : null,
             'priority' => (int) ($datos['priority'] ?? 0),
             'is_active' => (bool) ($datos['is_active'] ?? true),
         ];
