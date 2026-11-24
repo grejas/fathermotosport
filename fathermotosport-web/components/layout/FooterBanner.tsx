@@ -1,5 +1,6 @@
 "use client";
 
+import imageLoader from "@/lib/imageLoader";
 import { useEffect, useState } from "react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
@@ -53,7 +54,7 @@ export function FooterBanner() {
       {banner.image_url && (
         <div
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${banner.image_url})`, opacity: 0.55 }}
+          style={{ backgroundImage: `url(${imageLoader({ src: banner.image_url, width: 1280 })})`, opacity: 0.55 }}
         />
       )}
       {/* Overlay lateral: oscuro a la izquierda (texto legible), transparente a

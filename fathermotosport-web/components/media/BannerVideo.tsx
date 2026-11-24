@@ -1,5 +1,6 @@
 "use client";
 
+import imageLoader from "@/lib/imageLoader";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
@@ -339,7 +340,7 @@ export function BannerVideo({
         <video
           ref={videoRef}
           src={src}
-          poster={posterUrl ?? undefined}
+          poster={posterUrl ? imageLoader({ src: posterUrl, width: 1280 }) : undefined}
           autoPlay={modo === "hero" && Boolean(autoPermitido)}
           muted={!vslActivo}
           loop={!vsl || !vslActivo}

@@ -1,5 +1,6 @@
 "use client";
 
+import imageLoader from "@/lib/imageLoader";
 import { useEffect, useRef } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/lib/i18n/navigation";
@@ -66,7 +67,8 @@ export function HeroSection({ banner }: { banner: Banner | null }) {
           <div
             className="absolute inset-0"
             style={{
-              backgroundImage: `url(${imagen})`,
+              // WebP a 960 px: la imagen ocupa como mucho el 55% del ancho.
+              backgroundImage: `url(${imageLoader({ src: imagen, width: 960 })})`,
               backgroundSize: "55%",
               backgroundPosition: "right center",
               backgroundRepeat: "no-repeat",
