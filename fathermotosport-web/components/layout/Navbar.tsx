@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname, useRouter } from "@/lib/i18n/navigation";
 import { Heart, Menu, Search, User, X } from "lucide-react";
@@ -24,6 +24,8 @@ export function Navbar({ categories }: { categories: MenuCategory[] }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [query, setQuery] = useState("");
   const featured = featuredCategories(categories);
+  const featuredRef = useRef<HTMLUListElement>(null);
+  const [featuredOverflow, setFeaturedOverflow] = useState(false);
 
   const mounted = useMounted();
   const isAuthRaw = useAuthStore((s) => s.isAuth);
@@ -39,6 +41,28 @@ export function Navbar({ categories }: { categories: MenuCategory[] }) {
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // La rueda vertical desliza los enlaces directos cuando no entran (listener no pasivo
+  // para que la página no se mueva a la vez).
+  useEffect(() => {
+    const el = featuredRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (el.scrollWidth <= el.clientWidth || Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      e.preventDefault();
+      el.scrollLeft += e.deltaY;
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    // Solo cuando no entran se agrega el desvanecido del borde derecho.
+    const check = () => setFeaturedOverflow(el.scrollWidth > el.clientWidth + 1);
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    check();
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      ro.disconnect();
+    };
+  }, [featured.length]);
 
   const onSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +82,7 @@ export function Navbar({ categories }: { categories: MenuCategory[] }) {
         solid ? "border-b border-white/10 bg-brand-carbon/85 backdrop-blur-md" : "bg-transparent"
       )}
     >
-      <nav className="relative mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6">
+      <nav className="relative mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6 xl:gap-3">
         <Link href="/" className="flex items-center gap-2">
           <span translate="no" className="text-lg font-extrabold tracking-wide sm:text-xl">
             <span className="text-brand-red">Father</span>
@@ -66,18 +90,7 @@ export function Navbar({ categories }: { categories: MenuCategory[] }) {
           </span>
         </Link>
 
-        {/* Entre 1024 y 1279 px no entran los enlaces directos: quedan el desplegable y Marcas. */}
-        <ul className="ml-6 hidden items-center gap-5 lg:flex">
-          {featured.map((c) => (
-            <li key={c.id} className="hidden xl:block">
-              <Link
-                href={categoryHref(c)}
-                className="whitespace-nowrap text-sm font-medium text-brand-white/80 transition hover:text-brand-red"
-              >
-                {categoryLabel(t, c)}
-              </Link>
-            </li>
-          ))}
+        <ul className="ml-4 hidden shrink-0 items-center gap-4 lg:flex xl:gap-3.5">
           <CategoriesDropdown categories={categories} />
           <li>
             <Link
@@ -89,7 +102,33 @@ export function Navbar({ categories }: { categories: MenuCategory[] }) {
           </li>
         </ul>
 
-        <div className="ml-auto flex items-center gap-1">
+        {/*
+          Enlaces directos a la derecha de Marcas. Van en su propia lista (fuera de la del
+          desplegable, para no recortar su panel): si no entran, se deslizan en horizontal
+          con la rueda o el trackpad y se desvanecen en el borde derecho.
+        */}
+        {featured.length > 0 && (
+          <ul
+            ref={featuredRef}
+            className={cn(
+              "hidden min-w-0 flex-1 items-center gap-4 overflow-x-auto xl:gap-3.5 [-ms-overflow-style:none] [scrollbar-width:none] lg:flex [&::-webkit-scrollbar]:hidden",
+              featuredOverflow && "pr-4 [mask-image:linear-gradient(to_right,black_calc(100%-1.5rem),transparent)]"
+            )}
+          >
+            {featured.map((c) => (
+              <li key={c.id} className="shrink-0">
+                <Link
+                  href={categoryHref(c)}
+                  className="whitespace-nowrap text-sm font-medium text-brand-white/80 transition hover:text-brand-red"
+                >
+                  {categoryLabel(t, c)}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="ml-auto flex shrink-0 items-center gap-1">
           <form onSubmit={onSearch} className="hidden items-center sm:flex">
             <div
               className={cn(
@@ -167,6 +206,16 @@ export function Navbar({ categories }: { categories: MenuCategory[] }) {
             <LanguageSelector />
           </div>
           <ul className="flex flex-col gap-1">
+            <CategoriesAccordion categories={categories} onNavigate={() => setMobileOpen(false)} />
+            <li>
+              <Link
+                href="/catalog"
+                onClick={() => setMobileOpen(false)}
+                className="block rounded-lg px-3 py-2 text-sm font-medium text-brand-white/90 hover:bg-white/10"
+              >
+                {t("brands")}
+              </Link>
+            </li>
             {featured.map((c) => (
               <li key={c.id}>
                 <Link
@@ -178,16 +227,6 @@ export function Navbar({ categories }: { categories: MenuCategory[] }) {
                 </Link>
               </li>
             ))}
-            <CategoriesAccordion categories={categories} onNavigate={() => setMobileOpen(false)} />
-            <li>
-              <Link
-                href="/catalog"
-                onClick={() => setMobileOpen(false)}
-                className="block rounded-lg px-3 py-2 text-sm font-medium text-brand-white/90 hover:bg-white/10"
-              >
-                {t("brands")}
-              </Link>
-            </li>
             <li>
               <Link
                 href={isAuth ? "/profile" : "/login"}
