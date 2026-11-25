@@ -14,7 +14,7 @@ export interface MenuCategory {
 }
 
 /** Enlaces directos del navbar, por slug y en este orden. Si un slug no está activo, no se muestra. */
-export const FEATURED_SLUGS = ["cascos", "guantes", "botas", "chamarras", "breathe-divinity"] as const;
+export const FEATURED_SLUGS = ["chaquetas", "cascos", "guantes", "accesorios", "botas", "repuestos"] as const;
 
 /**
  * Slug → clave de traducción en messages/{locale}.json (namespace "nav").
@@ -24,6 +24,7 @@ const NAV_KEYS: Record<string, string> = {
   cascos: "helmets",
   guantes: "gloves",
   botas: "boots",
+  chaquetas: "jackets",
   chamarras: "jackets",
   repuestos: "parts",
   accesorios: "accessories",
