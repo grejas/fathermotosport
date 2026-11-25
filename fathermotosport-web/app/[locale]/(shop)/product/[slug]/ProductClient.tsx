@@ -95,7 +95,7 @@ export function ProductClient({
   const displayProduct = translated ? { ...product, name: translated.name, description: translated.description } : product;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pb-16 pt-16 sm:px-6 sm:pt-20 lg:pt-24">
+    <div className="mx-auto max-w-7xl px-4 pb-28 pt-16 sm:px-6 sm:pt-20 lg:pb-16 lg:pt-24">
       <button
         onClick={handleBackToCatalog}
         className="mb-6 inline-flex items-center rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-brand-white transition-all duration-300 hover:border-brand-red/40 hover:bg-white/10 hover:text-brand-red"

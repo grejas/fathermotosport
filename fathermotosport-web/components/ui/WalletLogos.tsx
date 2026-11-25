@@ -13,6 +13,7 @@ import {
 } from "simple-icons";
 import type { SimpleIcon } from "simple-icons";
 import { cn } from "@/lib/utils";
+import { isGatewayAdvertised } from "@/lib/data/paymentMethods";
 
 /**
  * Marcas de los medios de pago. No se dibujan a mano: los trazos vienen de paquetes
@@ -49,6 +50,12 @@ const RESTO: Marca[] = [
   { id: "bitcoin", name: "Bitcoin", si: siBitcoin, label: "Bitcoin" },
   { id: "binance_pay", name: "Binance Pay", si: siBinance, label: "Binance Pay" },
 ];
+
+/** PayPal y MercadoPago solo se muestran si el checkout los tiene encendidos. */
+function seAnuncia(m: Marca): boolean {
+  if (m.id === "paypal" || m.id === "mercadopago") return isGatewayAdvertised(m.id);
+  return true;
+}
 
 function Simbolo({ marca, className }: { marca: Marca; className?: string }) {
   if (marca.fa) {
@@ -90,7 +97,7 @@ function Chip({ marca }: { marca: Marca }) {
 export function PaymentLogos({ className }: { className?: string }) {
   return (
     <ul className={cn("flex flex-wrap gap-2", className)} translate="no" aria-label="Medios de pago">
-      {[...BILLETERAS, ...RESTO].map((m) => (
+      {[...BILLETERAS, ...RESTO.filter(seAnuncia)].map((m) => (
         <Chip key={m.id} marca={m} />
       ))}
     </ul>

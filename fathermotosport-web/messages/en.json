@@ -33,6 +33,8 @@
     "popular": "Popular",
     "no_stock": "No stock available",
     "added_to_cart": "{name} added",
+    "choose_size": "Choose size",
+    "choose_design": "Choose design",
     "model_3d_available": "3D model available"
   },
   "catalog": {
@@ -80,7 +82,7 @@
     "blog_title": "Latest from the blog",
     "blog_view_all": "View all posts",
     "pay_in_installments": "Pay in installments · 100% secure",
-    "payment_desc": "We accept PayPal, credit and debit cards, MercadoPago, IBAN bank transfer in Europe and crypto (USDT and Bitcoin).",
+    "payment_desc": "We accept credit and debit cards, Apple Pay and Google Pay, IBAN bank transfer in Europe and crypto (USDT and Bitcoin).",
     "view_payment_methods": "View payment methods"
   },
   "promo_1111": {

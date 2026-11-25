@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getPostBySlug } from "@/lib/api/posts";
 import { getImageUrl } from "@/lib/utils";
 import { BlogPostClient } from "./BlogPostClient";
+import { alternatesFor } from "@/lib/seo";
 
 const getPost = cache(async (slug: string) => {
   try {
@@ -13,7 +14,7 @@ const getPost = cache(async (slug: string) => {
   }
 });
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: { slug: string; locale: string } }): Promise<Metadata> {
   const post = await getPost(params.slug);
   if (!post) return {};
 
@@ -22,6 +23,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   return {
     title: post.title,
     description,
+    alternates: alternatesFor(`/blog/${post.slug}`, params.locale),
     openGraph: {
       title: post.title,
       description,

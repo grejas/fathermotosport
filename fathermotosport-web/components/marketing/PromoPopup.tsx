@@ -14,8 +14,18 @@ import { SHIPPING_COUNTRIES } from "@/lib/data/shippingCountries";
 import { captureUtm, readUtm } from "@/lib/utm";
 import { useCartStore } from "@/store/cartStore";
 
-/** Cuánto espera antes de abrirse (pauta: ~8 s, para no interrumpir de entrada). */
-const DELAY_MS = 8000;
+/**
+ * Cuándo se abre: al bajar el 40 % de la página, al intentar salir (escritorio) o, si no
+ * pasa nada de eso, a los 25 s. Antes salía a los 8 s fijos y tapaba el VSL de la portada.
+ */
+const SCROLL_RATIO = 0.4;
+const FALLBACK_MS = 25_000;
+/** Mientras un video suena con audio (el VSL "con sonido"), el popup espera. */
+const RECHECK_MS = 3000;
+
+function hayVideoConSonido(): boolean {
+  return Array.from(document.querySelectorAll("video")).some((v) => !v.paused && !v.ended && !v.muted);
+}
 /** Si lo cierra sin dejar el email, no vuelve a salir en estos días. */
 const SNOOZE_DAYS = 7;
 const KEY = "fms-popup";
@@ -46,7 +56,8 @@ const RUTAS_EXCLUIDAS = /\/(checkout|auth|orders|account|profile|unsubscribe)(\/
  * cupón de 10, 15, 20 o 25 % para su primera compra, de un solo uso y con vencimiento.
  * El porcentaje lo decide el servidor, nunca el navegador.
  *
- * Sale una vez, a los 8 s, fuera del checkout. Cerrado sin dejar el email, vuelve a
+ * Sale una vez (40 % de scroll, intención de salida o 25 s, nunca sobre el video con
+ * sonido), fuera del checkout. Cerrado sin dejar el email, vuelve a
  * ofrecerse a los 7 días. Con el cupón ya entregado no vuelve a salir.
  */
 export function PromoPopup() {
@@ -86,8 +97,35 @@ export function PromoPopup() {
     if (g?.state === "claimed") return;
     if (g?.state === "closed" && Date.now() - g.at < SNOOZE_DAYS * 86_400_000) return;
 
-    const id = window.setTimeout(() => setOpen(true), DELAY_MS);
-    return () => window.clearTimeout(id);
+    let hecho = false;
+    let recheck: number | undefined;
+    const abrir = () => {
+      if (hecho) return;
+      // No interrumpe a quien está mirando el video con sonido: vuelve a probar en unos segundos.
+      if (hayVideoConSonido()) {
+        window.clearTimeout(recheck);
+        recheck = window.setTimeout(abrir, RECHECK_MS);
+        return;
+      }
+      hecho = true;
+      setOpen(true);
+    };
+    const onScroll = () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      if (max > 0 && window.scrollY / max >= SCROLL_RATIO) abrir();
+    };
+    const onSalida = (e: MouseEvent) => {
+      if (e.clientY <= 0 && !e.relatedTarget) abrir();
+    };
+    const id = window.setTimeout(abrir, FALLBACK_MS);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    document.addEventListener("mouseout", onSalida);
+    return () => {
+      window.clearTimeout(id);
+      window.clearTimeout(recheck);
+      window.removeEventListener("scroll", onScroll);
+      document.removeEventListener("mouseout", onSalida);
+    };
   }, [excluida, open, premio]);
 
   // Si navega al checkout con el popup abierto, se cierra sin marcarlo como rechazado.

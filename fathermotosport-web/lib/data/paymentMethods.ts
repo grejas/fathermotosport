@@ -26,3 +26,12 @@ export const CRYPTO_PAYMENT_METHODS: readonly ManualPaymentMethod[] = ["binance_
 export function isManualPaymentMethod(method: string | null | undefined): method is ManualPaymentMethod {
   return MANUAL_PAYMENT_METHODS.includes(method as ManualPaymentMethod);
 }
+
+/**
+ * ¿Se puede anunciar esta pasarela en la portada y el footer? Solo si el checkout la
+ * ofrece de verdad: así, al apagar PayPal o MercadoPago, desaparecen también de la vitrina
+ * (antes la portada seguía mostrando PayPal y el cliente lo buscaba en vano en el pago).
+ */
+export function isGatewayAdvertised(method: "paypal" | "mercadopago"): boolean {
+  return ENABLED_PAYMENT_METHODS.includes(method);
+}

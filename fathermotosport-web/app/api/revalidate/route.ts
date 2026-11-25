@@ -5,9 +5,10 @@ import { SHIPPING_RETURNS_TAG } from "@/lib/api/shippingReturns";
 import { BANNERS_TAG } from "@/lib/api/banners";
 import { CATEGORIES_TAG } from "@/lib/api/categories";
 import { STORE_SETTINGS_TAG } from "@/lib/api/storeSettings";
+import { PRODUCTS_TAG } from "@/lib/seo";
 
 /** Solo se pueden invalidar estos tags; cualquier otro responde 400. */
-const ALLOWED_TAGS = new Set<string>([SHIPPING_RETURNS_TAG, BANNERS_TAG, CATEGORIES_TAG, STORE_SETTINGS_TAG]);
+const ALLOWED_TAGS = new Set<string>([SHIPPING_RETURNS_TAG, BANNERS_TAG, CATEGORIES_TAG, STORE_SETTINGS_TAG, PRODUCTS_TAG]);
 
 function sameSecret(given: string, expected: string): boolean {
   const a = Buffer.from(given);
