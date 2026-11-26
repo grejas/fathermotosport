@@ -8,6 +8,7 @@ use App\Support\BajaDePromociones;
 use App\Support\HtmlDeCorreo;
 use App\Support\ImagenDeCampana;
 use App\Support\PieDeCorreo;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 
@@ -41,9 +42,19 @@ class CorreoCampana extends CorreoPromocional
         return CampanaManual::contenidoPara($this->campana, $this->idioma());
     }
 
+    /**
+     * Las campañas las escribe el equipo: salen y se responden en la casilla de ventas
+     * (config mail.ventas), nunca desde noreply ni desde un correo personal.
+     */
     public function envelope(): Envelope
     {
-        return new Envelope(subject: (string) ($this->contenido()['asunto'] ?? 'FatherMotoSport'));
+        $ventas = (string) config('mail.ventas.address');
+
+        return new Envelope(
+            from: new Address($ventas, 'FatherMotoSport'),
+            replyTo: [new Address($ventas, (string) config('mail.ventas.name'))],
+            subject: (string) ($this->contenido()['asunto'] ?? 'FatherMotoSport'),
+        );
     }
 
     public function content(): Content
