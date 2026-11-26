@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { Button } from "@/components/ui/Button";
 import { VisorColorsModal } from "@/components/3d/VisorColorsModal";
 import { translateText } from "@/lib/utils/translate";
+import { isHelmet } from "@/lib/utils";
 import { variantImage } from "@/lib/utils/variantImage";
 import type { ShippingReturnsSummary } from "@/lib/shippingReturns";
 
@@ -91,7 +92,7 @@ export function ProductClient({
     );
   }
 
-  const isHelmet = product.category?.slug === "cascos";
+  const helmet = isHelmet(product);
   const displayProduct = translated ? { ...product, name: translated.name, description: translated.description } : product;
 
   return (
@@ -118,7 +119,7 @@ export function ProductClient({
               modelUrl={product.model_3d.file_glb_url}
               images={product.images ?? []}
               name={displayProduct.name}
-              showVisorColors={isHelmet}
+              showVisorColors={helmet}
             />
           ) : (
             <ProductGallery
@@ -127,7 +128,7 @@ export function ProductClient({
               focusImageId={variantImage(product.images, option)?.id}
             />
           )}
-          {isHelmet && (
+          {helmet && (
             <Button
               variant="glass"
               size="sm"
@@ -145,7 +146,7 @@ export function ProductClient({
       <ProductTabs product={displayProduct} />
       <RelatedProducts categoryId={product.category?.id} currentSlug={product.slug} />
 
-      {isHelmet && (
+      {helmet && (
         <VisorColorsModal
           open={showVisorModal}
           onClose={() => setShowVisorModal(false)}

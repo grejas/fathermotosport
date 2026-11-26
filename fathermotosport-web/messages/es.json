@@ -33,7 +33,11 @@
     "popular": "Popular",
     "no_stock": "Sin stock disponible",
     "added_to_cart": "{name} agregado",
-    "model_3d_available": "Modelo 3D disponible"
+    "model_3d_available": "Modelo 3D disponible",
+    "visor_color": "Color de visor",
+    "visor_choose": "Elige el color de visor",
+    "visor_required": "Elige el color de visor antes de agregar al carrito",
+    "visor_choose_on_page": "Elige talla y color de visor del casco"
   },
   "catalog": {
     "title": "Catálogo",
@@ -163,7 +167,8 @@
     "prices_updated": "Actualizamos el precio de: {names}. Revisa el total.",
     "coupon_from_link": "Tu cupón {code} está listo: se aplica en el carrito y en el pago.",
     "coupon_login_needed": "Tienes el cupón {code}. Es personal: inicia sesión con tu cuenta para usarlo.",
-    "coupon_login": "Iniciar sesión"
+    "coupon_login": "Iniciar sesión",
+    "visor": "Visor"
   },
   "checkout": {
     "shipping_address": "Dirección de envío",
@@ -367,7 +372,8 @@
     "tracking": "Tracking",
     "products": "Productos",
     "product_fallback": "Producto",
-    "empty": "Aún no tienes pedidos."
+    "empty": "Aún no tienes pedidos.",
+    "visor": "Visor"
   },
   "security": {
     "message": "Por tu seguridad, te recomendamos actualizar tu contraseña.",

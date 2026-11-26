@@ -8,6 +8,7 @@ use App\Models\OrderItem;
 use App\Models\ProductVariant;
 use App\Models\ShippingOption;
 use App\Models\User;
+use App\Models\VisorColor;
 use App\Services\Payments\ManualPaymentService;
 use App\Support\Paises;
 use Illuminate\Support\Facades\DB;
@@ -48,6 +49,9 @@ class OrderService
 
             $subtotal = 0;
             $lines = [];
+            // Unidades pedidas por variante: el mismo casco puede venir en dos líneas
+            // (una por color de visor) y el stock se compara contra la suma.
+            $unidadesPorVariante = [];
             // Todas las categorías y exclusiones frescas: nada de lo leído antes en la
             // petición decide el precio que se cobra.
             PrecioFinal::olvidar();
@@ -66,7 +70,9 @@ class OrderService
                     ]);
                 }
 
-                if ($variant->stock < $qty) {
+                $unidadesPorVariante[$variant->id] = ($unidadesPorVariante[$variant->id] ?? 0) + $qty;
+
+                if ($variant->stock < $unidadesPorVariante[$variant->id]) {
                     throw ValidationException::withMessages([
                         'items' => ["Stock insuficiente para {$variant->sku}. Disponible: {$variant->stock}."],
                     ]);
@@ -78,6 +84,7 @@ class OrderService
 
                 $lines[] = [
                     'variant' => $variant,
+                    'visor' => $this->resolveVisorColor($variant, $line['visor_color_id'] ?? null),
                     'quantity' => $qty,
                     'unit_price' => $unitPrice,
                     'subtotal' => $lineSubtotal,
@@ -167,6 +174,8 @@ class OrderService
                     'size' => $variant->size,
                     // El color es del producto (un producto = un color).
                     'color' => $variant->product->color,
+                    'visor_color_id' => $line['visor']?->id,
+                    'visor_color' => $line['visor']?->name,
                 ]);
             }
 
@@ -183,6 +192,35 @@ class OrderService
 
             return $order->load(['items.variant.product', 'address']);
         });
+    }
+
+    /**
+     * Color de visor elegido para un casco. Vale si es uno de los visores activos del
+     * producto; si el producto no tiene visores propios, cualquiera activo del catálogo
+     * global (lo mismo que muestra la web). Sin elección, null.
+     *
+     * @throws ValidationException
+     */
+    private function resolveVisorColor(ProductVariant $variant, ?string $visorColorId): ?VisorColor
+    {
+        if (! $visorColorId) {
+            return null;
+        }
+
+        $product = $variant->product;
+        $propios = $product->visorColors()->where('visor_colors.is_active', true);
+
+        $visor = (clone $propios)->exists()
+            ? $propios->where('visor_colors.id', $visorColorId)->first()
+            : VisorColor::active()->whereKey($visorColorId)->first();
+
+        if (! $visor) {
+            throw ValidationException::withMessages([
+                'items' => ["El color de visor elegido no está disponible para {$product->name}."],
+            ]);
+        }
+
+        return $visor;
     }
 
     /**

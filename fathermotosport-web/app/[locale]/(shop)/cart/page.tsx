@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/lib/i18n/navigation";
 import Image from "next/image";
 import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
-import { useCartStore } from "@/store/cartStore";
+import { cartLineId, useCartStore } from "@/store/cartStore";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
@@ -104,7 +104,7 @@ export default function CartPage() {
         <div className="space-y-4">
           {items.map((item) => (
             <div
-              key={item.variantId}
+              key={cartLineId(item)}
               className="flex gap-4 rounded-2xl border border-white/[0.06] bg-brand-card p-4"
             >
               <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-brand-dark">
@@ -116,7 +116,7 @@ export default function CartPage() {
               <div className="flex flex-1 flex-col">
                 <p className="font-semibold text-brand-white">{item.name}</p>
                 <p className="text-sm text-brand-muted">
-                  {[item.size, item.color].filter(Boolean).join(" · ")}
+                  {[item.size, item.color, item.visorColor && `${t("visor")}: ${item.visorColor}`].filter(Boolean).join(" · ")}
                 </p>
                 <p className="text-sm text-brand-muted">
                   {item.listPrice != null && item.listPrice > item.price && (
@@ -132,7 +132,7 @@ export default function CartPage() {
 
                 <div className="mt-auto flex items-center justify-between pt-2">
                   <div className="flex items-center rounded-lg border border-white/10">
-                    <button onClick={() => updateQuantity(item.variantId, item.quantity - 1)} className="p-2 text-brand-muted hover:text-brand-white">
+                    <button onClick={() => updateQuantity(cartLineId(item), item.quantity - 1)} className="p-2 text-brand-muted hover:text-brand-white">
                       <Minus size={14} />
                     </button>
                     <span
@@ -141,7 +141,7 @@ export default function CartPage() {
                     >
                       {item.quantity}
                     </span>
-                    <button onClick={() => updateQuantity(item.variantId, item.quantity + 1)} className="p-2 text-brand-muted hover:text-brand-white">
+                    <button onClick={() => updateQuantity(cartLineId(item), item.quantity + 1)} className="p-2 text-brand-muted hover:text-brand-white">
                       <Plus size={14} />
                     </button>
                   </div>
@@ -151,7 +151,7 @@ export default function CartPage() {
                       {formatPrice(item.price * item.quantity)}
                     </span>
                     <button
-                      onClick={() => removeItem(item.variantId)}
+                      onClick={() => removeItem(cartLineId(item))}
                       className="text-brand-muted hover:text-brand-red"
                       aria-label={t("remove")}
                     >

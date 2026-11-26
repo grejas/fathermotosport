@@ -301,7 +301,7 @@ export function CheckoutForm() {
       }
 
       const { order } = await createExpressOrder({
-        items: items.map((i) => ({ variant_id: i.variantId, quantity: i.quantity })),
+        items: items.map((i) => ({ variant_id: i.variantId, quantity: i.quantity, visor_color_id: i.visorColorId ?? undefined })),
         shipping_country_code: form.country,
         shipping_option_id: selectedOption.id,
         email: form.email.trim(),
@@ -477,7 +477,7 @@ export function CheckoutForm() {
   const crearPedido = () =>
     createOrder({
       guest_email: isAuth ? undefined : form.email,
-      items: items.map((i) => ({ variant_id: i.variantId, quantity: i.quantity })),
+      items: items.map((i) => ({ variant_id: i.variantId, quantity: i.quantity, visor_color_id: i.visorColorId ?? undefined })),
       address: {
         full_name: `${form.first_name} ${form.last_name}`.trim(),
         phone: form.phone,

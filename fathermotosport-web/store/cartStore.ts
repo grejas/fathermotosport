@@ -1,11 +1,16 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { Product, ProductVariant } from "@/lib/types";
+import type { Product, ProductVariant, VisorColor } from "@/lib/types";
 import { SESSION_KEY } from "@/lib/api/client";
 import type { CartPrice } from "@/lib/api/cart";
 import { finalPrice } from "@/lib/utils";
 
 export interface LocalCartItem {
+  /**
+   * Identifica la línea del carrito: variante + color de visor (el mismo casco con dos
+   * visores distintos son dos líneas). Falta en items guardados antes: usar cartLineId().
+   */
+  lineId?: string;
   variantId: string;
   productId: string;
   name: string;
@@ -13,6 +18,9 @@ export interface LocalCartItem {
   image: string | null;
   color: string | null;
   size: string | null;
+  /** Color de visor elegido (solo cascos). */
+  visorColorId?: string | null;
+  visorColor?: string | null;
   /** Lo que se cobra por unidad (precio final). Se refresca con /cart/prices. */
   price: number;
   /** Precio de lista, para tacharlo si hay descuento. Falta en items de antes. */
@@ -22,6 +30,15 @@ export interface LocalCartItem {
   stock: number;
   /** Peso del producto en kg. null = sin peso cargado (el envío asume DEFAULT_WEIGHT_KG). */
   weightKg: number | null;
+}
+
+/** Clave de la línea del carrito (variante + visor). */
+export function cartLineId(item: Pick<LocalCartItem, "lineId" | "variantId">): string {
+  return item.lineId ?? item.variantId;
+}
+
+function buildLineId(variantId: string, visorColorId?: string | null): string {
+  return visorColorId ? `${variantId}:${visorColorId}` : variantId;
 }
 
 /** Mismo valor que ShippingWeightService::DEFAULT_WEIGHT_KG en el backend. */
@@ -37,10 +54,20 @@ interface CartState {
   items: LocalCartItem[];
   sessionId: string;
   isOpen: boolean;
-  /** `image`: foto de la opción elegida (si no, la principal del producto). */
-  addItem: (product: Product, variant: ProductVariant, quantity?: number, image?: string | null) => void;
-  removeItem: (variantId: string) => void;
-  updateQuantity: (variantId: string, quantity: number) => void;
+  /**
+   * `image`: foto de la opción elegida (si no, la principal del producto).
+   * `visor`: color de visor elegido (cascos).
+   */
+  addItem: (
+    product: Product,
+    variant: ProductVariant,
+    quantity?: number,
+    image?: string | null,
+    visor?: Pick<VisorColor, "id" | "name"> | null
+  ) => void;
+  /** Por línea: cartLineId(item). */
+  removeItem: (lineId: string) => void;
+  updateQuantity: (lineId: string, quantity: number) => void;
   clearCart: () => void;
   openCart: () => void;
   closeCart: () => void;
@@ -78,17 +105,18 @@ export const useCartStore = create<CartState>()(
       pendingCoupon: null,
       setPendingCoupon: (code) => set({ pendingCoupon: code?.trim().toUpperCase() || null }),
 
-      addItem: (product, variant, quantity = 1, image) => {
+      addItem: (product, variant, quantity = 1, image, visor) => {
         const variantId = variant.id;
+        const lineId = buildLineId(variantId, visor?.id);
         // El precio es del producto (no varía por talla): el final, con el mejor descuento.
         const price = finalPrice(product);
         const listPrice = parseFloat(product.price);
-        const existing = get().items.find((i) => i.variantId === variantId);
+        const existing = get().items.find((i) => cartLineId(i) === lineId);
 
         if (existing) {
           set({
             items: get().items.map((i) =>
-              i.variantId === variantId
+              cartLineId(i) === lineId
                 ? {
                     ...i,
                     quantity: Math.min(i.quantity + quantity, variant.stock),
@@ -105,6 +133,7 @@ export const useCartStore = create<CartState>()(
             items: [
               ...get().items,
               {
+                lineId,
                 variantId,
                 productId: product.id,
                 name: product.name,
@@ -113,6 +142,8 @@ export const useCartStore = create<CartState>()(
                 // El color es del producto, no algo que el cliente elige.
                 color: product.color ?? null,
                 size: variant.size,
+                visorColorId: visor?.id ?? null,
+                visorColor: visor?.name ?? null,
                 price,
                 listPrice,
                 discountPercent: product.discount_percent,
@@ -126,13 +157,13 @@ export const useCartStore = create<CartState>()(
         set({ isOpen: true });
       },
 
-      removeItem: (variantId) =>
-        set({ items: get().items.filter((i) => i.variantId !== variantId) }),
+      removeItem: (lineId) =>
+        set({ items: get().items.filter((i) => cartLineId(i) !== lineId) }),
 
-      updateQuantity: (variantId, quantity) =>
+      updateQuantity: (lineId, quantity) =>
         set({
           items: get().items.map((i) =>
-            i.variantId === variantId
+            cartLineId(i) === lineId
               ? { ...i, quantity: Math.max(1, Math.min(quantity, i.stock)) }
               : i
           ),

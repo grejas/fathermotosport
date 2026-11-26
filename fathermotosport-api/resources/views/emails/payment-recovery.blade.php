@@ -121,6 +121,7 @@
                   $detalle = collect([
                     $item->size ? $t('size').' '.$item->size : null,
                     $item->color,
+                    $item->visor_color ? $t('visor').' '.$item->visor_color : null,
                     $t('quantity').': '.$item->quantity,
                   ])->filter()->implode(' · ');
                 @endphp

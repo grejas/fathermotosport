@@ -221,6 +221,8 @@ export interface OrderItem {
   subtotal: string;
   size: string | null;
   color: string | null;
+  /** Color de visor elegido (cascos). */
+  visor_color?: string | null;
   variant?: {
     id: string;
     sku: string;

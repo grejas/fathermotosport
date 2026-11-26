@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { useCartStore } from "@/store/cartStore";
+import { cartLineId, useCartStore } from "@/store/cartStore";
 import { formatPrice, getImageUrl } from "@/lib/utils";
 
 interface OrderSummaryProps {
@@ -35,7 +35,7 @@ export function OrderSummary({
 
       <div className="max-h-64 space-y-3 overflow-y-auto">
         {items.map((item) => (
-          <div key={item.variantId} className="flex gap-3">
+          <div key={cartLineId(item)} className="flex gap-3">
             <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md bg-brand-dark">
               {item.image && (
                 <Image src={getImageUrl(item.image)} alt={item.name} fill className="object-cover" sizes="48px" />
@@ -47,7 +47,7 @@ export function OrderSummary({
             <div className="flex-1">
               <p className="line-clamp-1 text-sm text-brand-white">{item.name}</p>
               <p className="text-xs text-brand-muted">
-                {[item.size, item.color].filter(Boolean).join(" · ")}
+                {[item.size, item.color, item.visorColor && `${tCart("visor")}: ${item.visorColor}`].filter(Boolean).join(" · ")}
               </p>
             </div>
             <span className="text-sm text-brand-white">{formatPrice(item.price * item.quantity)}</span>
