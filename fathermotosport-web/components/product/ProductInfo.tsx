@@ -235,7 +235,7 @@ export function ProductInfo({
           <p className="mb-2 text-sm font-semibold text-brand-white">
             {t("visor_color")}
             {selectedVisor ? (
-              <span className="ml-1 font-normal text-brand-muted">: {selectedVisor.name}</span>
+              <span className="font-normal text-brand-muted">: {selectedVisor.name}</span>
             ) : (
               <span className="ml-1 font-normal text-brand-red">· {t("visor_choose")}</span>
             )}
