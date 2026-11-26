@@ -18,6 +18,8 @@ class OrderItem extends Model
         'subtotal',
         'size',
         'color',
+        'visor_color_id',
+        'visor_color',
     ];
 
     protected $casts = [
@@ -29,6 +31,11 @@ class OrderItem extends Model
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
+    }
+
+    public function visorColor(): BelongsTo
+    {
+        return $this->belongsTo(VisorColor::class);
     }
 
     public function variant(): BelongsTo

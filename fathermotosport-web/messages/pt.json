@@ -35,7 +35,11 @@
     "added_to_cart": "{name} adicionado",
     "choose_size": "Escolher tamanho",
     "choose_design": "Escolher design",
-    "model_3d_available": "Modelo 3D disponível"
+    "model_3d_available": "Modelo 3D disponível",
+    "visor_color": "Cor da viseira",
+    "visor_choose": "Escolha a cor da viseira",
+    "visor_required": "Escolha a cor da viseira antes de adicionar ao carrinho",
+    "visor_choose_on_page": "Escolha o tamanho e a cor da viseira do capacete"
   },
   "catalog": {
     "title": "Catálogo",
@@ -165,7 +169,8 @@
     "prices_updated": "Atualizamos o preço de: {names}. Confira o total.",
     "coupon_from_link": "Seu cupom {code} está pronto: é aplicado no carrinho e no pagamento.",
     "coupon_login_needed": "Você tem o cupom {code}. Ele é pessoal: entre na sua conta para usá-lo.",
-    "coupon_login": "Entrar"
+    "coupon_login": "Entrar",
+    "visor": "Viseira"
   },
   "checkout": {
     "shipping_address": "Endereço de entrega",
@@ -369,7 +374,8 @@
     "tracking": "Rastreamento",
     "products": "Produtos",
     "product_fallback": "Produto",
-    "empty": "Você ainda não tem pedidos."
+    "empty": "Você ainda não tem pedidos.",
+    "visor": "Viseira"
   },
   "security": {
     "message": "Para sua segurança, recomendamos atualizar sua senha.",

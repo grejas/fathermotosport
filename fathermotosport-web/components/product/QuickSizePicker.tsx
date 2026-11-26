@@ -8,7 +8,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Link } from "@/lib/i18n/navigation";
 import { useCartStore } from "@/store/cartStore";
 import { trackAddToCart } from "@/lib/analytics/events";
-import { cn, finalPrice, formatPrice, getImageUrl } from "@/lib/utils";
+import { cn, finalPrice, formatPrice, getImageUrl, isHelmet } from "@/lib/utils";
 import type { Product, ProductVariant } from "@/lib/types";
 
 const ORDEN_TALLAS = ["XXXS", "XXS", "XS", "S", "M", "L", "XL", "XXL", "2XL", "XXXL", "3XL", "4XL"];
@@ -28,9 +28,12 @@ export function sizedVariants(product: Product): ProductVariant[] {
     .sort((a, b) => rangoTalla(a.size ?? "") - rangoTalla(b.size ?? ""));
 }
 
-/** true = hay que preguntar la talla antes de agregar (más de una talla activa). */
+/**
+ * true = no se puede agregar directo: hay más de una talla activa, o es un casco
+ * (el color de visor se elige en la ficha del producto).
+ */
 export function needsSizeChoice(product: Product): boolean {
-  return sizedVariants(product).length > 1;
+  return isHelmet(product) || sizedVariants(product).length > 1;
 }
 
 /**
@@ -84,6 +87,15 @@ export function QuickSizePicker({
           </div>
         </div>
 
+        {isHelmet(product) ? (
+          <Link
+            href={`/product/${product.slug}`}
+            onClick={onClose}
+            className="mt-5 flex w-full items-center justify-center rounded-xl bg-brand-red px-4 py-3 text-sm font-bold text-white transition hover:brightness-110"
+          >
+            {t("visor_choose_on_page")}
+          </Link>
+        ) : (
         <div className="mt-5 grid grid-cols-3 gap-2 sm:grid-cols-4">
           {variantes.map((v) => {
             const agotada = v.stock <= 0;
@@ -109,6 +121,7 @@ export function QuickSizePicker({
             );
           })}
         </div>
+        )}
 
         <Link
           href={`/product/${product.slug}`}

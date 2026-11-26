@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/lib/i18n/navigation";
 import { ShoppingBag } from "lucide-react";
-import { useCartStore } from "@/store/cartStore";
+import { cartLineId, useCartStore } from "@/store/cartStore";
 import { Drawer } from "@/components/ui/Drawer";
 import { Button } from "@/components/ui/Button";
 import { formatPrice } from "@/lib/utils";
@@ -62,7 +62,7 @@ export function CartDrawer() {
       ) : (
         <>
           {items.map((item) => (
-            <CartItem key={item.variantId} item={item} />
+            <CartItem key={cartLineId(item)} item={item} />
           ))}
           <CompleteYourGear limit={2} compact origen="cart_drawer" />
         </>

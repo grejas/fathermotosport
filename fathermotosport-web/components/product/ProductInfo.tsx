@@ -4,7 +4,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Heart, Minus, Plus, Ruler, ShieldCheck, Star, Truck, MessageCircle, Award } from "lucide-react";
 import type { Product, ProductVariant } from "@/lib/types";
-import { cn, finalPrice, formatDiscount, formatPrice, getCategoryColor, hasDiscount } from "@/lib/utils";
+import Image from "next/image";
+import { cn, finalPrice, formatDiscount, formatPrice, getCategoryColor, getImageUrl, hasDiscount, isHelmet } from "@/lib/utils";
+import { useVisorColors } from "@/lib/hooks/useVisorColors";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { SizeGuideModal, hasSizeGuide } from "@/components/product/SizeGuideModal";
@@ -61,6 +63,16 @@ export function ProductInfo({
   const [sizeTouched, setSizeTouched] = useState(false);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
 
+  // Cascos: el cliente elige el color de visor y viaja con el pedido. Los visores
+  // propios del producto; si no tiene, el catálogo global (igual que «Ver visores»).
+  const helmet = isHelmet(product);
+  const ownVisors = product.visor_colors ?? [];
+  const { data: globalVisors } = useVisorColors(helmet && ownVisors.length === 0);
+  const visors = helmet ? (ownVisors.length > 0 ? ownVisors : globalVisors ?? []) : [];
+  const [visorId, setVisorId] = useState<string | null>(null);
+  const selectedVisor = visors.find((v) => v.id === visorId) ?? null;
+  const needsVisor = visors.length > 0;
+
   // El color es del producto, así que la variante depende solo de la talla.
   // Productos sin talla (ej. viseras): la primera variante con stock.
   const selectedVariant: ProductVariant | undefined =
@@ -116,8 +128,19 @@ export function ProductInfo({
       toast.error(t("no_stock"));
       return;
     }
+    if (needsVisor && !selectedVisor) {
+      toast.error(t("visor_required"));
+      document.getElementById("visor-picker")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     // La foto de la opción elegida es la que viaja al carrito y al checkout.
-    addItem(product, selectedVariant, qty, variantImage(product.images, selectedVariant.size)?.url);
+    addItem(
+      product,
+      selectedVariant,
+      qty,
+      variantImage(product.images, selectedVariant.size)?.url,
+      selectedVisor ? { id: selectedVisor.id, name: selectedVisor.name } : null
+    );
     trackAddToCart(product, qty);
     toast.success(`${product.name} agregado al carrito`);
   };
@@ -222,6 +245,51 @@ export function ProductInfo({
         </div>
       )}
 
+      {needsVisor && !soldOut && (
+        <div id="visor-picker">
+          <p className="mb-2 text-sm font-semibold text-brand-white">
+            {t("visor_color")}
+            {selectedVisor ? (
+              <span className="font-normal text-brand-muted">: {selectedVisor.name}</span>
+            ) : (
+              <span className="ml-1 font-normal text-brand-red">· {t("visor_choose")}</span>
+            )}
+          </p>
+          <div className="flex flex-wrap gap-3" role="radiogroup" aria-label={t("visor_color")}>
+            {visors.map((v) => (
+              <button
+                key={v.id}
+                type="button"
+                role="radio"
+                aria-checked={visorId === v.id}
+                onClick={() => setVisorId(v.id)}
+                className="flex w-16 flex-col items-center gap-1"
+              >
+                <span
+                  className={cn(
+                    "relative h-11 w-11 overflow-hidden rounded-full border-2 transition",
+                    visorId === v.id ? "border-brand-red ring-2 ring-brand-red/40" : "border-white/20 hover:border-white/50"
+                  )}
+                  style={v.image_url ? undefined : { backgroundColor: v.hex_color }}
+                >
+                  {v.image_url && (
+                    <Image src={getImageUrl(v.image_url)} alt={v.name} fill className="object-cover" sizes="44px" />
+                  )}
+                </span>
+                <span
+                  className={cn(
+                    "line-clamp-2 text-center text-[11px] leading-tight",
+                    visorId === v.id ? "font-semibold text-brand-white" : "text-brand-muted"
+                  )}
+                >
+                  {v.name}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {soldOut && (
         <StockAlertForm slug={product.slug} sizes={sizes} sizeLabel={optionsAreSizes ? t("size") : t("design")} />
       )}
@@ -290,6 +358,17 @@ export function ProductInfo({
                 onClick={() => sizesRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
               >
                 {optionsAreSizes ? t("choose_size") : t("choose_design")}
+              </Button>
+            ) : needsVisor && !selectedVisor ? (
+              // Cascos: sin color de visor no se puede agregar; la barra lleva al selector.
+              <Button
+                variant="primary"
+                tabIndex={ctaVisible ? -1 : 0}
+                onClick={() =>
+                  document.getElementById("visor-picker")?.scrollIntoView({ behavior: "smooth", block: "center" })
+                }
+              >
+                {t("visor_color")}
               </Button>
             ) : (
               <Button variant="primary" tabIndex={ctaVisible ? -1 : 0} onClick={handleAdd} disabled={!canAdd}>

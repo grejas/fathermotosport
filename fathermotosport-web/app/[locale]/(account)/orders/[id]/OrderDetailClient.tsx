@@ -69,7 +69,7 @@ export function OrderDetailClient({ id }: { id: string }) {
                   {item.variant?.product?.name ?? t("product_fallback")}
                 </p>
                 <p className="text-xs text-brand-muted">
-                  {[item.size, item.color].filter(Boolean).join(" · ")} · x{item.quantity}
+                  {[item.size, item.color, item.visor_color && `${t("visor")}: ${item.visor_color}`].filter(Boolean).join(" · ")} · x{item.quantity}
                 </p>
               </div>
               <span className="text-sm font-bold text-brand-white">{formatPrice(item.subtotal)}</span>

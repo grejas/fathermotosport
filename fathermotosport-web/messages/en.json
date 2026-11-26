@@ -35,7 +35,11 @@
     "added_to_cart": "{name} added",
     "choose_size": "Choose size",
     "choose_design": "Choose design",
-    "model_3d_available": "3D model available"
+    "model_3d_available": "3D model available",
+    "visor_color": "Visor color",
+    "visor_choose": "Choose the visor color",
+    "visor_required": "Choose the visor color before adding to cart",
+    "visor_choose_on_page": "Choose the helmet size and visor color"
   },
   "catalog": {
     "title": "Catalog",
@@ -165,7 +169,8 @@
     "prices_updated": "We updated the price of: {names}. Please check the total.",
     "coupon_from_link": "Your coupon {code} is ready: it applies in the cart and at checkout.",
     "coupon_login_needed": "You have the coupon {code}. It is personal: log in to your account to use it.",
-    "coupon_login": "Log in"
+    "coupon_login": "Log in",
+    "visor": "Visor"
   },
   "checkout": {
     "shipping_address": "Shipping address",
@@ -369,7 +374,8 @@
     "tracking": "Tracking",
     "products": "Products",
     "product_fallback": "Product",
-    "empty": "You don't have any orders yet."
+    "empty": "You don't have any orders yet.",
+    "visor": "Visor"
   },
   "security": {
     "message": "For your security, we recommend updating your password.",

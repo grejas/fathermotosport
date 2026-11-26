@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Minus, Plus, Trash2 } from "lucide-react";
-import { useCartStore, type LocalCartItem } from "@/store/cartStore";
+import { cartLineId, useCartStore, type LocalCartItem } from "@/store/cartStore";
 import { formatPrice, getImageUrl } from "@/lib/utils";
 
 export function CartItem({ item }: { item: LocalCartItem }) {
@@ -24,13 +24,13 @@ export function CartItem({ item }: { item: LocalCartItem }) {
       <div className="flex flex-1 flex-col">
         <p className="line-clamp-2 text-sm font-semibold text-brand-white">{item.name}</p>
         <p className="text-xs text-brand-muted">
-          {[item.size, item.color].filter(Boolean).join(" · ")}
+          {[item.size, item.color, item.visorColor && `${t("visor")}: ${item.visorColor}`].filter(Boolean).join(" · ")}
         </p>
 
         <div className="mt-auto flex items-center justify-between pt-2">
           <div className="flex items-center rounded-lg border border-white/10">
             <button
-              onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
+              onClick={() => updateQuantity(cartLineId(item), item.quantity - 1)}
               className="p-1.5 text-brand-muted hover:text-brand-white"
               aria-label={t("decrease")}
             >
@@ -43,7 +43,7 @@ export function CartItem({ item }: { item: LocalCartItem }) {
               {item.quantity}
             </span>
             <button
-              onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
+              onClick={() => updateQuantity(cartLineId(item), item.quantity + 1)}
               className="p-1.5 text-brand-muted hover:text-brand-white"
               aria-label={t("increase")}
             >
@@ -65,7 +65,7 @@ export function CartItem({ item }: { item: LocalCartItem }) {
       </div>
 
       <button
-        onClick={() => removeItem(item.variantId)}
+        onClick={() => removeItem(cartLineId(item))}
         className="self-start p-1 text-brand-muted transition hover:text-brand-red"
         aria-label={t("remove")}
       >

@@ -57,6 +57,11 @@ export function getDiscountPercent(price: string | number, salePrice?: string | 
   return Math.round(((p - s) / p) * 100);
 }
 
+/** Cascos: llevan color de visor a elegir al comprar. */
+export function isHelmet(product: { category?: { slug?: string } | null }): boolean {
+  return product.category?.slug === "cascos";
+}
+
 /** Color hex de acento por categoría (según su slug). */
 export function getCategoryColor(slug?: string): string {
   const map: Record<string, string> = {
