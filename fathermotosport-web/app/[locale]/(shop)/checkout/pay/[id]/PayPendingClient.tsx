@@ -206,7 +206,7 @@ export function PayPendingClient({ id }: { id: string }) {
               <div>
                 <p className="text-brand-white">{item.variant?.product?.name ?? t("product")}</p>
                 <p className="text-xs text-brand-muted">
-                  {[item.size, item.color].filter(Boolean).join(" · ")} · x{item.quantity}
+                  {[item.size, item.color, item.visor_color && `${tCart("visor")}: ${item.visor_color}`].filter(Boolean).join(" · ")} · x{item.quantity}
                 </p>
               </div>
               <span className="shrink-0 text-brand-white">{formatPrice(item.subtotal)}</span>

@@ -8,6 +8,7 @@ return [
     'title' => 'Your order :number is waiting for payment',
     'message' => "We couldn't receive your payment. Remember that you can pay with PayPal or with a credit or debit card: you have more than one option.",
     'summary' => 'Your order summary',
+    'visor' => 'Visor',
     'size' => 'Size',
     'quantity' => 'Quantity',
     'preheader' => 'Your order is still available: you can pay with PayPal or by card.',

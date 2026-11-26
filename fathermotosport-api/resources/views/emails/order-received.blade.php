@@ -91,7 +91,7 @@
         <div>
           <div class="product-name">{{ $product->name ?? 'Producto' }}</div>
           <div class="product-meta">
-            {{ collect([$item->size, $item->color])->filter()->implode(' · ') }} · x{{ $item->quantity }}
+            {{ collect([$item->size, $item->color, $item->visor_color ? 'Visor: '.$item->visor_color : null])->filter()->implode(' · ') }} · x{{ $item->quantity }}
           </div>
         </div>
         <div class="product-price">${{ number_format($item->subtotal, 2) }}</div>

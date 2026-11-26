@@ -24,6 +24,8 @@ class StoreOrderRequest extends FormRequest
             'items' => ['required', 'array', 'min:1'],
             'items.*.variant_id' => ['required', 'uuid', 'exists:product_variants,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
+            // Color de visor elegido (solo cascos). OrderService valida que sea del casco.
+            'items.*.visor_color_id' => ['nullable', 'uuid'],
 
             'address' => ['required', 'array'],
             'address.full_name' => ['required', 'string', 'max:255'],

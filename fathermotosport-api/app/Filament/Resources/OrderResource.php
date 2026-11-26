@@ -142,6 +142,9 @@ class OrderResource extends Resource
                             $lines = $record->items->map(function ($item) {
                                 $name = optional(optional($item->variant)->product)->name ?? 'Producto';
                                 $variant = trim(($item->size ?? '').' '.($item->color ?? ''));
+                                if ($item->visor_color) {
+                                    $variant = trim($variant.' · Visor: '.$item->visor_color, ' ·');
+                                }
 
                                 return "• {$name} ".($variant ? "({$variant}) " : '')
                                     ."x{$item->quantity} — $".number_format($item->subtotal, 2);

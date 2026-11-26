@@ -44,7 +44,8 @@ class ProductController extends Controller
                 'images',
                 'variants',
                 'model3d',
-                'visorColors',
+                // Solo los activos: son los que se pueden elegir al comprar.
+                'visorColors' => fn ($q) => $q->where('visor_colors.is_active', true)->orderBy('visor_colors.sort_order'),
                 'reviews' => fn ($q) => $q->approved()->with(['user', 'approvedImages'])->latest(),
             ])
             ->withCount(['reviews' => fn ($q) => $q->approved()])

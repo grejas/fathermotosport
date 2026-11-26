@@ -2,12 +2,12 @@
 
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { Link } from "@/lib/i18n/navigation";
+import { Link, useRouter } from "@/lib/i18n/navigation";
 import { Box, Heart, Plus } from "lucide-react";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { useCartStore } from "@/store/cartStore";
 import { Button } from "@/components/ui/Button";
-import { finalPrice, formatPrice, getCategoryColor, getImageUrl } from "@/lib/utils";
+import { finalPrice, formatPrice, getCategoryColor, getImageUrl, isHelmet } from "@/lib/utils";
 import toast from "react-hot-toast";
 import { trackAddToCart } from "@/lib/analytics/events";
 
@@ -18,6 +18,7 @@ export default function FavoritesPage() {
   const items = useFavoritesStore((s) => s.items);
   const toggle = useFavoritesStore((s) => s.toggle);
   const addItem = useCartStore((s) => s.addItem);
+  const router = useRouter();
 
   if (!items.length) {
     return (
@@ -34,6 +35,12 @@ export default function FavoritesPage() {
   }
 
   const quickAdd = (product: (typeof items)[number]) => {
+    // Cascos: talla y color de visor se eligen en la ficha.
+    if (isHelmet(product)) {
+      toast(tProduct("visor_choose_on_page"));
+      router.push(`/product/${product.slug}`);
+      return;
+    }
     const variant = product.variants?.find((v) => v.is_active && v.stock > 0);
     if (!variant) {
       toast.error(tProduct("no_stock"));

@@ -22,6 +22,8 @@ class StoreExpressOrderRequest extends FormRequest
             'items' => ['required', 'array', 'min:1'],
             'items.*.variant_id' => ['required', 'uuid', 'exists:product_variants,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
+            // Color de visor elegido (solo cascos). OrderService valida que sea del casco.
+            'items.*.visor_color_id' => ['nullable', 'uuid'],
 
             // El país lo elige el cliente en el carrito: es lo único que hace falta
             // para cobrar el envío correcto antes de mandarlo a PayPal.

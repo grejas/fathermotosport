@@ -3,7 +3,7 @@ import type { Order, PaginatedResponse, PaymentMethod } from "@/lib/types";
 
 export interface CreateOrderPayload {
   guest_email?: string;
-  items: { variant_id: string; quantity: number }[];
+  items: { variant_id: string; quantity: number; visor_color_id?: string }[];
   address: {
     full_name: string;
     phone: string;
@@ -31,7 +31,7 @@ export interface CreateOrderPayload {
 
 /** PayPal Express: pedido creado desde el carrito, sin formulario previo. */
 export interface CreateExpressOrderPayload {
-  items: { variant_id: string; quantity: number }[];
+  items: { variant_id: string; quantity: number; visor_color_id?: string }[];
   shipping_country_code: string;
   shipping_option_id: number;
   /** Adónde avisarle del pedido. PayPal informa su propio email aparte, al pagar. */

@@ -8,6 +8,7 @@ return [
     'title' => 'Seu pedido :number está aguardando o pagamento',
     'message' => 'Não conseguimos receber seu pagamento. Lembre-se de que você pode pagar com PayPal ou com cartão de crédito ou débito: você tem mais de uma opção.',
     'summary' => 'Resumo do seu pedido',
+    'visor' => 'Viseira',
     'size' => 'Tamanho',
     'quantity' => 'Quantidade',
     'preheader' => 'Seu pedido continua disponível: você pode pagar com PayPal ou com cartão.',

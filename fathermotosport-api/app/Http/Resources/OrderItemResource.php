@@ -17,6 +17,7 @@ class OrderItemResource extends JsonResource
             'subtotal' => $this->subtotal,
             'size' => $this->size,
             'color' => $this->color,
+            'visor_color' => $this->visor_color,
             'variant' => $this->whenLoaded('variant', fn () => [
                 'id' => $this->variant->id,
                 'sku' => $this->variant->sku,
