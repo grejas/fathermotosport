@@ -312,6 +312,23 @@ class OrderResource extends Resource
 
                         Notification::make()->title('Pago confirmado: stock descontado y cliente notificado')->success()->send();
                     }),
+                // Correo al cliente para confirmar visor, talla y dirección antes de despachar.
+                // Sale de la casilla de ventas (config mail.ventas), nunca de un correo personal.
+                Tables\Actions\Action::make('pedir_datos_envio')
+                    ->label('Pedir datos de envío')
+                    ->icon('heroicon-o-envelope')
+                    ->color('warning')
+                    ->visible(fn (Order $record) => $record->payment_status === 'paid' && in_array($record->shipping_status, ['pending', 'preparing'], true))
+                    ->requiresConfirmation()
+                    ->modalHeading(fn (Order $record) => "Pedir datos de envío · {$record->order_number}")
+                    ->modalDescription(fn (Order $record) => 'Se envía desde '.config('mail.ventas.address').' a '.($record->emailDelCliente() ?? '(sin email)')
+                        .': confirma color de visor (cascos), talla y dirección. Las respuestas llegan a esa casilla.')
+                    ->action(function (Order $record) {
+                        $ok = app(EmailService::class)->sendConfirmarDatosEnvio($record);
+                        $ok
+                            ? Notification::make()->title('Correo enviado desde '.config('mail.ventas.address'))->success()->send()
+                            : Notification::make()->title('No se pudo enviar el correo')->danger()->send();
+                    }),
                 Tables\Actions\Action::make('tracking')
                     ->label('Tracking')
                     ->icon('heroicon-o-truck')
