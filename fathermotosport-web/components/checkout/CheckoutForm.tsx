@@ -35,8 +35,14 @@ import toast from "react-hot-toast";
 /** Fecha de la versión vigente de Términos y Privacidad (se guarda con cada aceptación). */
 const TERMS_VERSION = "2026-11-27";
 
-/** Destinos que no se venden por la web: Brasil compra por Mercado Livre (decisión de Gerson). */
-const PAISES_FUERA_DE_LA_WEB = ["BR"];
+/**
+ * Destinos que no se venden por la web (decisión de Gerson): Brasil compra por Mercado Livre;
+ * Bolivia, Paraguay y Haití no tienen envío. Haití ya no estaba en la lista; queda por si se agrega.
+ */
+const PAISES_FUERA_DE_LA_WEB = ["BR", "BO", "PY", "HT"];
+
+/** País por defecto si el navegador no indica uno disponible: México, primer mercado. */
+const PAIS_POR_DEFECTO = "MX";
 
 /** Nombre del método de envío en el idioma del cliente (en la base está en español). */
 const METODOS_TRADUCIBLES: Record<string, string> = { "Estándar": "method_standard" };
@@ -85,7 +91,7 @@ export function CheckoutForm() {
     email: "",
     phone: "",
     // Código ISO, igual que el selector de países del registro.
-    country: "BO" as string,
+    country: PAIS_POR_DEFECTO as string,
     state: "",
     city: "",
     address_line: "",
@@ -219,7 +225,7 @@ export function CheckoutForm() {
     };
   }, [form.country, items, weightKg]);
 
-  // País inicial según el navegador (es-MX → México, en-US → EE.UU.); Bolivia si no se
+  // País inicial según el navegador (es-MX → México, en-US → EE.UU.); México si no se
   // reconoce o si es un destino que no se vende por la web. El teléfono toma su prefijo.
   useEffect(() => {
     const disponibles = new Set(countries.map((c) => c.code));
@@ -227,7 +233,7 @@ export function CheckoutForm() {
       .map((l) => l.split("-")[1]?.toUpperCase())
       .find((r): r is string => !!r && disponibles.has(r));
     setForm((f) => {
-      const pais = region ?? (disponibles.has(f.country) ? f.country : "BO");
+      const pais = region ?? (disponibles.has(f.country) ? f.country : PAIS_POR_DEFECTO);
       return { ...f, country: pais, phone: phoneWithCountryPrefix(f.phone, f.country, pais) };
     });
     // Solo al entrar: después manda lo que elija el cliente.
