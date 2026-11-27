@@ -3,17 +3,6 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/lib/i18n/navigation";
 import { Button } from "@/components/ui/Button";
-import { isGatewayAdvertised } from "@/lib/data/paymentMethods";
-
-/** Lo que el checkout cobra hoy. PayPal y MercadoPago entran solos cuando se reactiven. */
-const METODOS = [
-  ...(isGatewayAdvertised("paypal") ? ["PayPal"] : []),
-  "Visa · Mastercard · Amex",
-  "Apple Pay · Google Pay",
-  ...(isGatewayAdvertised("mercadopago") ? ["MercadoPago"] : []),
-  "USDT",
-  "Bitcoin",
-];
 
 export function PaymentBanner() {
   const t = useTranslations("home");
@@ -28,7 +17,7 @@ export function PaymentBanner() {
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-3">
-          {METODOS.map((m) => (
+          {["Visa", "Mastercard", "Apple Pay", "Google Pay", "USDT", "Bitcoin"].map((m) => (
             <span
               key={m}
               translate="no"

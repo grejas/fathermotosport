@@ -86,7 +86,7 @@
     "blog_title": "Latest from the blog",
     "blog_view_all": "View all posts",
     "pay_in_installments": "Pay in installments · 100% secure",
-    "payment_desc": "We accept credit and debit cards, Apple Pay and Google Pay, and crypto (USDT and Bitcoin).",
+    "payment_desc": "We accept credit and debit cards (Visa, Mastercard, American Express), Apple Pay, Google Pay, Amazon Pay, US bank transfer and crypto (USDT, USDC, Bitcoin and Binance Pay).",
     "view_payment_methods": "View payment methods"
   },
   "promo_1111": {
@@ -277,7 +277,7 @@
   "pay_pending": {
     "title": "Complete your order payment",
     "order_number": "Order {number}",
-    "text": "Your order is still waiting for payment. You can pay with PayPal or with a credit or debit card: you have more than one option.",
+    "text": "Your order is still awaiting payment. You can pay by credit or debit card, digital wallet, bank transfer or crypto: there is more than one option.",
     "product": "Product",
     "discount": "Discount",
     "shipping": "Shipping",
@@ -637,7 +637,7 @@
     "wa_teaser": "Hi! I'd like to be notified when the FatherMotoSport Black Friday starts.",
     "wa_live": "Hi! I saw the Black Friday deals and have a question about a product.",
     "trust_shipping": "Free standard shipping",
-    "trust_payment": "Secure checkout with card or PayPal",
+    "trust_payment": "Secure checkout with card or digital wallet",
     "trust_support": "Sizing help on WhatsApp",
     "deals_title": "Black Friday deals",
     "already_title": "Already on sale",
