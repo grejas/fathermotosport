@@ -17,6 +17,7 @@ import { CookieBanner } from "@/components/legal/CookieBanner";
 import { PromoPopup } from "@/components/marketing/PromoPopup";
 import { getMenuCategories } from "@/lib/api/categories";
 import { getStoreSettings } from "@/lib/api/storeSettings";
+import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -27,6 +28,9 @@ export function generateStaticParams() {
 }
 
 export const metadata: Metadata = {
+  // Base para que canonical, hreflang y og:image salgan como URLs absolutas.
+  metadataBase: new URL(SITE_URL),
+  openGraph: { siteName: SITE_NAME, type: "website" },
   title: {
     default: "FatherMotoSport — Cascos y Accesorios Premium",
     template: "%s | FatherMotoSport",
@@ -77,7 +81,7 @@ export default async function RootLayout({
               </Suspense>
               {/* Consentimiento de cookies: sin él no se carga ningún píxel ni GA4. */}
               <CookieBanner />
-              {/* Cupón de 10–25 % a cambio del email (sale a los 8 s, nunca en el pago). */}
+              {/* Cupón de 10–25 % a cambio del email (sale al 40 % de scroll, al intentar salir o a los 25 s; nunca en el pago). */}
               <PromoPopup />
             </StoreSettingsProvider>
           </Providers>

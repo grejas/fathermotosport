@@ -57,7 +57,20 @@ export function BlackFridayClient() {
 
   const waHref = whatsappUrl(CONTACT_WHATSAPP, live ? t("wa_live") : t("wa_teaser")) ?? `https://wa.me/${CONTACT_WHATSAPP}`;
 
-  if (!mounted) return <div className="min-h-screen" />;
+  // Antes de montar (la fase depende de la hora del navegador) se pinta un hero mínimo con
+  // el H1: así Google y el primer pintado ya ven el título y no una página vacía.
+  if (!mounted) {
+    return (
+      <div className="min-h-screen px-4 pb-16 pt-20 sm:px-6 sm:pt-24">
+        <div className="mx-auto max-w-7xl">
+          <h1 className={`${bebas.className} text-[4.5rem] leading-[0.85] tracking-wide text-brand-white sm:text-[7.5rem]`}>
+            BLACK <span className="text-brand-gold">FRIDAY</span>
+          </h1>
+          <p className="mt-5 text-xs text-white/50">{t("dates")}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (phase === "ended") {
     return (

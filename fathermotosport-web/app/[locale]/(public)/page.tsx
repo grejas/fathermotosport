@@ -12,6 +12,15 @@ import { BlogSection } from "@/components/home/BlogSection";
 import { FooterBanner } from "@/components/layout/FooterBanner";
 import { getBannersServidor } from "@/lib/api/banners";
 import { getMenuCategories } from "@/lib/api/categories";
+import type { Metadata } from "next";
+import { alternatesFor, jsonLdHtml, ogLocale, organizationJsonLd } from "@/lib/seo";
+
+export function generateMetadata({ params }: { params: { locale: string } }): Metadata {
+  return {
+    alternates: alternatesFor("/", params.locale),
+    openGraph: { locale: ogLocale(params.locale), url: alternatesFor("/", params.locale)?.canonical as string },
+  };
+}
 
 export default async function HomePage() {
   // En el servidor (con caché de 10 minutos y revalidación al guardar en el panel):
@@ -25,6 +34,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdHtml(organizationJsonLd())} />
       <BlackFridayBanner />
       <Promo1111 />
       <FlashPromoBanner />

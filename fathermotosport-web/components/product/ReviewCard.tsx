@@ -55,7 +55,10 @@ export function ReviewCard({ review }: { review: Review }) {
       {cover && (
         <div className="relative mt-4 h-20 w-20 overflow-hidden rounded-lg border border-white/10 bg-black">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={cover.thumb_url} alt="" loading="lazy" className="h-full w-full object-cover" />
+          <img
+            src={cover.thumb_url}
+            alt={t("photo_alt", { n: 1, total: images.length, name: review.user?.name ?? "" })}
+            loading="lazy" className="h-full w-full object-cover" />
           {images.length > 1 && (
             <span className="absolute bottom-1 right-1 rounded bg-black/75 px-1.5 text-[11px] font-semibold text-white">
               +{images.length - 1}

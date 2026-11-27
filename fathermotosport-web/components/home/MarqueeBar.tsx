@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { isGatewayAdvertised } from "@/lib/data/paymentMethods";
 
 interface MarqueeItem {
   label: string;
@@ -17,9 +18,12 @@ export function MarqueeBar() {
   const items: MarqueeItem[] = [
     { label: t("free_shipping"), pill: true },
     { label: t("international_shipping"), pill: true},
+    // Solo lo que el checkout cobra hoy (PayPal y MercadoPago vuelven solos al reactivarse).
+    ...(isGatewayAdvertised("paypal") ? [{ label: "PayPal", brand: true }] : []),
     { label: "Apple Pay", brand: true },
     { label: "Google Pay", brand: true },
     { label: "Visa · Mastercard", brand: true },
+    ...(isGatewayAdvertised("mercadopago") ? [{ label: "MercadoPago", brand: true }] : []),
     { label: "USDT", brand: true },
     { label: "Bitcoin", brand: true },
     { label: t("certified_helmets") },
