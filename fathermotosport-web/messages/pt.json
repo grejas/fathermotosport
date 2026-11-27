@@ -780,5 +780,23 @@
     "done_email": "Enviamos o comprovante para {email}. Nas próximas 48 horas úteis escrevemos com as instruções de devolução.",
     "done_no_email": "Não conseguimos enviar o comprovante por e-mail, mas a sua solicitação foi registrada. Guarde esta referência.",
     "footer_link": "Desistir de uma compra"
+  },
+  "cookies": {
+    "title": "Usamos cookies",
+    "text": "Usamos cookies necessários para a loja funcionar (carrinho, sessão, idioma e pagamento seguro). Com a sua permissão também usamos cookies de análise (Google Analytics) e de marketing (Meta e TikTok) para medir visitas e mostrar anúncios relevantes. Você pode mudar sua escolha quando quiser no rodapé.",
+    "more": "Política de privacidade",
+    "reject": "Rejeitar",
+    "settings": "Configurar",
+    "save": "Salvar seleção",
+    "accept": "Aceitar todos",
+    "close": "Fechar",
+    "necessary_title": "Necessários",
+    "necessary_text": "Carrinho, login, idioma e prevenção de fraude no pagamento (Stripe). Não podem ser desativados.",
+    "always_on": "Sempre ativos",
+    "analytics_title": "Análise",
+    "analytics_text": "Google Analytics: quantas pessoas visitam a loja e quais páginas veem.",
+    "marketing_title": "Marketing",
+    "marketing_text": "Pixels da Meta (Facebook e Instagram) e do TikTok: medir anúncios e mostrar publicidade personalizada.",
+    "footer_link": "Preferências de cookies"
   }
 }

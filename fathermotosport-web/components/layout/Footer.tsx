@@ -5,6 +5,7 @@ import { TrackedWhatsappLink } from "@/components/analytics/TrackedWhatsappLink"
 import { categoryHref, categoryLabel, type MenuCategory } from "@/lib/api/categories";
 import { safeSocialUrl, whatsappUrl, type SocialNetwork, type StoreSettings } from "@/lib/api/storeSettings";
 import { PaymentLogos } from "@/components/ui/WalletLogos";
+import { CookieSettingsLink } from "@/components/legal/CookieBanner";
 
 // Redes sociales: el enlace sale del panel ("Configuración de la tienda"). Íconos de marca en SVG.
 const socialIcons: { network: SocialNetwork; label: string; path: string }[] = [
@@ -142,6 +143,10 @@ export function Footer({ categories, settings }: { categories: MenuCategory[]; s
           <Link href="/withdrawal" className="transition hover:text-brand-red">
             {tW("footer_link")}
           </Link>
+          <span aria-hidden className="hidden sm:inline">
+            ·
+          </span>
+          <CookieSettingsLink className="transition hover:text-brand-red" />
         </div>
         <p className="mt-2">{t("operated_by")}</p>
       </div>
