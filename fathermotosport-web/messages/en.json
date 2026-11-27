@@ -68,7 +68,7 @@
   "home": {
     "hero_title": "Gear up like a",
     "hero_highlight": "track champion",
-    "hero_desc": "Premium helmets, gloves and protection with international certification.",
+    "hero_desc": "Premium helmets, gloves and protection from top brands. Each model's certification is listed on its product page.",
     "view_catalog": "View catalog",
     "view_3d": "View in 3D",
     "discover": "DISCOVER MORE PRODUCTS",
@@ -121,7 +121,8 @@
     "secure_payment": "Secure payment",
     "secure_payment_desc": "SSL encryption",
     "support": "Support",
-    "support_desc": "Direct WhatsApp"
+    "support_desc": "Direct WhatsApp",
+    "certified_helmets": "Certified helmets"
   },
   "footer": {
     "description": "Premium gear for motorcyclists. Helmets, gloves, boots and more, with free shipping.",
@@ -268,7 +269,8 @@
     "pm_stripe_wallet": "Digital wallet",
     "pm_stripe_wallet_desc": "Apple Pay, Google Pay or Amazon Pay: pay in one tap",
     "wallet_title": "Pay with a digital wallet",
-    "wallet_unavailable": "This device has no Apple Pay, Google Pay or Amazon Pay set up. Close this and choose «Debit or credit card»."
+    "wallet_unavailable": "This device has no Apple Pay, Google Pay or Amazon Pay set up. Close this and choose «Debit or credit card».",
+    "import_duties": "International shipping to {country}: the price does not include import taxes or duties. If customs charges them on delivery, they are paid by the recipient."
   },
   "pay_pending": {
     "title": "Complete your order payment",
@@ -549,38 +551,38 @@
   },
   "shipping_returns": {
     "free_shipping": "Free shipping",
-    "free_returns": "Free returns if it arrives damaged or wrong",
+    "free_returns": "Right of withdrawal under your country's law",
     "summary_shipping": "Free shipping across the Americas and Europe.",
-    "summary_damaged": "If your item arrives faulty, damaged or not matching what you ordered, you have {hours} hours from delivery to report it. We send you the correct item at no cost or refund your money, your choice.",
-    "summary_not_accepted": "Returns are only accepted in these cases: we do not accept returns for a change of mind or for any other reason.",
+    "summary_damaged": "You can withdraw from your purchase without giving a reason within the period set by the law of your country, counted from delivery (for example, 14 days in the European Union and the United Kingdom). We refund everything you paid, including the original shipping.",
+    "summary_not_accepted": "If it arrives damaged or wrong, tell us within {hours} hours and we send the correct item at no cost or refund your money, your choice. Defects that appear later are covered by the legal guarantee.",
     "full_policy_link": "See full returns policy"
   },
   "returns_policy": {
     "title": "Shipping and Returns Policy",
-    "intro": "Free shipping across the Americas and Europe. Returns are accepted only when the product arrives faulty, damaged, wrong or not matching the order. The conditions for replacements, refunds and order cancellations are set out below.",
-    "damaged_title": "When we accept returns",
+    "intro": "Free shipping across the Americas and Europe. You can withdraw from your purchase without giving a reason within the period your country's law grants you. If it arrives damaged or wrong, we replace it or refund you at no cost.",
+    "damaged_title": "Right of withdrawal",
     "damaged_items": [
-      "Returns are accepted only if the product arrives faulty, damaged, wrong or not matching what you ordered.",
-      "The issue must be reported within {hours} hours of delivery.",
-      "The report must include photographs of the product received and of the issue.",
-      "The customer chooses between the correct item at no cost or a full refund.",
-      "Both the replacement shipment and the return of the item are free for the customer."
+      "You can withdraw without giving a reason within your country's period, counted from delivery: 14 calendar days in the European Union, Norway and the United Kingdom; 10 in Argentina and Chile; 8 in Costa Rica and El Salvador; 7 in Brazil and Peru; 5 business days in Colombia, Mexico, Uruguay and Nicaragua; 3 in Ecuador. In other countries we honour the period set by your law.",
+      "To use it, fill in the “Withdraw from a purchase” form in the footer or write to us with your order number. We confirm receipt by email.",
+      "Send the product back within 14 days of telling us your decision, complete, with its accessories and tags.",
+      "We refund everything you paid, including the original shipping, within 14 days of receiving your withdrawal. Return shipping is paid by the customer, unless the applicable law places it on the seller."
     ],
-    "not_accepted_title": "Returns we do not accept",
+    "not_accepted_title": "Damaged, faulty or wrong products",
     "not_accepted_items": [
-      "Returns for a change of mind, or for any reason other than those listed above, are not accepted.",
-      "Claims made more than {hours} hours after delivery do not qualify for a replacement or a refund."
+      "If it arrives damaged or wrong, tell us within {hours} hours with photographs and we send the correct item at no cost or refund your money, your choice.",
+      "After that period you remain covered by the legal guarantee of your country and by the manufacturer's warranty.",
+      "Prices do not include your country's import taxes or duties: if customs charges them, they are paid by the recipient."
     ],
     "process_title": "How the process works",
     "process_items": [
-      "Report the issue through the channels listed at the end of this page, with your order number, the reason and the photographs.",
-      "We arrange the pickup or the return shipment.",
-      "Once the item is received and checked, the refund or replacement is processed."
+      "Withdraw with the form or report the issue through the channels at the end, with your order number.",
+      "We tell you the address and how to ship the return.",
+      "Once we receive and check the item, we process the refund or replacement."
     ],
     "cancellations_title": "Cancellations",
     "cancellations_items": [
-      "An order may be cancelled at any time before it starts being processed for shipping.",
-      "Once dispatched, the order can no longer be cancelled: returns are only accepted in the cases described above."
+      "You can cancel the order before it is dispatched, with a full refund.",
+      "Once dispatched, you can still withdraw within your country's period, counted from when you receive it."
     ],
     "help": "To start a return or ask about your order, contact us through either of these channels:",
     "contact_whatsapp": "WhatsApp",
@@ -753,5 +755,48 @@
     "error_invalid": "Please check your email or WhatsApp.",
     "error_limited": "Too many attempts. Please try again later.",
     "error_network": "We couldn't save your request. Try again or message us on WhatsApp."
+  },
+  "withdrawal": {
+    "title": "Withdraw from a purchase",
+    "intro": "You can withdraw from your purchase without giving a reason within the period your country's law grants you, counted from delivery (for example, 14 days in the European Union and the United Kingdom). Fill in this form and we will email you a receipt with the date and time we received it.",
+    "start_text": "Want to return your purchase and get a refund? Start here.",
+    "start_button": "Withdraw from contract",
+    "order_number": "Order number",
+    "order_number_hint": "You can find it in the confirmation email (for example, FMS-0123).",
+    "name": "Full name",
+    "email": "Email",
+    "email_hint": "The one you used for the purchase. Your receipt will be sent there.",
+    "items": "Products you are returning (optional)",
+    "items_hint": "Leave it empty if you are withdrawing from the whole order.",
+    "reason": "Reason (optional)",
+    "legal_note": "By confirming, you notify us of your decision to withdraw from the purchase contract. We will send you a receipt and return instructions.",
+    "policy_link": "Returns policy",
+    "confirm_button": "Confirm withdrawal",
+    "error_required": "Enter the order number, your name and a valid email.",
+    "error_limited": "We received several requests in a row. Wait a minute and try again.",
+    "error_generic": "We couldn't record your request. Try again or write to ventas@fathermotosport.com.",
+    "done_title": "We received your withdrawal",
+    "done_text": "Reference {reference}, recorded on {date}.",
+    "done_email": "We sent the receipt to {email}. Within 48 business hours we will write to you with the return instructions.",
+    "done_no_email": "We couldn't email your receipt, but your request was recorded. Keep this reference.",
+    "footer_link": "Withdraw from a purchase"
+  },
+  "cookies": {
+    "title": "We use cookies",
+    "text": "We use necessary cookies to run the store (cart, session, language and secure payment). With your permission we also use analytics cookies (Google Analytics) and marketing cookies (Meta and TikTok) to measure visits and show you relevant ads. You can change your choice anytime from the footer.",
+    "more": "Privacy policy",
+    "reject": "Reject",
+    "settings": "Settings",
+    "save": "Save selection",
+    "accept": "Accept all",
+    "close": "Close",
+    "necessary_title": "Necessary",
+    "necessary_text": "Cart, sign-in, language and payment fraud prevention (Stripe). Cannot be turned off.",
+    "always_on": "Always on",
+    "analytics_title": "Analytics",
+    "analytics_text": "Google Analytics: how many people visit the store and which pages they view.",
+    "marketing_title": "Marketing",
+    "marketing_text": "Meta (Facebook and Instagram) and TikTok pixels: measure ads and show you personalized advertising.",
+    "footer_link": "Cookie preferences"
   }
 }

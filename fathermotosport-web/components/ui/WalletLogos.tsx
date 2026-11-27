@@ -1,4 +1,5 @@
 import { faAmazonPay, faApplePay, faGooglePay } from "@fortawesome/free-brands-svg-icons";
+import { ENABLED_PAYMENT_METHODS } from "@/lib/data/paymentMethods";
 import type { IconDefinition } from "@fortawesome/free-brands-svg-icons";
 import {
   siAmericanexpress,
@@ -84,11 +85,20 @@ function Chip({ marca }: { marca: Marca }) {
   );
 }
 
+/**
+ * Medios que la tienda no cobra hoy: no se muestran en el pie para no anunciar un pago que
+ * no existe (publicidad engañosa). PayPal vuelve solo cuando esté en ENABLED_PAYMENT_METHODS.
+ */
+const SIN_ACTIVAR: string[] = [
+  ...((ENABLED_PAYMENT_METHODS as readonly string[]).includes("paypal") ? [] : ["paypal"]),
+  "mercadopago",
+];
+
 /** Todos los medios de pago (footer). */
 export function PaymentLogos({ className }: { className?: string }) {
   return (
     <ul className={cn("flex flex-wrap gap-2", className)} translate="no" aria-label="Medios de pago">
-      {[...BILLETERAS, ...RESTO].map((m) => (
+      {[...BILLETERAS, ...RESTO].filter((m) => !SIN_ACTIVAR.includes(m.id)).map((m) => (
         <Chip key={m.id} marca={m} />
       ))}
     </ul>

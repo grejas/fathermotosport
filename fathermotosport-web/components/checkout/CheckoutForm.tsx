@@ -722,6 +722,9 @@ export function CheckoutForm() {
                 );
               })}
               <p className="text-xs leading-relaxed text-brand-muted">{t("shipping_from_china")}</p>
+              <p className="rounded-lg border border-brand-gold/20 bg-brand-gold/5 px-3 py-2 text-xs leading-relaxed text-brand-gold">
+                {t("import_duties", { country: countryLabel })}
+              </p>
             </div>
           ) : (
             <div className="rounded-xl border border-brand-gold/30 bg-brand-gold/5 p-4">

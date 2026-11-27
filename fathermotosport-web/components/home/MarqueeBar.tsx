@@ -13,17 +13,16 @@ interface MarqueeItem {
 
 export function MarqueeBar() {
   const t = useTranslations("benefits");
-  const tNav = useTranslations("nav");
 
   const items: MarqueeItem[] = [
     { label: t("free_shipping"), pill: true },
     { label: t("international_shipping"), pill: true},
-    { label: "PayPal", brand: true },
-    { label: "Stripe", brand: true },
-    { label: "MercadoPago", brand: true },
+    { label: "Apple Pay", brand: true },
+    { label: "Google Pay", brand: true },
+    { label: "Visa · Mastercard", brand: true },
     { label: "USDT", brand: true },
     { label: "Bitcoin", brand: true },
-    { label: `${tNav("helmets")} ECE 22.06` },
+    { label: t("certified_helmets") },
     { label: "AGV", brand: true },
     { label: "Shoei", brand: true },
     { label: "Shark", brand: true },

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useConsent } from "@/lib/analytics/consent";
 import { usePathname } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Check, Copy, Gift, Mail, MessageCircle, Truck } from "lucide-react";
@@ -68,6 +69,8 @@ export function PromoPopup() {
   const [copiado, setCopiado] = useState(false);
 
   const excluida = RUTAS_EXCLUIDAS.test(pathname);
+  // No se superpone al banner de cookies: espera a que el visitante elija.
+  const cookieConsent = useConsent();
 
   useEffect(() => {
     captureUtm();
@@ -81,14 +84,14 @@ export function PromoPopup() {
   }, [setPendingCoupon]);
 
   useEffect(() => {
-    if (excluida || open || premio) return;
+    if (excluida || open || premio || !cookieConsent) return;
     const g = leer();
     if (g?.state === "claimed") return;
     if (g?.state === "closed" && Date.now() - g.at < SNOOZE_DAYS * 86_400_000) return;
 
     const id = window.setTimeout(() => setOpen(true), DELAY_MS);
     return () => window.clearTimeout(id);
-  }, [excluida, open, premio]);
+  }, [excluida, open, premio, cookieConsent]);
 
   // Si navega al checkout con el popup abierto, se cierra sin marcarlo como rechazado.
   useEffect(() => {

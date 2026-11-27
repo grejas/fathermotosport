@@ -337,7 +337,8 @@ export function ProductInfo({
         {[
           { icon: Truck, label: t("free_shipping") },
           { icon: ShieldCheck, label: t("warranty") },
-          { icon: Award, label: product.certification ?? "Certificado" },
+          // Solo la certificación cargada para ESTE modelo: sin dato no se afirma ninguna.
+          ...(product.certification ? [{ icon: Award, label: product.certification }] : []),
           { icon: MessageCircle, label: t("support") },
         ].map(({ icon: Icon, label }, i) => (
           <div key={i} className="flex flex-col items-center gap-1.5 text-center">

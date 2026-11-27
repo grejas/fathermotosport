@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\ShippingController;
 use App\Http\Controllers\Api\ShippingReturnsController;
 use App\Http\Controllers\Api\StockAlertController;
+use App\Http\Controllers\Api\WithdrawalController;
 use App\Http\Controllers\Api\StoreSettingsController;
 use App\Http\Controllers\Api\UpsellController;
 use App\Http\Controllers\Api\UserController;
@@ -157,6 +158,9 @@ Route::prefix('v1')->group(function () {
 
     // Cupones
     Route::post('/coupons/validate', [CouponController::class, 'validate']);
+
+    // «Desistir de una compra» (derecho de desistimiento, art. 11a Directiva 2011/83 / CDC art. 49).
+    Route::post('/withdrawals', [WithdrawalController::class, 'store'])->middleware('throttle:5,1');
 
     // «Avísame cuando esté disponible» en productos agotados.
     Route::post('/products/{slug}/stock-alert', [StockAlertController::class, 'store'])->middleware('throttle:6,1');

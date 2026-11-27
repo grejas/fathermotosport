@@ -68,7 +68,7 @@
   "home": {
     "hero_title": "Equipe-se como um",
     "hero_highlight": "campeão de pista",
-    "hero_desc": "Capacetes, luvas e proteção premium com certificação internacional.",
+    "hero_desc": "Capacetes, luvas e proteção premium das melhores marcas. A certificação de cada modelo aparece na sua ficha.",
     "view_catalog": "Ver catálogo",
     "view_3d": "Ver em 3D",
     "discover": "DESCUBRA MAIS PRODUTOS",
@@ -121,7 +121,8 @@
     "secure_payment": "Pagamento seguro",
     "secure_payment_desc": "Criptografia SSL",
     "support": "Suporte",
-    "support_desc": "WhatsApp direto"
+    "support_desc": "WhatsApp direto",
+    "certified_helmets": "Capacetes homologados"
   },
   "footer": {
     "description": "Equipamento premium para motociclistas. Capacetes, luvas, botas e mais, com frete grátis.",
@@ -268,7 +269,8 @@
     "pm_stripe_wallet": "Carteira digital",
     "pm_stripe_wallet_desc": "Apple Pay, Google Pay ou Amazon Pay: pague com um toque",
     "wallet_title": "Pagar com carteira digital",
-    "wallet_unavailable": "Este dispositivo não tem Apple Pay, Google Pay nem Amazon Pay configurados. Feche e escolha «Cartão de débito ou crédito»."
+    "wallet_unavailable": "Este dispositivo não tem Apple Pay, Google Pay nem Amazon Pay configurados. Feche e escolha «Cartão de débito ou crédito».",
+    "import_duties": "Envio internacional para {country}: o preço não inclui impostos nem tributos de importação. Se a alfândega os cobrar no recebimento, quem recebe o pedido paga."
   },
   "pay_pending": {
     "title": "Conclua o pagamento do seu pedido",
@@ -549,38 +551,38 @@
   },
   "shipping_returns": {
     "free_shipping": "Frete grátis",
-    "free_returns": "Devolução grátis se chegar danificado ou errado",
+    "free_returns": "Arrependimento conforme a lei do seu país",
     "summary_shipping": "Frete grátis para toda a América e Europa.",
-    "summary_damaged": "Se o seu artigo chegar com defeito, danificado ou não corresponder ao que você pediu, você tem {hours} horas desde a entrega para reportar. Enviamos o artigo correto sem custo ou devolvemos o seu dinheiro, você escolhe.",
-    "summary_not_accepted": "Só aceitamos devoluções nesses casos: não são aceitas devoluções por arrependimento nem por outros motivos.",
+    "summary_damaged": "Você pode desistir da compra sem dar motivo dentro do prazo fixado pela lei do seu país, contado a partir da entrega (por exemplo, 7 dias no Brasil, 10 na Argentina e no Chile e 14 na União Europeia). Devolvemos tudo o que foi pago, incluído o frete original.",
+    "summary_not_accepted": "Se chegar danificado ou errado, avise-nos em até {hours} horas e enviamos o artigo correto sem custo ou devolvemos o seu dinheiro, você escolhe. Defeitos que aparecerem depois estão cobertos pela garantia legal.",
     "full_policy_link": "Ver política completa de devoluções"
   },
   "returns_policy": {
     "title": "Política de Frete e Devoluções",
-    "intro": "Frete grátis para toda a América e Europa. Aceitamos devoluções somente quando o produto chega com defeito, danificado, errado ou não corresponde ao pedido. A seguir, as condições de substituição, reembolso e cancelamento de pedidos.",
-    "damaged_title": "Quando aceitamos devoluções",
+    "intro": "Frete grátis para toda a América e Europa. Você pode desistir da compra sem dar motivo dentro do prazo que a lei do seu país lhe garante. Se chegar danificada ou errada, substituímos ou devolvemos o dinheiro sem custo.",
+    "damaged_title": "Direito de arrependimento",
     "damaged_items": [
-      "Só aceitamos devoluções se o produto chegar com defeito, danificado, errado ou não corresponder ao que você pediu.",
-      "O prazo para reportar é de {hours} horas desde a entrega.",
-      "O relato deve incluir fotografias do produto recebido e do problema.",
-      "O cliente escolhe entre o envio do artigo correto sem custo ou o reembolso integral do seu dinheiro.",
-      "O envio de substituição e a devolução do artigo não têm custo para o cliente."
+      "Você pode desistir sem dar o motivo dentro do prazo do seu país, contado a partir da entrega: 14 dias corridos na União Europeia, Noruega e Reino Unido; 10 na Argentina e no Chile; 8 na Costa Rica e em El Salvador; 7 no Brasil e no Peru; 5 dias úteis na Colômbia, México, Uruguai e Nicarágua; 3 no Equador. Nos demais países respeitamos o prazo fixado pela sua lei.",
+      "Para exercê-lo, use o formulário «Desistir de uma compra» no rodapé ou escreva para nós com o número do pedido. Confirmamos o recebimento por e-mail.",
+      "Devolva o produto em até 14 dias após nos comunicar a sua decisão, completo, com acessórios e etiquetas.",
+      "Devolvemos tudo o que foi pago, incluído o frete original, em até 14 dias após recebermos a sua decisão. O envio de volta é do cliente, salvo quando a lei aplicável o colocar a cargo do vendedor."
     ],
-    "not_accepted_title": "Devoluções que não aceitamos",
+    "not_accepted_title": "Produtos danificados, com defeito ou errados",
     "not_accepted_items": [
-      "Não são aceitas devoluções por arrependimento nem por motivos diferentes dos indicados acima.",
-      "Reclamações feitas depois de {hours} horas desde a entrega não se qualificam para substituição nem reembolso."
+      "Se chegar danificado ou errado, avise-nos em até {hours} horas com fotografias e enviamos o artigo correto sem custo ou devolvemos o seu dinheiro, você escolhe.",
+      "Depois desse prazo você continua coberto pela garantia legal do seu país e pela garantia do fabricante.",
+      "Os preços não incluem impostos nem tributos de importação do seu país: se a alfândega os cobrar, ficam por conta de quem recebe o pedido."
     ],
     "process_title": "Como funciona o processo",
     "process_items": [
-      "Reporte o problema pelos canais indicados no final desta página, com o número do pedido, o motivo e as fotografias.",
-      "Combinamos a coleta ou o envio de devolução.",
-      "Assim que o artigo for recebido e verificado, o reembolso ou a substituição é processado."
+      "Desista pelo formulário ou reporte o problema pelos canais no final, com o número do pedido.",
+      "Informamos o endereço e a forma de envio da devolução.",
+      "Ao receber e verificar o artigo, processamos o reembolso ou a substituição."
     ],
     "cancellations_title": "Cancelamentos",
     "cancellations_items": [
-      "O pedido pode ser cancelado a qualquer momento antes de começar a ser preparado para envio.",
-      "Depois de despachado, o pedido não pode mais ser cancelado: só são aceitas devoluções nos casos descritos acima."
+      "Você pode cancelar o pedido antes do despacho, com reembolso total.",
+      "Depois de despachado, você ainda pode desistir dentro do prazo do seu país, contado a partir do recebimento."
     ],
     "help": "Para iniciar uma devolução ou consultar sobre o seu pedido, fale conosco por um destes canais:",
     "contact_whatsapp": "WhatsApp",
@@ -753,5 +755,48 @@
     "error_invalid": "Confira o e-mail ou o WhatsApp.",
     "error_limited": "Muitas tentativas. Tente mais tarde.",
     "error_network": "Não conseguimos salvar seu aviso. Tente de novo ou fale conosco pelo WhatsApp."
+  },
+  "withdrawal": {
+    "title": "Desistir de uma compra",
+    "intro": "Você pode desistir da compra sem dar o motivo dentro do prazo que a lei do seu país lhe garante, contado a partir da entrega (por exemplo, 7 dias no Brasil, 10 na Argentina e no Chile e 14 na União Europeia). Preencha este formulário e enviaremos o comprovante por e-mail com a data e a hora do recebimento.",
+    "start_text": "Quer devolver sua compra e receber o reembolso? Comece aqui.",
+    "start_button": "Desistir do contrato",
+    "order_number": "Número do pedido",
+    "order_number_hint": "Está no e-mail de confirmação (por exemplo, FMS-0123).",
+    "name": "Nome e sobrenome",
+    "email": "E-mail",
+    "email_hint": "O que você usou na compra. O comprovante chegará nele.",
+    "items": "Produtos que você devolve (opcional)",
+    "items_hint": "Deixe vazio se desistir de todo o pedido.",
+    "reason": "Motivo (opcional)",
+    "legal_note": "Ao confirmar, você nos comunica a sua decisão de desistir do contrato de compra. Enviamos o comprovante e as instruções de devolução.",
+    "policy_link": "Política de devoluções",
+    "confirm_button": "Confirmar arrependimento",
+    "error_required": "Preencha o número do pedido, o seu nome e um e-mail válido.",
+    "error_limited": "Recebemos várias solicitações seguidas. Aguarde um minuto e tente de novo.",
+    "error_generic": "Não conseguimos registrar a sua solicitação. Tente de novo ou escreva para ventas@fathermotosport.com.",
+    "done_title": "Recebemos o seu arrependimento",
+    "done_text": "Referência {reference}, registrada em {date}.",
+    "done_email": "Enviamos o comprovante para {email}. Nas próximas 48 horas úteis escrevemos com as instruções de devolução.",
+    "done_no_email": "Não conseguimos enviar o comprovante por e-mail, mas a sua solicitação foi registrada. Guarde esta referência.",
+    "footer_link": "Desistir de uma compra"
+  },
+  "cookies": {
+    "title": "Usamos cookies",
+    "text": "Usamos cookies necessários para a loja funcionar (carrinho, sessão, idioma e pagamento seguro). Com a sua permissão também usamos cookies de análise (Google Analytics) e de marketing (Meta e TikTok) para medir visitas e mostrar anúncios relevantes. Você pode mudar sua escolha quando quiser no rodapé.",
+    "more": "Política de privacidade",
+    "reject": "Rejeitar",
+    "settings": "Configurar",
+    "save": "Salvar seleção",
+    "accept": "Aceitar todos",
+    "close": "Fechar",
+    "necessary_title": "Necessários",
+    "necessary_text": "Carrinho, login, idioma e prevenção de fraude no pagamento (Stripe). Não podem ser desativados.",
+    "always_on": "Sempre ativos",
+    "analytics_title": "Análise",
+    "analytics_text": "Google Analytics: quantas pessoas visitam a loja e quais páginas veem.",
+    "marketing_title": "Marketing",
+    "marketing_text": "Pixels da Meta (Facebook e Instagram) e do TikTok: medir anúncios e mostrar publicidade personalizada.",
+    "footer_link": "Preferências de cookies"
   }
 }
