@@ -37,7 +37,8 @@
     "visor_color": "Cor da viseira",
     "visor_choose": "Escolha a cor da viseira",
     "visor_required": "Escolha a cor da viseira antes de adicionar ao carrinho",
-    "visor_choose_on_page": "Escolha o tamanho e a cor da viseira do capacete"
+    "visor_choose_on_page": "Escolha o tamanho e a cor da viseira do capacete",
+    "original_invoice": "Produto original · com nota de originalidade"
   },
   "catalog": {
     "title": "Catálogo",
@@ -117,7 +118,7 @@
     "international_shipping": "Envios para toda a América e Europa",
     "free_shipping_desc": "Em todos os seus pedidos",
     "warranty": "Garantia",
-    "warranty_desc": "Produtos originais",
+    "warranty_desc": "Garantia legal e do fabricante",
     "secure_payment": "Pagamento seguro",
     "secure_payment_desc": "Criptografia SSL",
     "support": "Suporte",

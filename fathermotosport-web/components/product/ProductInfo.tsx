@@ -3,6 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Heart, Minus, Plus, Ruler, ShieldCheck, Star, Truck, MessageCircle, Award } from "lucide-react";
+
+/** Precio (USD) desde el que el producto se vende con factura de originalidad. */
+const ORIGINAL_CON_FACTURA_DESDE = 1000;
 import type { Product, ProductVariant } from "@/lib/types";
 import Image from "next/image";
 import { cn, finalPrice, formatDiscount, formatPrice, getCategoryColor, getImageUrl, hasDiscount, isHelmet } from "@/lib/utils";
@@ -186,6 +189,14 @@ export function ProductInfo({
           </>
         )}
       </div>
+
+      {/* Originalidad solo donde hay factura que la respalde: productos de USD 1.000 o más
+          (decisión de Gerson, 27-nov-2026). En el resto no se afirma. */}
+      {finalPrice(product) >= ORIGINAL_CON_FACTURA_DESDE && (
+        <p className="-mt-2 flex items-center gap-1.5 text-sm font-semibold text-brand-gold">
+          <ShieldCheck size={16} aria-hidden /> {t("original_invoice")}
+        </p>
+      )}
 
       {sizes.length > 0 && (
         <div>
