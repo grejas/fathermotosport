@@ -278,7 +278,7 @@
     "terms_required": "Para continuar, aceite os Termos e Condições e a Política de Privacidade.",
     "contact": "Contato",
     "email_hint": "Enviamos aqui a confirmação e o rastreamento do pedido.",
-    "address_placeholder": "Rua, número, andar ou apartamento",
+    "address_placeholder": "Rua, número, andar ou apartamento, referências",
     "postal_code": "Código postal",
     "postal_code_optional": "Código postal (opcional)",
     "phone_hint": "Com código do país. A transportadora usa para combinar a entrega.",
@@ -292,7 +292,8 @@
     "err_country": "Escolha o país de entrega.",
     "err_phone": "Escreva um telefone com código do país.",
     "brazil_ml_title": "Compra a partir do Brasil?",
-    "brazil_ml_text": "As vendas para o Brasil são feitas pelo Mercado Livre. Fale com a gente no WhatsApp e enviamos o link do produto."
+    "brazil_ml_text": "As vendas para o Brasil são feitas pelo Mercado Livre. Fale com a gente no WhatsApp e enviamos o link do produto.",
+    "recipient_name": "Nome do destinatário"
   },
   "pay_pending": {
     "title": "Conclua o pagamento do seu pedido",

@@ -278,7 +278,7 @@
     "terms_required": "To continue, accept the Terms and Conditions and the Privacy Policy.",
     "contact": "Contact",
     "email_hint": "We'll send your order confirmation and tracking here.",
-    "address_placeholder": "Street, number, floor or apartment",
+    "address_placeholder": "Street, number, floor or apartment, notes",
     "postal_code": "Postal / ZIP code",
     "postal_code_optional": "Postal / ZIP code (optional)",
     "phone_hint": "Include the country code. The carrier uses it to arrange delivery.",
@@ -292,7 +292,8 @@
     "err_country": "Choose the delivery country.",
     "err_phone": "Enter a phone number with the country code.",
     "brazil_ml_title": "Buying from Brazil?",
-    "brazil_ml_text": "Orders to Brazil are sold through Mercado Livre. Message us on WhatsApp and we'll send you the product link."
+    "brazil_ml_text": "Orders to Brazil are sold through Mercado Livre. Message us on WhatsApp and we'll send you the product link.",
+    "recipient_name": "Recipient name"
   },
   "pay_pending": {
     "title": "Complete your order payment",

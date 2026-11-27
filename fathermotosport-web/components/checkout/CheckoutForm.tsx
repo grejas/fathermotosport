@@ -239,8 +239,7 @@ export function CheckoutForm() {
     if (user) {
       setForm((f) => ({
         ...f,
-        first_name: user.first_name ?? "",
-        last_name: user.last_name ?? "",
+        first_name: [user.first_name, user.last_name].filter(Boolean).join(" "),
         email: user.email,
         phone: user.phone || f.phone,
       }));
@@ -525,7 +524,8 @@ export function CheckoutForm() {
       guest_email: isAuth ? undefined : form.email,
       items: items.map((i) => ({ variant_id: i.variantId, quantity: i.quantity, visor_color_id: i.visorColorId ?? undefined })),
       address: {
-        full_name: `${form.first_name} ${form.last_name}`.trim(),
+        // Un solo campo "Nombre del destinatario" (formato del proveedor).
+        full_name: form.first_name.trim(),
         phone: form.phone,
         // La dirección guarda el nombre del país (como hasta ahora); el código ISO
         // solo se usa para calcular el envío.
@@ -629,39 +629,23 @@ export function CheckoutForm() {
         {!isPaypal && (
         <section>
           <h3 className="mb-3 text-lg font-bold text-brand-white">{t("shipping_address")}</h3>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3">
             <Input
-              label={t("first_name")}
+              label={t("recipient_name")}
               name="first_name"
-              autoComplete="given-name"
+              autoComplete="name"
               value={form.first_name}
               onChange={(e) => actualizar("first_name", e.target.value)}
               error={errors.first_name}
             />
             <Input
-              label={t("last_name")}
-              name="last_name"
-              autoComplete="family-name"
-              value={form.last_name}
-              onChange={(e) => actualizar("last_name", e.target.value)}
-              error={errors.last_name}
-            />
-            <Input
               label={t("address")}
               name="address_line"
               autoComplete="street-address"
-              className="sm:col-span-2"
               placeholder={t("address_placeholder")}
               value={form.address_line}
               onChange={(e) => actualizar("address_line", e.target.value)}
               error={errors.address_line}
-            />
-            <Input
-              label={t("reference")}
-              name="reference"
-              className="sm:col-span-2"
-              value={form.reference}
-              onChange={(e) => actualizar("reference", e.target.value)}
             />
             <Input
               label={t("city")}
@@ -712,7 +696,6 @@ export function CheckoutForm() {
               type="tel"
               autoComplete="tel"
               inputMode="tel"
-              className="sm:col-span-2"
               value={form.phone}
               onChange={(e) => actualizar("phone", e.target.value)}
               hint={t("phone_hint")}
