@@ -79,7 +79,7 @@ export function Footer({ categories, settings }: { categories: MenuCategory[]; s
 
         <div>
           <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-brand-white">{t("payments")}</h4>
-          <PaymentLogos />
+          <PaymentLogos mercadopago={settings.mercadopago} />
         </div>
 
         <div>

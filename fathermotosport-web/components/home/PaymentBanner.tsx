@@ -3,9 +3,12 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/lib/i18n/navigation";
 import { Button } from "@/components/ui/Button";
+import { useStoreSettings } from "@/components/layout/StoreSettingsProvider";
 
 export function PaymentBanner() {
   const t = useTranslations("home");
+  const { mercadopago } = useStoreSettings();
+  const medios = ["Visa", "Mastercard", "Apple Pay", "Google Pay", ...(mercadopago ? ["Mercado Pago"] : []), "USDT", "Bitcoin"];
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
@@ -17,7 +20,7 @@ export function PaymentBanner() {
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-3">
-          {["Visa", "Mastercard", "Apple Pay", "Google Pay", "USDT", "Bitcoin"].map((m) => (
+          {medios.map((m) => (
             <span
               key={m}
               translate="no"

@@ -87,18 +87,22 @@ function Chip({ marca }: { marca: Marca }) {
 
 /**
  * Medios que la tienda no cobra hoy: no se muestran en el pie para no anunciar un pago que
- * no existe (publicidad engañosa). PayPal vuelve solo cuando esté en ENABLED_PAYMENT_METHODS.
+ * no existe (publicidad engañosa). PayPal vuelve solo cuando esté en ENABLED_PAYMENT_METHODS;
+ * Mercado Pago aparece en cuanto la API tiene sus credenciales (settings.mercadopago).
  */
-const SIN_ACTIVAR: string[] = [
-  ...((ENABLED_PAYMENT_METHODS as readonly string[]).includes("paypal") ? [] : ["paypal"]),
-  "mercadopago",
-];
+function sinActivar(mercadopago: boolean): string[] {
+  return [
+    ...((ENABLED_PAYMENT_METHODS as readonly string[]).includes("paypal") ? [] : ["paypal"]),
+    ...(mercadopago ? [] : ["mercadopago"]),
+  ];
+}
 
 /** Todos los medios de pago (footer). */
-export function PaymentLogos({ className }: { className?: string }) {
+export function PaymentLogos({ className, mercadopago = false }: { className?: string; mercadopago?: boolean }) {
+  const ocultos = sinActivar(mercadopago);
   return (
     <ul className={cn("flex flex-wrap gap-2", className)} translate="no" aria-label="Medios de pago">
-      {[...BILLETERAS, ...RESTO].filter((m) => !SIN_ACTIVAR.includes(m.id)).map((m) => (
+      {[...BILLETERAS, ...RESTO].filter((m) => !ocultos.includes(m.id)).map((m) => (
         <Chip key={m.id} marca={m} />
       ))}
     </ul>
@@ -109,6 +113,17 @@ interface Props {
   /** "chip": tarjetitas blancas. "inline": solo los logos, para dentro de una opción. */
   variant?: "chip" | "inline";
   className?: string;
+}
+
+/** Logo de Mercado Pago, para su opción del checkout. */
+export function MercadoPagoLogo({ className }: { className?: string }) {
+  return (
+    <ul className={cn("flex flex-wrap gap-1.5", className)} translate="no" aria-label="Mercado Pago">
+      {RESTO.filter((m) => m.id === "mercadopago").map((m) => (
+        <Chip key={m.id} marca={m} />
+      ))}
+    </ul>
+  );
 }
 
 /** Logos de tarjeta (Visa, Mastercard, Amex), para la opción de tarjeta del checkout. */
