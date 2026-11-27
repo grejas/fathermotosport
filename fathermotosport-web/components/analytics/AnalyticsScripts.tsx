@@ -25,7 +25,12 @@ export function AnalyticsScripts() {
   if (!tiktokPixelEnabled && !metaPixelEnabled && !ga4Enabled) return null;
   if (!consent) return null;
 
-  const marketing = consent.marketing;
+  // Global Privacy Control (señal del navegador): exclusión de "venta o compartición" según la
+  // CCPA/CPRA y otras leyes estatales de EE.UU. Si está activa, nunca se cargan Meta ni TikTok.
+  const gpc =
+    typeof navigator !== "undefined" &&
+    (navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl === true;
+  const marketing = consent.marketing && !gpc;
   const analytics = consent.analytics;
 
   return (

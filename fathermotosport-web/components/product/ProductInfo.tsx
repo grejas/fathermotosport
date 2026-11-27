@@ -3,6 +3,22 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Heart, Minus, Plus, Ruler, ShieldCheck, Star, Truck, MessageCircle, Award } from "lucide-react";
+
+/** Precio (USD) desde el que el producto se vende con factura de originalidad. */
+const ORIGINAL_CON_FACTURA_DESDE = 1000;
+
+/**
+ * Originalidad comprobada (decisión de Gerson, 27-nov-2026): el resto del catálogo es
+ * dropshipping desde China y no se afirma que sea original. Solo los productos de USD 1.000
+ * o más (con factura) y los cascos Ruroc.
+ */
+function esOriginalComprobado(product: Parameters<typeof finalPrice>[0] & {
+  brand?: { slug?: string; name?: string } | null;
+  category?: { slug?: string } | null;
+}): boolean {
+  const marca = (product.brand?.slug ?? product.brand?.name ?? "").toLowerCase();
+  return finalPrice(product) >= ORIGINAL_CON_FACTURA_DESDE || (marca === "ruroc" && isHelmet(product));
+}
 import type { Product, ProductVariant } from "@/lib/types";
 import Image from "next/image";
 import { cn, finalPrice, formatDiscount, formatPrice, getCategoryColor, getImageUrl, hasDiscount, isHelmet } from "@/lib/utils";
@@ -201,6 +217,13 @@ export function ProductInfo({
           </>
         )}
       </div>
+
+      {/* Originalidad solo donde está comprobada (ver esOriginalComprobado). */}
+      {esOriginalComprobado(product) && (
+        <p className="-mt-2 flex items-center gap-1.5 text-sm font-semibold text-brand-gold">
+          <ShieldCheck size={16} aria-hidden /> {t("original_invoice")}
+        </p>
+      )}
 
       {sizes.length > 0 && (
         <div ref={sizesRef} className="scroll-mt-24">

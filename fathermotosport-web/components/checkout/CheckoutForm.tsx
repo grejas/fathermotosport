@@ -30,6 +30,9 @@ import { cn, formatPrice } from "@/lib/utils";
 import { deliveryRange, formatDeliveryDate } from "@/lib/utils/deliveryDates";
 import type { Order, PaymentMethod, ShippingQuote } from "@/lib/types";
 import toast from "react-hot-toast";
+
+/** Fecha de la versión vigente de Términos y Privacidad (se guarda con cada aceptación). */
+const TERMS_VERSION = "2026-11-27";
 import {
   identifyCustomer,
   trackAddPaymentInfo,
@@ -100,6 +103,9 @@ export function CheckoutForm() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
   const [shipping, setShipping] = useState<ShippingQuote | null>(null);
+  // Aceptación de Términos y Privacidad (obligatoria, nunca premarcada).
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [termsError, setTermsError] = useState(false);
   const [shippingLoading, setShippingLoading] = useState(false);
   const [optionId, setOptionId] = useState<number | null>(null);
   // Pedido creado y todavía sin pagar (solo tarjeta). Sobrevive al cierre del modal para
@@ -348,6 +354,13 @@ export function CheckoutForm() {
       return;
     }
 
+    if (!termsAccepted) {
+      setTermsError(true);
+      toast.error(t("terms_required"));
+      document.getElementById("checkout-terms")?.focus();
+      return;
+    }
+
     const validation = validateCheckout({
       first_name: form.first_name,
       last_name: form.last_name,
@@ -497,6 +510,8 @@ export function CheckoutForm() {
       coupon_code: coupon.trim() || undefined,
       expected_subtotal: subtotalMostrado(),
       locale,
+      terms_accepted: termsAccepted,
+      terms_version: TERMS_VERSION,
     });
 
   /** Pantalla de éxito, con el token para que un invitado pueda ver su pedido. */
@@ -789,10 +804,50 @@ export function CheckoutForm() {
                   </p>
                 </>
               ) : (
-                <Button type="submit" variant="primary" className="mt-4 w-full" loading={loading}>
+                <>
+                <label
+                  htmlFor="checkout-terms"
+                  className={cn(
+                    "mt-4 flex cursor-pointer items-start gap-2.5 rounded-lg border p-3 text-xs leading-relaxed text-brand-muted",
+                    termsError ? "border-brand-red/60 bg-brand-red/5" : "border-white/10"
+                  )}
+                >
+                  <input
+                    id="checkout-terms"
+                    type="checkbox"
+                    checked={termsAccepted}
+                    onChange={(e) => {
+                      setTermsAccepted(e.target.checked);
+                      if (e.target.checked) setTermsError(false);
+                    }}
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-brand-red"
+                    aria-invalid={termsError}
+                  />
+                  <span>
+                    {t.rich("terms_accept", {
+                      terms: (chunks) => (
+                        <Link href="/terms" target="_blank" className="text-brand-white underline underline-offset-2 hover:text-brand-red">
+                          {chunks}
+                        </Link>
+                      ),
+                      privacy: (chunks) => (
+                        <Link href="/privacy" target="_blank" className="text-brand-white underline underline-offset-2 hover:text-brand-red">
+                          {chunks}
+                        </Link>
+                      ),
+                      returns: (chunks) => (
+                        <Link href="/returns-policy" target="_blank" className="text-brand-white underline underline-offset-2 hover:text-brand-red">
+                          {chunks}
+                        </Link>
+                      ),
+                    })}
+                  </span>
+                </label>
+                <Button type="submit" variant="primary" className="mt-3 w-full" loading={loading}>
                   {/* Con tarjeta el botón lleva al formulario de pago, no cierra la compra. */}
                   {isStripe ? t("stripe_continue") : isManual ? t("manual_continue") : t("confirm_order")}
                 </Button>
+                </>
               )}
               <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-brand-muted">
                 <ShieldCheck size={14} className="text-cat-boots" /> {t("ssl_secure")}

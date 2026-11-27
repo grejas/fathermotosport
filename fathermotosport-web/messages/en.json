@@ -39,7 +39,8 @@
     "visor_color": "Visor color",
     "visor_choose": "Choose the visor color",
     "visor_required": "Choose the visor color before adding to cart",
-    "visor_choose_on_page": "Choose the helmet size and visor color"
+    "visor_choose_on_page": "Choose the helmet size and visor color",
+    "original_invoice": "Guaranteed genuine product"
   },
   "catalog": {
     "title": "Catalog",
@@ -85,7 +86,7 @@
     "no_featured": "No featured products yet.",
     "blog_title": "Latest from the blog",
     "blog_view_all": "View all posts",
-    "pay_in_installments": "Pay in installments · 100% secure",
+    "pay_in_installments": "100% secure checkout · several ways to pay",
     "payment_desc": "We accept credit and debit cards (Visa, Mastercard, American Express), Apple Pay, Google Pay, Amazon Pay, US bank transfer and crypto (USDT, USDC, Bitcoin and Binance Pay).",
     "view_payment_methods": "View payment methods"
   },
@@ -119,7 +120,7 @@
     "international_shipping": "Shipping across the Americas and Europe",
     "free_shipping_desc": "On all your orders",
     "warranty": "Warranty",
-    "warranty_desc": "Original products",
+    "warranty_desc": "Legal and manufacturer warranty",
     "secure_payment": "Secure payment",
     "secure_payment_desc": "SSL encryption",
     "support": "Support",
@@ -176,7 +177,7 @@
   "checkout": {
     "shipping_address": "Shipping address",
     "payment_method": "Payment method",
-    "confirm_order": "Confirm order",
+    "confirm_order": "Buy and pay",
     "order_summary": "Summary",
     "your_data": "Your details",
     "first_name": "First name",
@@ -262,7 +263,7 @@
     "pm_crypto_network_hint": "Use the same network when withdrawing from your exchange. TRC20 usually has the lowest fee.",
     "pm_sepa_note": "After confirming you'll see the exact amount in euros, the IBAN and the payment reference. You have 72 hours to transfer; we prepare your order once the payment clears.",
     "pm_crypto_note": "After confirming you'll see the exact amount, the address and a QR code. USDT: 24 hours to pay. BTC: the price is locked for 2 hours.",
-    "manual_continue": "Confirm and see payment details",
+    "manual_continue": "Buy and see payment details",
     "pm_binance_hint": "Pay from the Binance app by scanning our QR: no network to choose and no withdrawal fee.",
     "pm_binance_note": "After confirming you'll see the amount, our Binance Pay QR and a button to open the app. You can pay with USDT, USDC or BTC. You have 24 hours.",
     "pm_us_bank": "Bank transfer (USA)",
@@ -272,7 +273,9 @@
     "pm_stripe_wallet_desc": "Apple Pay, Google Pay or Amazon Pay: pay in one tap",
     "wallet_title": "Pay with a digital wallet",
     "wallet_unavailable": "This device has no Apple Pay, Google Pay or Amazon Pay set up. Close this and choose «Debit or credit card».",
-    "import_duties": "International shipping to {country}: the price does not include import taxes or duties. If customs charges them on delivery, they are paid by the recipient."
+    "import_duties": "International shipping to {country}: the price does not include import taxes or duties. If customs charges them on delivery, they are paid by the recipient.",
+    "terms_accept": "I have read and accept the <terms>Terms and Conditions</terms> and the <privacy>Privacy Policy</privacy>. I know I can withdraw from the purchase under the <returns>Returns Policy</returns>.",
+    "terms_required": "To continue, accept the Terms and Conditions and the Privacy Policy."
   },
   "pay_pending": {
     "title": "Complete your order payment",
@@ -798,7 +801,7 @@
     "analytics_title": "Analytics",
     "analytics_text": "Google Analytics: how many people visit the store and which pages they view.",
     "marketing_title": "Marketing",
-    "marketing_text": "Meta (Facebook and Instagram) and TikTok pixels: measure ads and show you personalized advertising.",
-    "footer_link": "Cookie preferences"
+    "marketing_text": "Meta (Facebook and Instagram) and TikTok pixels: measure ads and show you personalized advertising. Turning this off means \"Do Not Sell or Share My Personal Information\". If your browser sends a Global Privacy Control signal, we honor it automatically.",
+    "footer_link": "Cookies & Your Privacy Choices"
   }
 }

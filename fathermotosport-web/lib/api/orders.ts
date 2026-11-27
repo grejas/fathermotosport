@@ -27,6 +27,10 @@ export interface CreateOrderPayload {
   notes?: string;
   /** Idioma de la tienda al comprar: el backend lo usa para escribirle al cliente. */
   locale?: string;
+  /** Aceptó Términos y Privacidad en el checkout (se guarda con fecha como prueba). */
+  terms_accepted?: boolean;
+  /** Versión de los Términos aceptados (fecha de la última actualización). */
+  terms_version?: string;
 }
 
 /** PayPal Express: pedido creado desde el carrito, sin formulario previo. */

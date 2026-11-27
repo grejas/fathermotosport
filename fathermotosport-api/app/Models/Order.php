@@ -78,6 +78,8 @@ class Order extends Model
         'payment_method',
         'country',
         'locale',
+        'terms_accepted_at',
+        'terms_version',
         'notes',
         'attention_reason',
         // Cotización fijada al crear un pedido de pago manual (ManualPaymentService).
@@ -88,6 +90,7 @@ class Order extends Model
     ];
 
     protected $casts = [
+        'terms_accepted_at' => 'datetime',
         'subtotal' => 'decimal:2',
         'discount' => 'decimal:2',
         'shipping' => 'decimal:2',
