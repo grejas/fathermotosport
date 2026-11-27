@@ -175,7 +175,7 @@
     "visor": "Viseira"
   },
   "checkout": {
-    "shipping_address": "Endereço de entrega",
+    "shipping_address": "Dados do destinatário",
     "payment_method": "Método de pagamento",
     "confirm_order": "Comprar e pagar",
     "order_summary": "Resumo",
@@ -184,7 +184,7 @@
     "last_name": "Sobrenome",
     "country": "País",
     "phone": "Telefone",
-    "state": "Estado / Província",
+    "state": "Província / Estado",
     "city": "Cidade",
     "address": "Endereço",
     "reference": "Referência (opcional)",
@@ -275,7 +275,24 @@
     "wallet_unavailable": "Este dispositivo não tem Apple Pay, Google Pay nem Amazon Pay configurados. Feche e escolha «Cartão de débito ou crédito».",
     "import_duties": "Envio internacional para {country}: o preço não inclui impostos nem tributos de importação. Se a alfândega os cobrar no recebimento, quem recebe o pedido paga.",
     "terms_accept": "Li e aceito os <terms>Termos e Condições</terms> e a <privacy>Política de Privacidade</privacy>. Sei que posso desistir da compra conforme a <returns>Política de devoluções</returns>.",
-    "terms_required": "Para continuar, aceite os Termos e Condições e a Política de Privacidade."
+    "terms_required": "Para continuar, aceite os Termos e Condições e a Política de Privacidade.",
+    "contact": "Contato",
+    "email_hint": "Enviamos aqui a confirmação e o rastreamento do pedido.",
+    "address_placeholder": "Rua, número, andar ou apartamento",
+    "postal_code": "Código postal",
+    "postal_code_optional": "Código postal (opcional)",
+    "phone_hint": "Com código do país. A transportadora usa para combinar a entrega.",
+    "method_standard": "Padrão",
+    "err_first_name": "Escreva o nome do destinatário.",
+    "err_email": "Escreva um e-mail válido.",
+    "err_address": "Escreva o endereço de entrega.",
+    "err_city": "Escreva a cidade.",
+    "err_postal_required": "Escreva o código postal: a transportadora precisa dele para entregar.",
+    "err_postal_invalid": "Confira o código postal: o formato não é válido para este país.",
+    "err_country": "Escolha o país de entrega.",
+    "err_phone": "Escreva um telefone com código do país.",
+    "brazil_ml_title": "Compra a partir do Brasil?",
+    "brazil_ml_text": "As vendas para o Brasil são feitas pelo Mercado Livre. Fale com a gente no WhatsApp e enviamos o link do produto."
   },
   "pay_pending": {
     "title": "Conclua o pagamento do seu pedido",

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/lib/i18n/navigation";
-import { Mail, ShieldCheck, Tag, Truck } from "lucide-react";
+import { Mail, ShieldCheck, Tag, Truck, Store } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { PaymentMethods } from "./PaymentMethods";
@@ -25,7 +25,8 @@ import {
 import { ENABLED_PAYMENT_METHODS, isManualPaymentMethod } from "@/lib/data/paymentMethods";
 import { whatsappUrl } from "@/lib/api/storeSettings";
 import { useStoreSettings } from "@/components/layout/StoreSettingsProvider";
-import { validateCheckout, hasErrors, isEmail, type FieldErrors } from "@/lib/validators";
+import { validateCheckout, hasErrors, isEmail, codigoPostalObligatorio, type FieldErrors } from "@/lib/validators";
+import { phoneWithCountryPrefix } from "@/lib/personalData";
 import { cn, formatPrice } from "@/lib/utils";
 import { deliveryRange, formatDeliveryDate } from "@/lib/utils/deliveryDates";
 import type { Order, PaymentMethod, ShippingQuote } from "@/lib/types";
@@ -33,6 +34,12 @@ import toast from "react-hot-toast";
 
 /** Fecha de la versión vigente de Términos y Privacidad (se guarda con cada aceptación). */
 const TERMS_VERSION = "2026-11-27";
+
+/** Destinos que no se venden por la web: Brasil compra por Mercado Livre (decisión de Gerson). */
+const PAISES_FUERA_DE_LA_WEB = ["BR"];
+
+/** Nombre del método de envío en el idioma del cliente (en la base está en español). */
+const METODOS_TRADUCIBLES: Record<string, string> = { "Estándar": "method_standard" };
 import {
   identifyCustomer,
   trackAddPaymentInfo,
@@ -83,6 +90,7 @@ export function CheckoutForm() {
     city: "",
     address_line: "",
     reference: "",
+    postal_code: "",
   });
   // Arranca en tarjeta; en un iPhone/Mac con Apple Pay listo, en la billetera (ver abajo).
   const [method, setMethod] = useState<PaymentMethod>(
@@ -129,7 +137,9 @@ export function CheckoutForm() {
   // y ordenada según ese idioma. El registro sigue usando la lista completa del mundo.
   const countries = useMemo(
     () =>
-      SHIPPING_COUNTRIES.map((c) => ({ code: c.code, label: tCountries(c.code) })).sort((a, b) =>
+      SHIPPING_COUNTRIES.filter((c) => !PAISES_FUERA_DE_LA_WEB.includes(c.code))
+        .map((c) => ({ code: c.code, label: tCountries(c.code) }))
+        .sort((a, b) =>
         a.label.localeCompare(b.label, locale)
       ),
     [tCountries, locale]
@@ -142,6 +152,9 @@ export function CheckoutForm() {
   // Nombre canónico en español: es lo que se guarda en la dirección del pedido,
   // para que el panel no reciba el país en tres idiomas distintos.
   const countryName = shippingCountryName(form.country) ?? form.country;
+
+  const nombreMetodo = (nombre: string) =>
+    METODOS_TRADUCIBLES[nombre] ? t(METODOS_TRADUCIBLES[nombre]) : nombre;
 
   const isManual = isManualPaymentMethod(method);
   const methodEnabled = ENABLED_PAYMENT_METHODS.includes(method) || (isManual && manualDisponibles.includes(method));
@@ -206,6 +219,21 @@ export function CheckoutForm() {
     };
   }, [form.country, items, weightKg]);
 
+  // País inicial según el navegador (es-MX → México, en-US → EE.UU.); Bolivia si no se
+  // reconoce o si es un destino que no se vende por la web. El teléfono toma su prefijo.
+  useEffect(() => {
+    const disponibles = new Set(countries.map((c) => c.code));
+    const region = (navigator.languages ?? [navigator.language])
+      .map((l) => l.split("-")[1]?.toUpperCase())
+      .find((r): r is string => !!r && disponibles.has(r));
+    setForm((f) => {
+      const pais = region ?? (disponibles.has(f.country) ? f.country : "BO");
+      return { ...f, country: pais, phone: phoneWithCountryPrefix(f.phone, f.country, pais) };
+    });
+    // Solo al entrar: después manda lo que elija el cliente.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Autocompleta datos si el usuario está logueado.
   useEffect(() => {
     if (user) {
@@ -214,7 +242,7 @@ export function CheckoutForm() {
         first_name: user.first_name ?? "",
         last_name: user.last_name ?? "",
         email: user.email,
-        phone: user.phone ?? "",
+        phone: user.phone || f.phone,
       }));
     }
   }, [user]);
@@ -370,7 +398,8 @@ export function CheckoutForm() {
       country: form.country,
       city: form.city,
       address_line: form.address_line,
-    });
+      postal_code: form.postal_code,
+    }, (k) => t(k));
     setErrors(validation);
     if (hasErrors(validation)) {
       // Mensaje del primer campo que falta, en vez del genérico: antes el cliente
@@ -460,6 +489,8 @@ export function CheckoutForm() {
    */
   const actualizar = (campo: keyof typeof form, valor: string) => {
     const nuevos = { ...form, [campo]: valor };
+    // Al cambiar de país, el teléfono arranca con su prefijo (nunca pisa un número escrito).
+    if (campo === "country") nuevos.phone = phoneWithCountryPrefix(form.phone, form.country, valor);
     setForm(nuevos);
 
     setErrors((previos) => {
@@ -475,7 +506,8 @@ export function CheckoutForm() {
         country: nuevos.country,
         city: nuevos.city,
         address_line: nuevos.address_line,
-      });
+        postal_code: nuevos.postal_code,
+      }, (k) => t(k));
 
       // Sigue inválido: se conserva el mensaje que ya estaba.
       if (recalculado[campo]) return previos;
@@ -502,6 +534,7 @@ export function CheckoutForm() {
         city: form.city,
         address_line: form.address_line,
         reference: form.reference || undefined,
+        postal_code: form.postal_code.trim() || undefined,
       },
       // La billetera es Stripe: el backend solo conoce la pasarela.
       payment_method: method === "stripe_wallet" ? "stripe" : method,
@@ -545,19 +578,17 @@ export function CheckoutForm() {
           </p>
         )}
 
-        {/* El método de pago va primero: de él depende qué datos hacen falta. */}
-        <section>
-          <h3 className="mb-3 text-lg font-bold text-brand-white">{t("payment_method")}</h3>
-          <PaymentMethods
-            value={method}
-            onChange={setMethod}
-            enabled={ENABLED_PAYMENT_METHODS}
-            manual={manualDisponibles}
-            comingSoonLabel={t("payments_coming_soon")}
-          />
-          {!methodEnabled && (
-            <div className="mt-3 rounded-xl border border-brand-gold/30 bg-brand-gold/5 p-4">
-              <p className="text-sm font-semibold text-brand-gold">{t("coming_soon_whatsapp")}</p>
+
+
+
+
+        {/* Brasil no se vende por la web (canal Mercado Livre): se avisa a quien entra en portugués. */}
+        {locale === "pt" && (
+          <div className="flex items-start gap-3 rounded-xl border border-brand-gold/30 bg-brand-gold/5 p-4">
+            <Store size={18} className="mt-0.5 shrink-0 text-brand-gold" aria-hidden />
+            <div className="text-sm">
+              <p className="font-semibold text-brand-gold">{t("brazil_ml_title")}</p>
+              <p className="mt-1 text-brand-muted">{t("brazil_ml_text")}</p>
               {whatsappHref && (
                 <a
                   href={whatsappHref}
@@ -570,44 +601,39 @@ export function CheckoutForm() {
                 </a>
               )}
             </div>
-          )}
-          {isPaypal && (
-            <p className="mt-3 text-xs text-brand-muted">{t("express_subtitle")}</p>
-          )}
-        </section>
-
-        {/* Con PayPal, el único dato que se pide es adónde avisarle: nombre y dirección
-            los aporta PayPal al pagar. Con sesión iniciada viene el de la cuenta, y se
-            puede cambiar. */}
-        {isPaypal && (
-          <section>
-            <h3 className="mb-3 text-lg font-bold text-brand-white">{t("express_email_title")}</h3>
-            <div className="rounded-2xl border border-white/10 bg-brand-card p-4">
-              <Input
-                label={t("express_email_label")}
-                name="express_email"
-                type="email"
-                autoComplete="email"
-                inputMode="email"
-                required
-                leftIcon={<Mail size={16} />}
-                value={form.email}
-                onChange={(e) => actualizar("email", e.target.value)}
-                hint={t("express_email_hint")}
-                error={errors.email}
-              />
-            </div>
-          </section>
+          </div>
         )}
 
-        {/* Con PayPal no se piden más datos del cliente: los aporta PayPal al pagar. */}
+        {/* Contacto: a este correo llegan la confirmación y el comprobante. */}
         {!isPaypal && (
         <section>
-          <h3 className="mb-3 text-lg font-bold text-brand-white">{t("your_data")}</h3>
-          <div className="grid grid-cols-2 gap-3">
+          <h3 className="mb-3 text-lg font-bold text-brand-white">{t("contact")}</h3>
+          <Input
+            label={tAuth("email")}
+            name="email"
+            type="email"
+            autoComplete="email"
+            inputMode="email"
+            className={cn(isAuth && "cursor-not-allowed opacity-70")}
+            value={form.email}
+            onChange={(e) => actualizar("email", e.target.value)}
+            readOnly={isAuth}
+            hint={isAuth ? t("email_from_account") : t("email_hint")}
+            error={errors.email}
+          />
+        </section>
+        )}
+
+        {/* Datos del destinatario en el orden que pide el proveedor para despachar:
+            nombre, dirección, ciudad, provincia/estado, código postal, país y teléfono. */}
+        {!isPaypal && (
+        <section>
+          <h3 className="mb-3 text-lg font-bold text-brand-white">{t("shipping_address")}</h3>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Input
               label={t("first_name")}
               name="first_name"
+              autoComplete="given-name"
               value={form.first_name}
               onChange={(e) => actualizar("first_name", e.target.value)}
               error={errors.first_name}
@@ -615,35 +641,83 @@ export function CheckoutForm() {
             <Input
               label={t("last_name")}
               name="last_name"
+              autoComplete="family-name"
               value={form.last_name}
               onChange={(e) => actualizar("last_name", e.target.value)}
               error={errors.last_name}
             />
             <Input
-              label={tAuth("email")}
-              name="email"
-              type="email"
-              className={cn("col-span-2", isAuth && "cursor-not-allowed opacity-70")}
-              value={form.email}
-              onChange={(e) => actualizar("email", e.target.value)}
-              readOnly={isAuth}
-              hint={isAuth ? t("email_from_account") : undefined}
-              error={errors.email}
+              label={t("address")}
+              name="address_line"
+              autoComplete="street-address"
+              className="sm:col-span-2"
+              placeholder={t("address_placeholder")}
+              value={form.address_line}
+              onChange={(e) => actualizar("address_line", e.target.value)}
+              error={errors.address_line}
             />
-          </div>
-        </section>
-
-        )}
-
-        {!isPaypal && (
-        <section>
-          <h3 className="mb-3 text-lg font-bold text-brand-white">{t("shipping_address")}</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <Input label={t("phone")} name="phone" value={form.phone} onChange={(e) => actualizar("phone", e.target.value)} error={errors.phone} />
-            <Input label={t("state")} name="state" value={form.state} onChange={(e) => actualizar("state", e.target.value)} />
-            <Input label={t("city")} name="city" value={form.city} onChange={(e) => actualizar("city", e.target.value)} error={errors.city} />
-            <Input label={t("address")} name="address_line" value={form.address_line} onChange={(e) => actualizar("address_line", e.target.value)} error={errors.address_line} />
-            <Input label={t("reference")} name="reference" className="col-span-2" value={form.reference} onChange={(e) => actualizar("reference", e.target.value)} />
+            <Input
+              label={t("reference")}
+              name="reference"
+              className="sm:col-span-2"
+              value={form.reference}
+              onChange={(e) => actualizar("reference", e.target.value)}
+            />
+            <Input
+              label={t("city")}
+              name="city"
+              autoComplete="address-level2"
+              value={form.city}
+              onChange={(e) => actualizar("city", e.target.value)}
+              error={errors.city}
+            />
+            <Input
+              label={t("state")}
+              name="state"
+              autoComplete="address-level1"
+              value={form.state}
+              onChange={(e) => actualizar("state", e.target.value)}
+              error={errors.state}
+            />
+            <Input
+              label={codigoPostalObligatorio(form.country) ? t("postal_code") : t("postal_code_optional")}
+              name="postal_code"
+              autoComplete="postal-code"
+              value={form.postal_code}
+              onChange={(e) => actualizar("postal_code", e.target.value)}
+              error={errors.postal_code}
+            />
+            <div>
+            <label className="mb-1.5 block text-sm font-medium text-brand-white" htmlFor="checkout-country">
+              {t("country")}
+            </label>
+            <select
+              id="checkout-country"
+              name="country"
+              autoComplete="country"
+              value={form.country}
+              onChange={(e) => actualizar("country", e.target.value)}
+              className="input-brand"
+            >
+              {countries.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {countryFlag(c.code)} {c.label}
+                </option>
+              ))}
+            </select>
+            </div>
+            <Input
+              label={t("phone")}
+              name="phone"
+              type="tel"
+              autoComplete="tel"
+              inputMode="tel"
+              className="sm:col-span-2"
+              value={form.phone}
+              onChange={(e) => actualizar("phone", e.target.value)}
+              hint={t("phone_hint")}
+              error={errors.phone}
+            />
           </div>
         </section>
         )}
@@ -651,13 +725,14 @@ export function CheckoutForm() {
         <section>
           <h3 className="mb-3 text-lg font-bold text-brand-white">{tCart("shipping")}</h3>
 
-          {/* El país define la tarifa. Es el único dato que se pide con PayPal. */}
+          {/* Con PayPal el país es el único dato que se pide aquí (la dirección la da PayPal). */}
+          {isPaypal && (
           <div className="mb-3">
-            <label className="mb-1.5 block text-sm font-medium text-brand-white" htmlFor="checkout-country">
-              {isPaypal ? t("express_country_question") : t("country")}
+            <label className="mb-1.5 block text-sm font-medium text-brand-white" htmlFor="checkout-country-paypal">
+              {t("express_country_question")}
             </label>
             <select
-              id="checkout-country"
+              id="checkout-country-paypal"
               name="country"
               value={form.country}
               onChange={(e) => actualizar("country", e.target.value)}
@@ -670,6 +745,7 @@ export function CheckoutForm() {
               ))}
             </select>
           </div>
+          )}
 
           {shippingLoading ? (
             <p className="text-sm text-brand-muted">{t("shipping_calculating")}</p>
@@ -702,7 +778,7 @@ export function CheckoutForm() {
                     <Truck size={18} className={selected ? "text-brand-red" : "text-brand-muted"} />
                     <span className="flex-1">
                       <span className="block text-sm font-semibold text-brand-white">
-                        {option.method_name}
+                        {nombreMetodo(option.method_name)}
                       </span>
                       {option.estimated_days_min !== null && option.estimated_days_max !== null ? (
                         (() => {
@@ -761,6 +837,61 @@ export function CheckoutForm() {
           )}
         </section>
 
+        {/* El pago va después de los datos y el envío: es el orden que más convierte. */}
+        <section>
+          <h3 className="mb-3 text-lg font-bold text-brand-white">{t("payment_method")}</h3>
+          <PaymentMethods
+            value={method}
+            onChange={setMethod}
+            enabled={ENABLED_PAYMENT_METHODS}
+            manual={manualDisponibles}
+            comingSoonLabel={t("payments_coming_soon")}
+          />
+          {!methodEnabled && (
+            <div className="mt-3 rounded-xl border border-brand-gold/30 bg-brand-gold/5 p-4">
+              <p className="text-sm font-semibold text-brand-gold">{t("coming_soon_whatsapp")}</p>
+              {whatsappHref && (
+                <a
+                  href={whatsappHref}
+                  onClick={() => trackWhatsappClick("checkout")}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
+                >
+                  {t("write_whatsapp")}
+                </a>
+              )}
+            </div>
+          )}
+          {isPaypal && (
+            <p className="mt-3 text-xs text-brand-muted">{t("express_subtitle")}</p>
+          )}
+        </section>
+
+        {/* Con PayPal, el único dato que se pide es adónde avisarle: nombre y dirección
+            los aporta PayPal al pagar. Con sesión iniciada viene el de la cuenta, y se
+            puede cambiar. */}
+        {isPaypal && (
+          <section>
+            <h3 className="mb-3 text-lg font-bold text-brand-white">{t("express_email_title")}</h3>
+            <div className="rounded-2xl border border-white/10 bg-brand-card p-4">
+              <Input
+                label={t("express_email_label")}
+                name="express_email"
+                type="email"
+                autoComplete="email"
+                inputMode="email"
+                required
+                leftIcon={<Mail size={16} />}
+                value={form.email}
+                onChange={(e) => actualizar("email", e.target.value)}
+                hint={t("express_email_hint")}
+                error={errors.email}
+              />
+            </div>
+          </section>
+        )}
+
         {/* El cupón no aplica al flujo de PayPal: no hay paso intermedio donde
             recalcular el total antes de mandar el monto a PayPal. */}
         {!isPaypal && (
@@ -785,7 +916,7 @@ export function CheckoutForm() {
         <OrderSummary
           discount={discount}
           shipping={shippingCost}
-          shippingMethod={selectedOption?.method_name}
+          shippingMethod={selectedOption ? nombreMetodo(selectedOption.method_name) : null}
           shippingNote={shippingLoading ? t("shipping_calculating") : t("shipping_to_coordinate")}
         >
           {methodEnabled ? (
