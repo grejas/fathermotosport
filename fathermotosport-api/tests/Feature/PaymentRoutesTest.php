@@ -6,8 +6,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * PayPal y Stripe están activos; mercadopago sigue detrás del 503 hasta tener
- * credenciales. Si se vuelve a apagar una pasarela (comentando sus rutas en
+ * PayPal, Stripe y Mercado Pago llegan a su controlador; el resto cae en el 503. Si se vuelve a apagar una pasarela (comentando sus rutas en
  * routes/api.php), hay que mover esas rutas al test de rutas bloqueadas.
  */
 class PaymentRoutesTest extends TestCase
@@ -43,7 +42,6 @@ class PaymentRoutesTest extends TestCase
     public function test_other_payment_routes_are_still_blocked(): void
     {
         $bloqueadas = [
-            '/api/v1/payments/mercadopago/create',
             '/api/v1/payments/cualquier-otra',
         ];
 

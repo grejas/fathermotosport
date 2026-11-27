@@ -212,6 +212,22 @@ class ManualPaymentService
         });
     }
 
+    /**
+     * USD por 1 peso mexicano, cotizado en vivo (lo usa el cobro con Mercado Pago México,
+     * que solo acepta MXN). Tasa de referencia del BCE vía Frankfurter; respaldo
+     * open.er-api.com. Null si no hay un dato confiable.
+     */
+    public function usdPorPesoMexicano(): ?float
+    {
+        return $this->cotizacionCacheada('fx_usd_por_mxn', function () {
+            $mxnPorUsd = $this->leer('https://api.frankfurter.app/latest?from=USD&to=MXN', 'rates.MXN')
+                ?? $this->leer('https://open.er-api.com/v6/latest/USD', 'rates.MXN');
+
+            // Un USD/MXN fuera de este rango es una respuesta rota, no el mercado.
+            return $mxnPorUsd !== null && $mxnPorUsd > 10 && $mxnPorUsd < 40 ? round(1 / $mxnPorUsd, 8) : null;
+        });
+    }
+
     /** USD por 1 BTC. */
     private function usdPorBitcoin(): ?float
     {

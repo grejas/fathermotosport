@@ -61,7 +61,7 @@ return [
         'public_key' => env('MERCADOPAGO_PUBLIC_KEY'),
         'access_token' => env('MERCADOPAGO_ACCESS_TOKEN'),
         'webhook_secret' => env('MERCADOPAGO_WEBHOOK_SECRET'),
-        'currency' => env('MERCADOPAGO_CURRENCY', 'BOB'),
+        // La cuenta es de México: siempre cobra en MXN (ver MercadoPagoService::MONEDA).
     ],
 
     'google' => [
@@ -80,7 +80,6 @@ return [
     'revalidate' => [
         'secret' => env('REVALIDATE_SECRET'),
     ],
-
 
     // ffmpeg para comprimir los videos (media:optimizar-videos). En Hostinger, el binario
     // estático que instala scripts/deploy-web-rapida.sh.

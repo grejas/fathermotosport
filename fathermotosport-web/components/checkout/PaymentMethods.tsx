@@ -59,13 +59,23 @@ export function PaymentMethods({ value, onChange, enabled, manual = [], comingSo
             active={disponible && value === m.id}
             disabled={!disponible}
             // PayPal conserva su amarillo también cuando está elegido.
-            iconClass={m.id === "paypal" ? "bg-[#FFC439] text-[#003087]" : undefined}
+            iconClass={
+              m.id === "paypal"
+                ? "bg-[#FFC439] text-[#003087]"
+                : m.id === "mercadopago"
+                  ? "bg-[#00B1EA] text-white"
+                  : undefined
+            }
             // Billeteras y tarjeta van separadas, cada una con sus logos.
             extra={
               m.id === "stripe_wallet" ? (
                 <WalletLogos variant="inline" className="mt-1.5" />
               ) : m.id === "stripe" ? (
                 <CardLogos className="mt-1.5" />
+              ) : m.id === "mercadopago" ? (
+                <span className="mt-1.5 inline-block rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-brand-white">
+                  MXN
+                </span>
               ) : undefined
             }
             onClick={() => onChange(m.id)}

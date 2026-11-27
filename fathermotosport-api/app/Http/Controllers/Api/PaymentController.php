@@ -705,17 +705,92 @@ class PaymentController extends Controller
 
     // ─────────────────────── MercadoPago ───────────────────────
 
+    /**
+     * Inicia el pago con Mercado Pago México. El total se cobra en MXN con la cotización
+     * del día en que el cliente paga: cada intento nuevo vuelve a cotizar, y el monto
+     * queda fijado en el pedido para que el webhook lo compare con lo cobrado.
+     */
     public function mercadopagoCreate(Request $request): JsonResponse
     {
-        $order = Order::with('items')->findOrFail($request->validate(['order_id' => 'required|uuid'])['order_id']);
+        if (! MercadoPagoService::configurado()) {
+            return response()->json([
+                'message' => 'Mercado Pago no está disponible en este momento. Elige otro método o escríbenos por WhatsApp.',
+            ], 503);
+        }
 
-        $preference = $this->mercadopago->createPreference($order);
+        $order = Order::findOrFail($request->validate(['order_id' => 'required|uuid'])['order_id']);
 
-        $this->recordPayment($order, 'mercadopago', $preference['id'], strtoupper((string) config('services.mercadopago.currency', 'BOB')));
+        if (! $order->isAccessibleBy($request->user('sanctum'), Order::tokenFromRequest($request))) {
+            abort(403, 'No puedes pagar este pedido.');
+        }
+
+        if ($order->payment_status === 'paid') {
+            return response()->json(['message' => 'Este pedido ya fue pagado.'], 409);
+        }
+
+        if (in_array($order->status, ['cancelled', 'refunded'], true)) {
+            return response()->json(['message' => 'Este pedido ya no se puede pagar.'], 409);
+        }
+
+        // Reutiliza la preferencia de hoy si sigue pendiente: recargar la página no debe
+        // cambiar el monto ni crear otra. Al día siguiente se cotiza de nuevo.
+        $pendiente = Payment::where('order_id', $order->id)
+            ->where('provider', 'mercadopago')
+            ->where('status', 'pending')
+            ->where('created_at', '>=', now()->startOfDay())
+            ->latest()
+            ->first();
+
+        if ($pendiente && filled($pendiente->gateway_response['init_point'] ?? null)
+            && $order->payment_currency === MercadoPagoService::MONEDA) {
+            return response()->json([
+                'preference_id' => $pendiente->transaction_id,
+                'init_point' => $pendiente->gateway_response['init_point'],
+                'amount' => ManualPaymentService::formatoMonto($order->payment_amount, MercadoPagoService::MONEDA),
+                'currency' => MercadoPagoService::MONEDA,
+                'reused' => true,
+            ]);
+        }
+
+        $tasa = app(ManualPaymentService::class)->usdPorPesoMexicano();
+        if ($tasa === null) {
+            return response()->json([
+                'message' => 'No pudimos obtener el tipo de cambio en este momento. Intenta de nuevo en unos minutos o elige otro método de pago.',
+            ], 503);
+        }
+
+        $cotizacion = ['moneda' => MercadoPagoService::MONEDA, 'tasa' => $tasa];
+        $order->forceFill([
+            'payment_method' => 'mercadopago',
+            'payment_currency' => MercadoPagoService::MONEDA,
+            'payment_amount' => ManualPaymentService::montoAPagar((float) $order->total, $cotizacion),
+            'payment_rate' => $tasa,
+            // Si venía de transferencia / cripto, su vencimiento ya no aplica.
+            'payment_expires_at' => null,
+        ])->save();
+
+        try {
+            $preference = $this->mercadopago->createPreference($order);
+        } catch (RequestException $e) {
+            Log::error('Mercado Pago rechazó la creación de la preferencia.', [
+                'order' => $order->id,
+                'status' => $e->response->status(),
+                'body' => $e->response->json(),
+            ]);
+
+            return response()->json([
+                'message' => 'No pudimos iniciar el pago con Mercado Pago. Intenta de nuevo o escríbenos por WhatsApp.',
+            ], 502);
+        }
+
+        $payment = $this->recordPayment($order, 'mercadopago', $preference['id'], MercadoPagoService::MONEDA, (float) $order->payment_amount);
+        $payment->update(['gateway_response' => ['init_point' => $preference['init_point']]]);
 
         return response()->json([
             'preference_id' => $preference['id'],
             'init_point' => $preference['init_point'],
+            'amount' => ManualPaymentService::formatoMonto($order->payment_amount, MercadoPagoService::MONEDA),
+            'currency' => MercadoPagoService::MONEDA,
         ]);
     }
 
@@ -916,22 +991,48 @@ class PaymentController extends Controller
 
     public function mercadopagoWebhook(Request $request): JsonResponse
     {
-        if (! $this->mercadopago->verifyWebhook($this->flatHeaders($request), $request->query())) {
+        // PHP convierte el "data.id" de la query en "data_id".
+        $query = $request->query();
+        if (! $this->mercadopago->verifyWebhook($this->flatHeaders($request), $query)) {
             Log::warning('Webhook MercadoPago con firma inválida.');
 
             return response()->json(['message' => 'Firma inválida.'], 400);
         }
 
-        $paymentId = $request->input('data.id') ?? $request->query('data.id');
+        $tipo = $request->input('type') ?? $query['type'] ?? null;
+        $paymentId = $request->input('data.id') ?? $query['data_id'] ?? null;
 
-        if ($paymentId) {
+        if ($paymentId && ($tipo === null || $tipo === 'payment')) {
             $detail = $this->mercadopago->getPayment((string) $paymentId);
             $orderId = $detail['external_reference'] ?? null;
+            $order = $orderId ? Order::find($orderId) : null;
 
-            if (($detail['status'] ?? null) === 'approved' && $orderId) {
-                $payment = Payment::where('order_id', $orderId)->latest()->first();
-                if ($payment) {
-                    $this->markPaid($payment, $detail);
+            if (($detail['status'] ?? null) === 'approved' && $order) {
+                $payment = Payment::where('order_id', $order->id)
+                    ->where('provider', 'mercadopago')
+                    ->latest()
+                    ->first();
+
+                if ($payment && MercadoPagoService::montoCubre($detail, $order)) {
+                    $this->markPaid($payment, [
+                        'mercadopago_payment_id' => $detail['id'] ?? $paymentId,
+                        'status' => $detail['status'],
+                        'payment_type' => $detail['payment_type_id'] ?? null,
+                        'amount' => $detail['transaction_amount'] ?? null,
+                        'currency' => $detail['currency_id'] ?? null,
+                        'rate_usd' => (string) $order->payment_rate,
+                    ]);
+                } elseif ($payment) {
+                    Log::error('Mercado Pago: el monto cobrado no cubre el pedido.', [
+                        'pedido' => $order->order_number,
+                        'esperado' => $order->payment_amount.' '.$order->payment_currency,
+                        'cobrado' => ($detail['transaction_amount'] ?? '?').' '.($detail['currency_id'] ?? '?'),
+                    ]);
+                    $this->marcarParaAtencion($order, sprintf(
+                        'Mercado Pago cobró %s %s y el pedido espera %s %s. Revisar antes de enviar.',
+                        $detail['transaction_amount'] ?? '?', $detail['currency_id'] ?? '?',
+                        $order->payment_amount, $order->payment_currency,
+                    ));
                 }
             }
         }
@@ -983,7 +1084,7 @@ class PaymentController extends Controller
 
     // ───────────────────────── Helpers ─────────────────────────
 
-    private function recordPayment(Order $order, string $provider, string $transactionId, string $currency): Payment
+    private function recordPayment(Order $order, string $provider, string $transactionId, string $currency, ?float $amount = null): Payment
     {
         return Payment::updateOrCreate(
             ['transaction_id' => $transactionId],
@@ -991,7 +1092,8 @@ class PaymentController extends Controller
                 'order_id' => $order->id,
                 'provider' => $provider,
                 'currency' => $currency,
-                'amount' => $order->total,
+                // Por defecto el total en USD; Mercado Pago guarda lo que cobra en MXN.
+                'amount' => $amount ?? $order->total,
                 'status' => 'pending',
             ]
         );

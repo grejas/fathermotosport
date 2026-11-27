@@ -13,7 +13,7 @@ import { OrderSummary } from "./OrderSummary";
 import { useCartStore, cartWeightKg } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
 import { createOrder, createExpressOrder } from "@/lib/api/orders";
-import { createPaypalOrder, createStripeIntent, getStripeCardConfig } from "@/lib/api/payments";
+import { createMercadoPagoPreference, createPaypalOrder, createStripeIntent, getStripeCardConfig } from "@/lib/api/payments";
 import { validateCoupon } from "@/lib/api/coupons";
 import { useCartPricesOnShow, useSyncCartPrices } from "@/lib/hooks/useCartPrices";
 import { calculateShipping } from "@/lib/api/shipping";
@@ -56,6 +56,11 @@ export function CheckoutForm() {
   const whatsappHref = whatsappUrl(storeSettings.whatsappDigits);
   // Transferencia SEPA / cripto: solo los que el panel tiene configurados.
   const manualDisponibles = storeSettings.manualPaymentMethods;
+  // Mercado Pago aparece aparte, para todos los países, solo si la API tiene sus credenciales.
+  const pasarelas = useMemo<readonly PaymentMethod[]>(
+    () => (storeSettings.mercadopago ? [...ENABLED_PAYMENT_METHODS, "mercadopago"] : ENABLED_PAYMENT_METHODS),
+    [storeSettings.mercadopago]
+  );
   const tAuth = useTranslations("auth");
   const tCart = useTranslations("cart");
   const tCountries = useTranslations("countries");
@@ -157,7 +162,8 @@ export function CheckoutForm() {
     METODOS_TRADUCIBLES[nombre] ? t(METODOS_TRADUCIBLES[nombre]) : nombre;
 
   const isManual = isManualPaymentMethod(method);
-  const methodEnabled = ENABLED_PAYMENT_METHODS.includes(method) || (isManual && manualDisponibles.includes(method));
+  const methodEnabled = pasarelas.includes(method) || (isManual && manualDisponibles.includes(method));
+  const isMercadoPago = method === "mercadopago";
   // PayPal no usa el formulario de datos: la dirección la elige el cliente en PayPal.
   const isPaypal = method === "paypal";
   // Billetera y tarjeta son las dos Stripe; cambia solo qué se muestra para pagar.
@@ -447,6 +453,17 @@ export function CheckoutForm() {
         setSetupCobro(intent.setup_future_usage ?? null);
         setStripeSecret(intent.client_secret);
 
+        return;
+      }
+
+      // Mercado Pago: el servidor cotiza el total en MXN al tipo de cambio del día y
+      // devuelve el checkout de Mercado Pago. El carrito se vacía antes de salir.
+      if (isMercadoPago) {
+        const mp = await createMercadoPagoPreference(pedido.id, pedido.access_token ?? undefined);
+        if (!mp.init_point) throw new Error(t("order_error"));
+        clearCart();
+        toast.success(t("redirecting_mercadopago"));
+        window.location.href = mp.init_point;
         return;
       }
 
@@ -833,7 +850,7 @@ export function CheckoutForm() {
           <PaymentMethods
             value={method}
             onChange={setMethod}
-            enabled={ENABLED_PAYMENT_METHODS}
+            enabled={pasarelas}
             manual={manualDisponibles}
             comingSoonLabel={t("payments_coming_soon")}
           />
