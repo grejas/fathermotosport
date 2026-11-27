@@ -17,7 +17,7 @@ export function PaymentBanner() {
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-3">
-          {["PayPal", "Stripe", "MercadoPago", "IBAN · SEPA", "USDT", "Bitcoin"].map((m) => (
+          {["PayPal", "Stripe", "MercadoPago", "USDT", "Bitcoin"].map((m) => (
             <span
               key={m}
               translate="no"

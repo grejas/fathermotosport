@@ -21,7 +21,6 @@ export function MarqueeBar() {
     { label: "PayPal", brand: true },
     { label: "Stripe", brand: true },
     { label: "MercadoPago", brand: true },
-    { label: "IBAN · SEPA", brand: true },
     { label: "USDT", brand: true },
     { label: "Bitcoin", brand: true },
     { label: `${tNav("helmets")} ECE 22.06` },
