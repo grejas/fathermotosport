@@ -1,11 +1,10 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Truck, ShieldCheck, Lock, MessageCircle } from "lucide-react";
+import { Truck, Lock, MessageCircle } from "lucide-react";
 
 const benefits = [
   { icon: Truck, titleKey: "free_shipping", descKey: "free_shipping_desc" },
-  { icon: ShieldCheck, titleKey: "warranty", descKey: "warranty_desc" },
   { icon: Lock, titleKey: "secure_payment", descKey: "secure_payment_desc" },
   { icon: MessageCircle, titleKey: "support", descKey: "support_desc" },
 ] as const;
@@ -15,7 +14,7 @@ export function FooterStrip() {
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {benefits.map((b) => {
           const Icon = b.icon;
           return (
