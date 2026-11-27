@@ -5,7 +5,7 @@
 # Antes de pisar routes/api.php verifica que el del servidor sea idéntico al de main;
 # si difiere, no toca nada. Guarda copia .bak-riesgo-alto.
 set -u
-COMMIT="a0aae2a66b6a794d56b4d3050ee7c1ceed1de8db"
+COMMIT="c2b0f825b2d75ec688aafe7a561f6ff6efea93b0"
 RAW="https://raw.githubusercontent.com/grejas/fathermotosport/$COMMIT/fathermotosport-api"
 APP="/home/u206357267/domains/fathermotosport.com/api"
 PHP="/opt/alt/php82/usr/bin/php"
