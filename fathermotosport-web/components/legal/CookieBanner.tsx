@@ -68,8 +68,10 @@ export function CookieBanner() {
       role="dialog"
       aria-modal="false"
       aria-labelledby="cookie-banner-title"
-      className="fixed inset-x-0 bottom-0 z-[80] p-3 sm:p-4"
+      className="fixed inset-x-0 bottom-0 z-[80] p-3 sm:p-4 lg:right-auto lg:max-w-xl"
     >
+      {/* En pantallas grandes va abajo a la izquierda: no tapa el resumen ni el botón de
+          pago del checkout, que están a la derecha. */}
       <div className="mx-auto max-w-3xl rounded-2xl border border-white/10 bg-brand-card/95 p-5 shadow-2xl shadow-black/60 backdrop-blur-md sm:p-6">
         <div className="flex items-start gap-3">
           <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-red/10 text-brand-red">

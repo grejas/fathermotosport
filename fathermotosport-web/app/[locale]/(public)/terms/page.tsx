@@ -64,10 +64,37 @@ const sections: LegalSection[] = [
     ],
   },
   {
+    heading: "Propiedad intelectual",
+    body: [
+      "Los textos, fotos, videos, logos y el diseño del sitio pertenecen a FatherMotoSport o a sus titulares y no pueden copiarse ni usarse con fines comerciales sin autorización. Las marcas de los fabricantes (cascos, ropa y accesorios) pertenecen a sus respectivos dueños y se mencionan solo para identificar los productos.",
+    ],
+  },
+  {
+    heading: "Edad mínima",
+    body: [
+      "Para comprar en el sitio debes ser mayor de edad según la ley de tu país (18 años en la mayoría). Si eres menor, la compra debe hacerla tu padre, madre o tutor.",
+    ],
+  },
+  {
     heading: "Ley aplicable",
     body: [
       "Estos términos se rigen por las leyes del Estado de Wyoming, EE.UU.",
       "Si compras como consumidor, esta elección no te priva de la protección que te dan las normas obligatorias del país donde vives (por ejemplo, el Código de Defensa del Consumidor de Brasil o la normativa de consumo de la Unión Europea).",
+    ],
+  },
+  {
+    heading: "Reclamos y resolución de disputas",
+    body: [
+      `Si tienes un problema con tu pedido, escríbenos primero a ${LEGAL.email}: respondemos en un máximo de 5 días hábiles y buscamos una solución en 30 días.`,
+      "Si no llegamos a un acuerdo, puedes acudir a los tribunales o a la autoridad de consumo del país donde vives. Nada en estos términos te obliga a renunciar a ese derecho ni a un arbitraje.",
+    ],
+  },
+  {
+    heading: "Otras disposiciones",
+    body: [
+      "Si alguna cláusula de estos términos resulta inválida, el resto sigue vigente.",
+      "Estos términos están redactados en español. Si te mostramos una traducción y hay diferencias, prevalece la versión en español, salvo que la ley de tu país disponga otra cosa.",
+      "Podemos actualizar estos términos; cada pedido se rige por la versión vigente el día en que lo hiciste, que queda registrada con tu aceptación en el checkout.",
     ],
   },
   {

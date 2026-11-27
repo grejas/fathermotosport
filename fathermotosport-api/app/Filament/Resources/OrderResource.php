@@ -126,8 +126,19 @@ class OrderResource extends Resource
                                 return '—';
                             }
 
-                            return "{$a->full_name} · {$a->phone}\n{$a->address_line}, {$a->city}, {$a->country}"
-                                .($a->reference ? " ({$a->reference})" : '');
+                            // Mismo orden que el checkout y el formato del proveedor:
+                            // nombre, dirección, ciudad, provincia/estado, CP, país, teléfono.
+                            $lineas = array_filter([
+                                $a->full_name,
+                                $a->address_line.($a->reference ? " ({$a->reference})" : ''),
+                                $a->city,
+                                $a->state,
+                                $a->postal_code ? "CP {$a->postal_code}" : null,
+                                $a->country,
+                                $a->phone,
+                            ]);
+
+                            return implode("\n", $lineas);
                         }),
                 ]),
 

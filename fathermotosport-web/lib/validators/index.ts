@@ -84,26 +84,56 @@ export function validateRegister(data: {
 }
 
 /**
+ * Países donde el código postal es obligatorio para entregar. En el resto (Bolivia,
+ * Centroamérica norte, Panamá, Paraguay, Venezuela, Rep. Dominicana) es opcional.
+ */
+const CP_OBLIGATORIO = new Set([
+  "US", "CA", "MX", "AR", "CL", "CO", "PE", "UY", "EC", "CR",
+  "ES", "PT", "FR", "IT", "DE", "GB", "BE", "NL", "CH", "AT",
+  "SE", "NO", "DK", "FI", "IE", "PL", "CZ", "HU", "RO", "GR",
+]);
+
+export function codigoPostalObligatorio(country: string): boolean {
+  return CP_OBLIGATORIO.has(country.toUpperCase());
+}
+
+/** Formato del código postal: estricto en EE.UU. y Canadá, flexible en el resto. */
+function codigoPostalValido(country: string, cp: string): boolean {
+  const v = cp.trim();
+  if (country === "US") return /^\d{5}(-\d{4})?$/.test(v);
+  if (country === "CA") return /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/.test(v);
+  return /^[A-Za-z0-9][A-Za-z0-9 -]{1,9}$/.test(v);
+}
+
+/**
  * Errores por campo (no un único "full_name"), para poder señalar exactamente
  * cuál falta en el formulario. email undefined = el cliente tiene sesión iniciada
- * y su email sale de la cuenta.
+ * y su email sale de la cuenta. `t` traduce las claves del namespace checkout.
  */
-export function validateCheckout(data: {
-  first_name: string;
-  last_name?: string;
-  email?: string;
-  phone: string;
-  country: string;
-  city: string;
-  address_line: string;
-}): FieldErrors {
+export function validateCheckout(
+  data: {
+    first_name: string;
+    last_name?: string;
+    email?: string;
+    phone: string;
+    country: string;
+    city: string;
+    address_line: string;
+    postal_code?: string;
+  },
+  t: (key: string) => string
+): FieldErrors {
   const errors: FieldErrors = {};
-  if (!minLength(data.first_name, 1)) errors.first_name = "Nombre obligatorio.";
-  if (data.email !== undefined && !isEmail(data.email)) errors.email = "Email válido obligatorio.";
-  if (!minLength(data.phone, 1)) errors.phone = "Teléfono obligatorio.";
-  if (!minLength(data.country, 1)) errors.country = "Selecciona un país.";
-  if (!minLength(data.city, 1)) errors.city = "Ciudad obligatoria.";
-  if (!minLength(data.address_line, 1)) errors.address_line = "Dirección obligatoria.";
+  const cp = data.postal_code ?? "";
+  if (!minLength(data.first_name, 1)) errors.first_name = t("err_first_name");
+  if (data.email !== undefined && !isEmail(data.email)) errors.email = t("err_email");
+  if (!minLength(data.address_line, 1)) errors.address_line = t("err_address");
+  if (!minLength(data.city, 1)) errors.city = t("err_city");
+  if (codigoPostalObligatorio(data.country) && !minLength(cp, 1)) errors.postal_code = t("err_postal_required");
+  else if (minLength(cp, 1) && !codigoPostalValido(data.country, cp)) errors.postal_code = t("err_postal_invalid");
+  if (!minLength(data.country, 1)) errors.country = t("err_country");
+  // Solo el prefijo ("+591 ") no cuenta como teléfono.
+  if (data.phone.replace(/\D/g, "").length < 7) errors.phone = t("err_phone");
   return errors;
 }
 
