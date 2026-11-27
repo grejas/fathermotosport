@@ -36,6 +36,7 @@ const socialIcons: { network: SocialNetwork; label: string; path: string }[] = [
  */
 export function Footer({ categories, settings }: { categories: MenuCategory[]; settings: StoreSettings }) {
   const t = useTranslations("footer");
+  const tW = useTranslations("withdrawal");
   const tNav = useTranslations("nav");
   const tWhatsapp = useTranslations("whatsapp");
 
@@ -134,6 +135,12 @@ export function Footer({ categories, settings }: { categories: MenuCategory[]; s
           </span>
           <Link href="/privacy" className="transition hover:text-brand-red">
             {t("privacy")}
+          </Link>
+          <span aria-hidden className="hidden sm:inline">
+            ·
+          </span>
+          <Link href="/withdrawal" className="transition hover:text-brand-red">
+            {tW("footer_link")}
           </Link>
         </div>
         <p className="mt-2">{t("operated_by")}</p>
