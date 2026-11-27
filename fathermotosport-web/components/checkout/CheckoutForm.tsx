@@ -648,6 +648,13 @@ export function CheckoutForm() {
               error={errors.address_line}
             />
             <Input
+              label={t("reference")}
+              name="reference"
+              placeholder={t("reference_placeholder")}
+              value={form.reference}
+              onChange={(e) => actualizar("reference", e.target.value)}
+            />
+            <Input
               label={t("city")}
               name="city"
               autoComplete="address-level2"
