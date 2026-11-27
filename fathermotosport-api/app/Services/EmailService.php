@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Mail\ConfirmarDatosEnvioMail;
 use App\Mail\EmailVerificationCodeMail;
 use App\Mail\OrderConfirmedMail;
 use App\Mail\OrderReceivedMail;
@@ -48,6 +49,17 @@ class EmailService
         }
 
         $this->dispatch($email, new OrderConfirmedMail($order));
+    }
+
+    /**
+     * Le pide al cliente confirmar visor, talla y dirección antes de despachar.
+     * Sale de la casilla de ventas (config mail.ventas). Devuelve false si no se pudo.
+     */
+    public function sendConfirmarDatosEnvio(Order $order, ?string $nota = null): bool
+    {
+        $email = $order->emailDelCliente();
+
+        return $email ? $this->dispatch($email, new ConfirmarDatosEnvioMail($order, $nota)) : false;
     }
 
     /**

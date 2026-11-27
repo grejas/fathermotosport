@@ -11,7 +11,6 @@ const METODOS = [
   "Visa · Mastercard · Amex",
   "Apple Pay · Google Pay",
   ...(isGatewayAdvertised("mercadopago") ? ["MercadoPago"] : []),
-  "IBAN · SEPA",
   "USDT",
   "Bitcoin",
 ];

@@ -115,4 +115,13 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    /*
+    | Correos que escribe el equipo a un cliente (no los automáticos): salen y se
+    | responden en la casilla de ventas, nunca desde un correo personal.
+    */
+    'ventas' => [
+        'address' => env('MAIL_VENTAS_ADDRESS', 'ventas@fathermotosport.com'),
+        'name' => env('MAIL_VENTAS_NAME', 'FatherMotoSport Ventas'),
+    ],
+
 ];

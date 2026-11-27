@@ -25,7 +25,6 @@ export function MarqueeBar() {
     { label: "Google Pay", brand: true },
     { label: "Visa · Mastercard", brand: true },
     ...(isGatewayAdvertised("mercadopago") ? [{ label: "MercadoPago", brand: true }] : []),
-    { label: "IBAN · SEPA", brand: true },
     { label: "USDT", brand: true },
     { label: "Bitcoin", brand: true },
     { label: `${tNav("helmets")} ECE 22.06` },

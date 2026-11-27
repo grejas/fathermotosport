@@ -19,7 +19,9 @@ export const ENABLED_PAYMENT_METHODS: readonly PaymentMethod[] = ["stripe_wallet
  * Transferencia SEPA, transferencia en EE.UU. (ACH / wire, cuenta Mercury) y cripto. Se ofrecen solo si el panel tiene sus datos completos
  * (StoreSettings.manualPaymentMethods); el pago lo confirma una persona.
  */
-export const MANUAL_PAYMENT_METHODS: readonly ManualPaymentMethod[] = ["sepa", "us_bank", "binance_pay", "usdt_trc20", "usdt_bep20", "btc", "btc_bep20"];
+// SEPA retirado del checkout (26-nov-2026, pedido de Gerson). El tipo "sepa" se mantiene para
+// que los pedidos antiguos sigan mostrando sus instrucciones.
+export const MANUAL_PAYMENT_METHODS: readonly ManualPaymentMethod[] = ["us_bank", "binance_pay", "usdt_trc20", "usdt_bep20", "btc", "btc_bep20"];
 
 export const CRYPTO_PAYMENT_METHODS: readonly ManualPaymentMethod[] = ["binance_pay", "usdt_trc20", "usdt_bep20", "btc", "btc_bep20"];
 
