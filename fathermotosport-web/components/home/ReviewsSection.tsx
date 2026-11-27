@@ -26,6 +26,8 @@ export function ReviewsSection() {
   // página a la API.
   const { data: reviewsData } = useReviews(1);
   const [isExpanded, setIsExpanded] = useState(false);
+  // El formulario ocupaba media pantalla en la portada: ahora se abre con un botón.
+  const [showForm, setShowForm] = useState(false);
 
   const reviews = reviewsData?.data ?? [];
   const hasReviews = reviews.length > 0;
@@ -52,13 +54,22 @@ export function ReviewsSection() {
       {hasReviews ? (
         <>
           {summary && summary.total > 0 && <RatingSummary summary={summary} />}
-          <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {/* Celular: carrusel horizontal (antes eran 9 tarjetas apiladas, ~4.000 px, el 40 %
+              de la portada). Tablet y escritorio: la grilla de siempre. */}
+          <div className="-mx-4 mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] md:hidden">
+            {reviews.slice(0, INITIAL_VISIBLE_REVIEWS).map((r) => (
+              <div key={r.id} className="w-[85%] shrink-0 snap-center">
+                <ReviewCard review={r} />
+              </div>
+            ))}
+          </div>
+          <div className="mt-8 hidden grid-cols-2 gap-4 md:grid lg:grid-cols-3">
             {visibleReviews.map((r) => (
               <ReviewCard key={r.id} review={r} />
             ))}
           </div>
           {canToggle && (
-            <div className="mt-8 text-center">
+            <div className="mt-8 hidden text-center md:block">
               <Button variant="glass" size="sm" onClick={handleToggle}>
                 {isExpanded ? t("show_less") : t("show_more")}
               </Button>
@@ -72,10 +83,20 @@ export function ReviewsSection() {
       )}
 
       <div className="mx-auto mt-10 max-w-xl border-t border-white/10 pt-8">
-        <h3 className={`${bebasNeue.className} mb-4 text-center text-2xl uppercase tracking-wide text-brand-red`}>
-          {t("leave_review")}
-        </h3>
-        <ReviewForm />
+        {showForm ? (
+          <>
+            <h3 className={`${bebasNeue.className} mb-4 text-center text-2xl uppercase tracking-wide text-brand-red`}>
+              {t("leave_review")}
+            </h3>
+            <ReviewForm />
+          </>
+        ) : (
+          <div className="text-center">
+            <Button variant="glass" size="sm" onClick={() => setShowForm(true)}>
+              {t("leave_review")}
+            </Button>
+          </div>
+        )}
       </div>
     </section>
   );

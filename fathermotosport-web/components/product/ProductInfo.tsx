@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Heart, Minus, Plus, Ruler, ShieldCheck, Star, Truck, MessageCircle, Award } from "lucide-react";
 
@@ -75,6 +75,8 @@ export function ProductInfo({
     () => sizes.find((s) => variants.some((v) => v.size === s && v.stock > 0)) ?? sizes[0] ?? null
   );
   const [qty, setQty] = useState(1);
+  // ¿Eligió la talla a mano? La barra fija no agrega una talla que el cliente no vio.
+  const [sizeTouched, setSizeTouched] = useState(false);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
 
   // Cascos: el cliente elige el color de visor y viaja con el pedido. Los visores
@@ -107,7 +109,20 @@ export function ProductInfo({
   const selectSize = (s: string) => {
     setSize(s);
     setQty(1);
+    setSizeTouched(true);
   };
+
+  // Barra fija de compra (solo celular): aparece cuando el botón principal sale de pantalla.
+  const ctaRef = useRef<HTMLDivElement>(null);
+  const sizesRef = useRef<HTMLDivElement>(null);
+  const [ctaVisible, setCtaVisible] = useState(true);
+  useEffect(() => {
+    const el = ctaRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([e]) => setCtaVisible(e.isIntersecting), { threshold: 0 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   const addItem = useCartStore((s) => s.addItem);
   const toggleFav = useFavoritesStore((s) => s.toggle);
@@ -211,7 +226,7 @@ export function ProductInfo({
       )}
 
       {sizes.length > 0 && (
-        <div>
+        <div ref={sizesRef} className="scroll-mt-24">
           <p className="mb-2 text-sm font-semibold text-brand-white">{optionsAreSizes ? t("size") : t("design")}</p>
           <div className="flex flex-wrap gap-2">
             {sizes.map((s) => {
@@ -323,7 +338,7 @@ export function ProductInfo({
       )}
 
       {(!soldOut || isAuth) && (
-        <div className="flex flex-col gap-3 sm:flex-row">
+        <div ref={ctaRef} className="flex flex-col gap-3 sm:flex-row">
           {!soldOut && (
             <Button variant="primary" className="flex-1" onClick={handleAdd} disabled={!canAdd}>
               {t("add_to_cart")}
@@ -338,6 +353,53 @@ export function ProductInfo({
               {isFav ? "Guardado" : "Favoritos"}
             </Button>
           )}
+        </div>
+      )}
+
+      {!soldOut && (
+        <div
+          aria-hidden={ctaVisible}
+          className={cn(
+            "fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-brand-carbon/95 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur transition-transform duration-300 lg:hidden",
+            ctaVisible ? "pointer-events-none translate-y-full" : "translate-y-0"
+          )}
+        >
+          <div className="mx-auto flex max-w-7xl items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs text-brand-muted">{product.name}</p>
+              <p className="flex items-baseline gap-2">
+                <span className="text-lg font-extrabold text-brand-white">{formatPrice(finalPrice(product))}</span>
+                {hasDiscount(product) && (
+                  <span className="text-xs text-brand-muted line-through">{formatPrice(product.price)}</span>
+                )}
+              </p>
+            </div>
+            {sizes.length > 1 && !sizeTouched ? (
+              <Button
+                variant="primary"
+                tabIndex={ctaVisible ? -1 : 0}
+                onClick={() => sizesRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+              >
+                {optionsAreSizes ? t("choose_size") : t("choose_design")}
+              </Button>
+            ) : needsVisor && !selectedVisor ? (
+              // Cascos: sin color de visor no se puede agregar; la barra lleva al selector.
+              <Button
+                variant="primary"
+                tabIndex={ctaVisible ? -1 : 0}
+                onClick={() =>
+                  document.getElementById("visor-picker")?.scrollIntoView({ behavior: "smooth", block: "center" })
+                }
+              >
+                {t("visor_color")}
+              </Button>
+            ) : (
+              <Button variant="primary" tabIndex={ctaVisible ? -1 : 0} onClick={handleAdd} disabled={!canAdd}>
+                {t("add_to_cart")}
+                {sizes.length > 1 && size ? ` · ${size}` : ""}
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
