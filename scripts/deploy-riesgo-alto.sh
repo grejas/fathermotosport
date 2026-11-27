@@ -5,7 +5,7 @@
 # Antes de pisar routes/api.php verifica que el del servidor sea idéntico al de main;
 # si difiere, no toca nada. Guarda copia .bak-riesgo-alto.
 set -u
-COMMIT="c2b0f825b2d75ec688aafe7a561f6ff6efea93b0"
+COMMIT="0a65588ad45b364a95b522407882ac304d1ff0af"
 RAW="https://raw.githubusercontent.com/grejas/fathermotosport/$COMMIT/fathermotosport-api"
 APP="/home/u206357267/domains/fathermotosport.com/api"
 PHP="/opt/alt/php82/usr/bin/php"
@@ -23,6 +23,7 @@ NUEVOS=(
   database/migrations/2026_11_27_100001_returns_policy_right_of_withdrawal.php
   database/migrations/2026_11_27_100002_create_withdrawal_requests_table.php
   database/migrations/2026_11_27_100003_clear_wrong_certifications.php
+  database/migrations/2026_11_27_100004_remove_unconfirmed_dot.php
   lang/en/desistimiento.php
   lang/es/desistimiento.php
   lang/pt/desistimiento.php
@@ -59,5 +60,6 @@ $PHP artisan tinker --execute='
 echo "Tabla withdrawal_requests: ".(Schema::hasTable("withdrawal_requests") ? "OK" : "FALTA").PHP_EOL;
 $s = App\Models\ShippingReturnsSetting::find(1);
 echo "Política con 14 días: ".(str_contains((string) ($s?->page_body["es"] ?? ""), "14 días") ? "OK" : "revisar").PHP_EOL;
+echo "Productos con DOT: ".App\Models\Product::where("certification", "like", "%DOT%")->count().PHP_EOL;
 echo "Productos no-casco con norma de casco: ".App\Models\Product::whereNotNull("certification")->whereHas("category", fn($q) => $q->where("slug", "!=", "cascos"))->where(fn($q) => $q->where("certification", "like", "%ECE%")->orWhere("certification", "like", "%DOT%"))->count().PHP_EOL;
 '
