@@ -48,6 +48,10 @@ class StoreOrderRequest extends FormRequest
             // Idioma de la tienda al comprar. No se rechaza uno desconocido (un idioma no
             // vale perder una venta): OrderService lo descarta y queda el de respaldo.
             'locale' => ['nullable', 'string', 'max:5'],
+            // Casilla de Términos y Privacidad del checkout. "sometimes": una web vieja en caché
+            // que no la manda no pierde la venta; la web nueva no deja comprar sin marcarla.
+            'terms_accepted' => ['sometimes', 'accepted'],
+            'terms_version' => ['nullable', 'string', 'max:20'],
         ];
     }
 }

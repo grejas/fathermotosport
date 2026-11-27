@@ -83,7 +83,7 @@
     "no_featured": "Ainda não há produtos em destaque.",
     "blog_title": "Últimas do blog",
     "blog_view_all": "Ver tudo o blog",
-    "pay_in_installments": "Pague em parcelas · 100% seguro",
+    "pay_in_installments": "Pagamento 100% seguro · várias formas de pagamento",
     "payment_desc": "Aceitamos cartões de crédito e débito (Visa, Mastercard, American Express), Apple Pay, Google Pay, Amazon Pay, transferência bancária nos EUA e cripto (USDT, USDC, Bitcoin e Binance Pay).",
     "view_payment_methods": "Ver métodos de pagamento"
   },
@@ -174,7 +174,7 @@
   "checkout": {
     "shipping_address": "Endereço de entrega",
     "payment_method": "Método de pagamento",
-    "confirm_order": "Confirmar pedido",
+    "confirm_order": "Comprar e pagar",
     "order_summary": "Resumo",
     "your_data": "Seus dados",
     "first_name": "Nome",
@@ -260,7 +260,7 @@
     "pm_crypto_network_hint": "Use a mesma rede ao sacar da sua exchange. A TRC20 costuma ter a menor taxa.",
     "pm_sepa_note": "Ao confirmar, você verá o valor exato em euros, o IBAN e a referência. Você tem 72 horas para transferir; preparamos seu pedido quando o pagamento for creditado.",
     "pm_crypto_note": "Ao confirmar, você verá o valor exato, o endereço e um QR code. USDT: 24 horas para pagar. BTC: o preço fica travado por 2 horas.",
-    "manual_continue": "Confirmar e ver dados de pagamento",
+    "manual_continue": "Comprar e ver dados de pagamento",
     "pm_binance_hint": "Pague pelo app da Binance escaneando nosso QR: sem escolher rede e sem taxa de saque.",
     "pm_binance_note": "Ao confirmar, você verá o valor, nosso QR do Binance Pay e um botão para abrir o app. Você pode pagar com USDT, USDC ou BTC. Você tem 24 horas.",
     "pm_us_bank": "Transferência bancária (EUA)",
@@ -270,7 +270,9 @@
     "pm_stripe_wallet_desc": "Apple Pay, Google Pay ou Amazon Pay: pague com um toque",
     "wallet_title": "Pagar com carteira digital",
     "wallet_unavailable": "Este dispositivo não tem Apple Pay, Google Pay nem Amazon Pay configurados. Feche e escolha «Cartão de débito ou crédito».",
-    "import_duties": "Envio internacional para {country}: o preço não inclui impostos nem tributos de importação. Se a alfândega os cobrar no recebimento, quem recebe o pedido paga."
+    "import_duties": "Envio internacional para {country}: o preço não inclui impostos nem tributos de importação. Se a alfândega os cobrar no recebimento, quem recebe o pedido paga.",
+    "terms_accept": "Li e aceito os <terms>Termos e Condições</terms> e a <privacy>Política de Privacidade</privacy>. Sei que posso desistir da compra conforme a <returns>Política de devoluções</returns>.",
+    "terms_required": "Para continuar, aceite os Termos e Condições e a Política de Privacidade."
   },
   "pay_pending": {
     "title": "Conclua o pagamento do seu pedido",
@@ -796,7 +798,7 @@
     "analytics_title": "Análise",
     "analytics_text": "Google Analytics: quantas pessoas visitam a loja e quais páginas veem.",
     "marketing_title": "Marketing",
-    "marketing_text": "Pixels da Meta (Facebook e Instagram) e do TikTok: medir anúncios e mostrar publicidade personalizada.",
-    "footer_link": "Preferências de cookies"
+    "marketing_text": "Pixels da Meta (Facebook e Instagram) e do TikTok: medir anúncios e mostrar publicidade personalizada. Desativar equivale a pedir que não vendamos nem compartilhemos seus dados pessoais. Se o seu navegador enviar o sinal Global Privacy Control, nós o respeitamos automaticamente.",
+    "footer_link": "Cookies e suas opções de privacidade"
   }
 }

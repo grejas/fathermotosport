@@ -150,6 +150,8 @@ class OrderService
                 'payment_method' => $data['payment_method'],
                 'country' => $address->country,
                 'locale' => Order::idiomaValido($data['locale'] ?? null),
+                'terms_accepted_at' => ! empty($data['terms_accepted']) ? now() : null,
+                'terms_version' => ! empty($data['terms_accepted']) ? ($data['terms_version'] ?? null) : null,
                 'notes' => $data['notes'] ?? null,
             ] + ($cotizacion
                 ? ManualPaymentService::camposDelPedido($data['payment_method'], round($total, 2), $cotizacion)
