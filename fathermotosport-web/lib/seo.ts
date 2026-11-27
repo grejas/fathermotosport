@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { unstable_cache } from "next/cache";
+import imageLoader from "@/lib/imageLoader";
 import type { PaginatedResponse, Post, Product } from "@/lib/types";
 import { finalPrice } from "@/lib/utils";
 
@@ -45,6 +47,39 @@ export function absoluteImage(url: string | null | undefined): string | undefine
   } catch {
     return url;
   }
+}
+
+/** Por encima de esto WhatsApp suele mostrar el link sin foto. */
+const OG_MAX_BYTES = 300 * 1024;
+const OG_WIDTH = 1280;
+
+/** Peso de la foto original (HEAD), cacheado 1 día: no se pregunta en cada visita. */
+const pesoImagen = unstable_cache(
+  async (url: string): Promise<number | null> => {
+    try {
+      const res = await fetch(url, { method: "HEAD" });
+      const largo = Number(res.headers.get("content-length"));
+      return res.ok && largo > 0 ? largo : null;
+    } catch {
+      return null;
+    }
+  },
+  ["og-image-peso"],
+  { revalidate: 86_400, tags: [PRODUCTS_TAG] }
+);
+
+/**
+ * Foto para compartir (og:image). Si la original pesa más de 300 KB (hay PNG de 2,4 MB),
+ * se usa la versión WebP de 1280 px que genera la API (/storage/v/1280/...), que pesa
+ * ~10 veces menos. Las livianas quedan tal cual (JPEG/PNG: máxima compatibilidad).
+ */
+export async function ogImage(url: string | null | undefined): Promise<string | undefined> {
+  const original = absoluteImage(url);
+  if (!original) return undefined;
+  const liviana = imageLoader({ src: original, width: OG_WIDTH });
+  if (liviana === original) return original;
+  const peso = await pesoImagen(original);
+  return peso !== null && peso > OG_MAX_BYTES ? liviana : original;
 }
 
 /** Texto plano corto para descripciones (la descripción del producto viene en HTML). */
