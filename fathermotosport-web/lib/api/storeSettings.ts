@@ -17,6 +17,8 @@ export interface StoreSettingsApi {
   social: Partial<Record<SocialNetwork, string | null>>;
   /** Transferencia / cripto configurados en el panel. */
   payment_methods?: Partial<Record<ManualPaymentMethod, boolean>>;
+  /** Pasarelas con credenciales cargadas en el servidor. */
+  gateways?: { mercadopago?: boolean };
 }
 
 /**
@@ -30,6 +32,8 @@ export interface StoreSettings {
   social: Record<SocialNetwork, string | null>;
   /** Métodos manuales que el checkout puede ofrecer (con sus datos completos en el panel). */
   manualPaymentMethods: ManualPaymentMethod[];
+  /** Mercado Pago México listo para cobrar (Access Token cargado en la API). */
+  mercadopago: boolean;
 }
 
 /** Mismos dominios que StoreConfig::SOCIAL_DOMAINS (más su variante www.). */
@@ -52,6 +56,7 @@ export const FALLBACK_STORE_SETTINGS: StoreSettings = {
   social: { facebook: null, instagram: null, youtube: null, tiktok: null },
   // Sin API no se sabe si están configurados: no se ofrecen.
   manualPaymentMethods: [],
+  mercadopago: false,
 };
 
 /** El enlace solo se pinta si es https y del dominio de esa red (la API ya lo valida). */
@@ -91,6 +96,7 @@ export function resolveStoreSettings(api: StoreSettingsApi | null): StoreSetting
       SOCIAL_NETWORKS.map((network) => [network, safeSocialUrl(network, api.social?.[network])])
     ) as Record<SocialNetwork, string | null>,
     manualPaymentMethods: MANUAL_PAYMENT_METHODS.filter((m) => api.payment_methods?.[m] === true),
+    mercadopago: api.gateways?.mercadopago === true,
   };
 }
 

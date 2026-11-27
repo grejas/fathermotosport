@@ -137,3 +137,27 @@ export async function payUpsellWithSavedCard(
   );
   return data;
 }
+
+export interface MercadoPagoCreateResponse {
+  preference_id: string;
+  init_point: string | null;
+  /** Total a cobrar en pesos mexicanos, al tipo de cambio del día. */
+  amount: string;
+  currency: "MXN";
+}
+
+/**
+ * Crea la preferencia de Mercado Pago México para un pedido ya creado. El servidor fija
+ * el total en MXN con el tipo de cambio del día y devuelve la URL del checkout.
+ */
+export async function createMercadoPagoPreference(
+  orderId: string,
+  accessToken?: string
+): Promise<MercadoPagoCreateResponse> {
+  const { data } = await apiClient.post<MercadoPagoCreateResponse>(
+    "/payments/mercadopago/create",
+    { order_id: orderId },
+    orderAuth(accessToken)
+  );
+  return data;
+}

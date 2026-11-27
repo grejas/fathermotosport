@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Services\FrontendRevalidator;
 use App\Services\Payments\ManualPaymentService;
+use App\Services\Payments\MercadoPagoService;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
@@ -135,7 +136,7 @@ class StoreConfig extends Model
      * otro campo de store_config. Vacío => null; una red con un enlace que no pasa la
      * validación también llega como null, para que la web no la muestre.
      *
-     * @return array{store_name: ?string, email: ?string, phone: ?string, whatsapp: ?string, social: array<string, ?string>, payment_methods: array<string, bool>}
+     * @return array{store_name: ?string, email: ?string, phone: ?string, whatsapp: ?string, social: array<string, ?string>, payment_methods: array<string, bool>, gateways: array<string, bool>}
      */
     public static function datosPublicos(): array
     {
@@ -158,6 +159,8 @@ class StoreConfig extends Model
                 // Solo si cada método está configurado; los datos para pagar no salen
                 // acá, van en el pedido (ManualPaymentService::instrucciones).
                 'payment_methods' => app(ManualPaymentService::class)->disponibles($config),
+                // Pasarelas que dependen de credenciales del .env (no del panel).
+                'gateways' => ['mercadopago' => MercadoPagoService::configurado()],
             ];
         });
     }

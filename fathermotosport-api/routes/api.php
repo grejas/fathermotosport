@@ -143,7 +143,12 @@ Route::prefix('v1')->group(function () {
         Route::get('/payments/stripe/config', [PaymentController::class, 'stripeConfig']);
     });
 
-    // Resto de pagos (mercadopago) — DESHABILITADOS hasta contar con credenciales.
+    // Mercado Pago México: cobra en MXN con el tipo de cambio del día. Sin Access Token
+    // en el .env responde 503 y la web no muestra el botón.
+    Route::post('/payments/mercadopago/create', [PaymentController::class, 'mercadopagoCreate'])
+        ->middleware('throttle:10,1');
+
+    // Resto de pagos — DESHABILITADOS.
     // Devuelven un 503 limpio dirigiendo al cliente a WhatsApp.
     Route::any('payments/{any}', function () {
         return response()->json([
@@ -152,9 +157,6 @@ Route::prefix('v1')->group(function () {
             'whatsapp' => '+59168736384',
         ], 503);
     })->where('any', '.*');
-
-    // Rutas de pago pendientes (reactivar cuando existan credenciales):
-    // Route::post('/payments/mercadopago/create', [PaymentController::class, 'mercadopagoCreate']);
 
     // Cupones
     Route::post('/coupons/validate', [CouponController::class, 'validate']);
