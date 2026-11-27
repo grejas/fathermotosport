@@ -1,4 +1,5 @@
 import { faAmazonPay, faApplePay, faGooglePay } from "@fortawesome/free-brands-svg-icons";
+import { ENABLED_PAYMENT_METHODS } from "@/lib/data/paymentMethods";
 import type { IconDefinition } from "@fortawesome/free-brands-svg-icons";
 import {
   siAmericanexpress,
@@ -12,7 +13,6 @@ import {
 } from "simple-icons";
 import type { SimpleIcon } from "simple-icons";
 import { cn } from "@/lib/utils";
-import { isGatewayAdvertised } from "@/lib/data/paymentMethods";
 
 /**
  * Marcas de los medios de pago. No se dibujan a mano: los trazos vienen de paquetes
@@ -48,12 +48,6 @@ const RESTO: Marca[] = [
   { id: "bitcoin", name: "Bitcoin", si: siBitcoin, label: "Bitcoin" },
   { id: "binance_pay", name: "Binance Pay", si: siBinance, label: "Binance Pay" },
 ];
-
-/** PayPal y MercadoPago solo se muestran si el checkout los tiene encendidos. */
-function seAnuncia(m: Marca): boolean {
-  if (m.id === "paypal" || m.id === "mercadopago") return isGatewayAdvertised(m.id);
-  return true;
-}
 
 function Simbolo({ marca, className }: { marca: Marca; className?: string }) {
   if (marca.fa) {
@@ -91,11 +85,20 @@ function Chip({ marca }: { marca: Marca }) {
   );
 }
 
+/**
+ * Medios que la tienda no cobra hoy: no se muestran en el pie para no anunciar un pago que
+ * no existe (publicidad engañosa). PayPal vuelve solo cuando esté en ENABLED_PAYMENT_METHODS.
+ */
+const SIN_ACTIVAR: string[] = [
+  ...((ENABLED_PAYMENT_METHODS as readonly string[]).includes("paypal") ? [] : ["paypal"]),
+  "mercadopago",
+];
+
 /** Todos los medios de pago (footer). */
 export function PaymentLogos({ className }: { className?: string }) {
   return (
     <ul className={cn("flex flex-wrap gap-2", className)} translate="no" aria-label="Medios de pago">
-      {[...BILLETERAS, ...RESTO.filter(seAnuncia)].map((m) => (
+      {[...BILLETERAS, ...RESTO].filter((m) => !SIN_ACTIVAR.includes(m.id)).map((m) => (
         <Chip key={m.id} marca={m} />
       ))}
     </ul>

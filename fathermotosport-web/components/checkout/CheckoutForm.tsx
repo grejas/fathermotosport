@@ -27,6 +27,7 @@ import { whatsappUrl } from "@/lib/api/storeSettings";
 import { useStoreSettings } from "@/components/layout/StoreSettingsProvider";
 import { validateCheckout, hasErrors, isEmail, type FieldErrors } from "@/lib/validators";
 import { cn, formatPrice } from "@/lib/utils";
+import { deliveryRange, formatDeliveryDate } from "@/lib/utils/deliveryDates";
 import type { Order, PaymentMethod, ShippingQuote } from "@/lib/types";
 import toast from "react-hot-toast";
 import {
@@ -688,12 +689,24 @@ export function CheckoutForm() {
                       <span className="block text-sm font-semibold text-brand-white">
                         {option.method_name}
                       </span>
-                      {option.estimated_days_min !== null && option.estimated_days_max !== null && (
+                      {option.estimated_days_min !== null && option.estimated_days_max !== null ? (
+                        (() => {
+                          const rango = deliveryRange(
+                            option.estimated_days_min,
+                            option.estimated_days_max
+                          );
+                          return (
+                            <span className="block text-xs text-brand-muted">
+                              {t("shipping_days", {
+                                from: formatDeliveryDate(rango.from, locale),
+                                to: formatDeliveryDate(rango.to, locale),
+                              })}
+                            </span>
+                          );
+                        })()
+                      ) : (
                         <span className="block text-xs text-brand-muted">
-                          {t("shipping_days", {
-                            min: option.estimated_days_min,
-                            max: option.estimated_days_max,
-                          })}
+                          {t("shipping_days_unknown")}
                         </span>
                       )}
                     </span>
@@ -708,6 +721,10 @@ export function CheckoutForm() {
                   </label>
                 );
               })}
+              <p className="text-xs leading-relaxed text-brand-muted">{t("shipping_from_china")}</p>
+              <p className="rounded-lg border border-brand-gold/20 bg-brand-gold/5 px-3 py-2 text-xs leading-relaxed text-brand-gold">
+                {t("import_duties", { country: countryLabel })}
+              </p>
             </div>
           ) : (
             <div className="rounded-xl border border-brand-gold/30 bg-brand-gold/5 p-4">

@@ -13,6 +13,7 @@ import { CartDrawer } from "@/components/cart/CartDrawer";
 import { ProfileCompletionModal } from "@/components/account/ProfileCompletionModal";
 import { StoreSettingsProvider } from "@/components/layout/StoreSettingsProvider";
 import { AnalyticsScripts } from "@/components/analytics/AnalyticsScripts";
+import { CookieBanner } from "@/components/legal/CookieBanner";
 import { PromoPopup } from "@/components/marketing/PromoPopup";
 import { getMenuCategories } from "@/lib/api/categories";
 import { getStoreSettings } from "@/lib/api/storeSettings";
@@ -78,6 +79,8 @@ export default async function RootLayout({
               <Suspense fallback={null}>
                 <AnalyticsScripts />
               </Suspense>
+              {/* Consentimiento de cookies: sin él no se carga ningún píxel ni GA4. */}
+              <CookieBanner />
               {/* Cupón de 10–25 % a cambio del email (sale al 40 % de scroll, al intentar salir o a los 25 s; nunca en el pago). */}
               <PromoPopup />
             </StoreSettingsProvider>

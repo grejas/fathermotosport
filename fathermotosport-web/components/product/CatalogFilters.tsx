@@ -22,7 +22,7 @@ const types = [
 ] as const;
 const certs = [
   { value: "ECE 22.06", key: "ece" },
-  { value: "DOT", key: "dot" },
+  // "DOT" retirado (27-nov-2026): ningún casco lo anuncia hasta confirmar la etiqueta.
 ] as const;
 
 interface Props {

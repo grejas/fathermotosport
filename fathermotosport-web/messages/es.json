@@ -70,7 +70,7 @@
   "home": {
     "hero_title": "Equípate como un",
     "hero_highlight": "campeón de pista",
-    "hero_desc": "Cascos, guantes y protección premium con certificación internacional.",
+    "hero_desc": "Cascos, guantes y protección premium de las mejores marcas. La certificación de cada modelo figura en su ficha.",
     "view_catalog": "Ver catálogo",
     "view_3d": "Ver en 3D",
     "discover": "DESCUBRE MÁS PRODUCTOS",
@@ -123,7 +123,8 @@
     "secure_payment": "Pago seguro",
     "secure_payment_desc": "Encriptación SSL",
     "support": "Soporte",
-    "support_desc": "WhatsApp directo"
+    "support_desc": "WhatsApp directo",
+    "certified_helmets": "Cascos homologados"
   },
   "footer": {
     "description": "Equipamiento premium para motociclistas. Cascos, guantes, botas y más, con envío gratis.",
@@ -204,7 +205,9 @@
     "free": "Gratis",
     "shipping_calculating": "Calculando envío…",
     "shipping_weight": "Peso del pedido: {weight} kg",
-    "shipping_days": "Entrega estimada: {min}-{max} días",
+    "shipping_days": "Llega entre el {from} y el {to}",
+    "shipping_days_unknown": "Plazo a confirmar por WhatsApp",
+    "shipping_from_china": "Plazo estimado en días hábiles (lunes a viernes). La aduana de tu país puede sumar demoras.",
     "shipping_unavailable": "Todavía no tenemos una tarifa de envío para {country}. Escribinos por WhatsApp y coordinamos el envío.",
     "shipping_to_coordinate": "A coordinar",
     "pay_with_paypal": "Pagar con PayPal",
@@ -268,7 +271,8 @@
     "pm_stripe_wallet": "Billetera digital",
     "pm_stripe_wallet_desc": "Apple Pay, Google Pay o Amazon Pay: pagas con un toque",
     "wallet_title": "Pagar con billetera digital",
-    "wallet_unavailable": "Este dispositivo no tiene Apple Pay, Google Pay ni Amazon Pay listos. Cierra y elige «Tarjeta de débito o crédito»."
+    "wallet_unavailable": "Este dispositivo no tiene Apple Pay, Google Pay ni Amazon Pay listos. Cierra y elige «Tarjeta de débito o crédito».",
+    "import_duties": "Envío internacional a {country}: el precio no incluye impuestos ni aranceles de importación. Si la aduana los cobra al recibir el paquete, los paga quien recibe el pedido."
   },
   "pay_pending": {
     "title": "Completa el pago de tu pedido",
@@ -549,38 +553,38 @@
   },
   "shipping_returns": {
     "free_shipping": "Envío gratuito",
-    "free_returns": "Devolución gratuita si llega dañado o incorrecto",
+    "free_returns": "Desistimiento según la ley de tu país",
     "summary_shipping": "Envío gratuito a toda América y Europa.",
-    "summary_damaged": "Si tu artículo llega defectuoso, dañado o no corresponde a lo que pediste, tienes {hours} horas desde la entrega para reportarlo. Te enviamos el artículo correcto sin costo o te devolvemos tu dinero, a tu elección.",
-    "summary_not_accepted": "Solo aceptamos devoluciones en esos casos: no se aceptan devoluciones por cambio de opinión ni por otros motivos.",
+    "summary_damaged": "Puedes desistir de tu compra sin dar motivo dentro del plazo que fija la ley de tu país, contado desde la entrega (por ejemplo, 14 días en la Unión Europea, 10 en Argentina y Chile y 7 en Brasil). Te devolvemos todo lo pagado, incluido el envío original.",
+    "summary_not_accepted": "Si llega dañado o incorrecto, avísanos dentro de {hours} horas y te enviamos el artículo correcto sin costo o te devolvemos tu dinero, a tu elección. Los defectos que aparezcan después están cubiertos por la garantía legal.",
     "full_policy_link": "Ver política completa de devoluciones"
   },
   "returns_policy": {
     "title": "Política de Envío y Devoluciones",
-    "intro": "Envío gratuito a toda América y Europa. Aceptamos devoluciones únicamente cuando el producto llega defectuoso, dañado, incorrecto o no corresponde a lo pedido. A continuación se detallan las condiciones de reemplazo, reembolso y cancelación de pedidos.",
-    "damaged_title": "Cuándo aceptamos devoluciones",
+    "intro": "Envío gratuito a toda América y Europa. Puedes desistir de tu compra sin dar motivo dentro del plazo que te reconoce la ley de tu país. Si llega dañada o incorrecta, la reponemos o te devolvemos el dinero sin costo.",
+    "damaged_title": "Derecho de desistimiento",
     "damaged_items": [
-      "Solo aceptamos devoluciones si el producto llega defectuoso, dañado, incorrecto o no corresponde a lo que pediste.",
-      "El plazo para reportarlo es de {hours} horas desde la entrega.",
-      "El reporte debe incluir fotografías del producto recibido y del problema.",
-      "El cliente elige entre el envío del artículo correcto sin costo o el reembolso íntegro de su dinero.",
-      "El envío de reemplazo y la devolución del artículo no tienen costo para el cliente."
+      "Puedes desistir sin indicar el motivo dentro del plazo de tu país, contado desde la entrega: 14 días naturales en la Unión Europea, Noruega y Reino Unido; 10 en Argentina y Chile; 8 en Costa Rica y El Salvador; 7 en Brasil y Perú; 5 días hábiles en Colombia, México, Uruguay y Nicaragua; 3 en Ecuador. En los demás países respetamos el plazo que fije tu ley.",
+      "Para ejercerlo, usa el formulario «Desistir de una compra» del pie de página o escríbenos con tu número de pedido. Te confirmamos la recepción por correo.",
+      "Devuelve el producto dentro de los 14 días siguientes a comunicarnos tu decisión, completo y con sus accesorios y etiquetas.",
+      "Te devolvemos todo lo pagado, incluido el envío original, dentro de los 14 días siguientes a recibir tu decisión. El envío de vuelta corre por cuenta del cliente, salvo que la ley aplicable lo ponga a cargo del vendedor."
     ],
-    "not_accepted_title": "Devoluciones que no aceptamos",
+    "not_accepted_title": "Productos dañados, defectuosos o incorrectos",
     "not_accepted_items": [
-      "No se aceptan devoluciones por cambio de opinión ni por motivos distintos a los indicados arriba.",
-      "Los reclamos realizados después de las {hours} horas desde la entrega no califican para reemplazo ni reembolso."
+      "Si llega dañado o incorrecto, avísanos dentro de {hours} horas con fotografías y te enviamos el artículo correcto sin costo o te devolvemos tu dinero, a tu elección.",
+      "Pasado ese plazo sigues cubierto por la garantía legal de tu país y por la garantía del fabricante.",
+      "Los precios no incluyen impuestos ni aranceles de importación de tu país: si la aduana los cobra, corren por cuenta de quien recibe el pedido."
     ],
     "process_title": "Cómo funciona el proceso",
     "process_items": [
-      "Reporta el problema por los canales indicados al final de esta página, con tu número de pedido, el motivo y las fotografías.",
-      "Coordinamos la recolección o el envío de devolución.",
-      "Una vez recibido y verificado el artículo, se procesa el reembolso o el reemplazo."
+      "Desiste con el formulario o repórtanos el problema por los canales del final, con tu número de pedido.",
+      "Te indicamos la dirección y la forma de envío de la devolución.",
+      "Al recibir y revisar el artículo, procesamos el reembolso o el reemplazo."
     ],
     "cancellations_title": "Cancelaciones",
     "cancellations_items": [
-      "El pedido puede cancelarse en cualquier momento antes de que comience a procesarse para su envío.",
-      "Una vez despachado, el pedido ya no puede cancelarse: solo se aceptan devoluciones en los casos descritos arriba."
+      "Puedes cancelar el pedido antes de que se despache, con reembolso total.",
+      "Una vez despachado, igualmente puedes desistir dentro del plazo de tu país, contado desde que lo recibas."
     ],
     "help": "Para iniciar una devolución o consultar por tu pedido, escríbenos por cualquiera de estos canales:",
     "contact_whatsapp": "WhatsApp",
@@ -753,5 +757,48 @@
     "error_invalid": "Revisa el email o el WhatsApp.",
     "error_limited": "Demasiados intentos. Prueba más tarde.",
     "error_network": "No pudimos guardar tu aviso. Inténtalo de nuevo o escríbenos por WhatsApp."
+  },
+  "withdrawal": {
+    "title": "Desistir de una compra",
+    "intro": "Puedes desistir de tu compra sin indicar el motivo dentro del plazo que te reconoce la ley de tu país, contado desde la entrega (por ejemplo, 14 días en la Unión Europea, 10 en Argentina y Chile y 7 en Brasil). Completa este formulario y te enviaremos el comprobante por correo con la fecha y hora de recepción.",
+    "start_text": "¿Quieres devolver tu compra y recibir el reembolso? Empieza aquí.",
+    "start_button": "Desistir del contrato",
+    "order_number": "Número de pedido",
+    "order_number_hint": "Lo encuentras en el correo de confirmación (por ejemplo, FMS-0123).",
+    "name": "Nombre y apellido",
+    "email": "Correo electrónico",
+    "email_hint": "El que usaste en la compra. Ahí te llegará el comprobante.",
+    "items": "Productos que devuelves (opcional)",
+    "items_hint": "Déjalo vacío si desistes de todo el pedido.",
+    "reason": "Motivo (opcional)",
+    "legal_note": "Al confirmar, nos comunicas tu decisión de desistir del contrato de compra. Te enviamos el comprobante y las instrucciones de devolución.",
+    "policy_link": "Política de devoluciones",
+    "confirm_button": "Confirmar desistimiento",
+    "error_required": "Completa el número de pedido, tu nombre y un correo válido.",
+    "error_limited": "Recibimos varias solicitudes seguidas. Espera un minuto e inténtalo de nuevo.",
+    "error_generic": "No pudimos registrar tu solicitud. Inténtalo de nuevo o escríbenos a ventas@fathermotosport.com.",
+    "done_title": "Recibimos tu desistimiento",
+    "done_text": "Referencia {reference}, registrada el {date}.",
+    "done_email": "Te enviamos el comprobante a {email}. En las próximas 48 horas hábiles te escribimos con las instrucciones de devolución.",
+    "done_no_email": "No pudimos enviarte el comprobante por correo, pero tu solicitud quedó registrada. Guarda esta referencia.",
+    "footer_link": "Desistir de una compra"
+  },
+  "cookies": {
+    "title": "Usamos cookies",
+    "text": "Usamos cookies necesarias para que la tienda funcione (carrito, sesión, idioma y pago seguro). Con tu permiso también usamos cookies de analítica (Google Analytics) y de marketing (Meta y TikTok) para medir visitas y mostrarte anuncios relevantes. Puedes cambiar tu elección cuando quieras desde el pie de página.",
+    "more": "Política de privacidad",
+    "reject": "Rechazar",
+    "settings": "Configurar",
+    "save": "Guardar selección",
+    "accept": "Aceptar todas",
+    "close": "Cerrar",
+    "necessary_title": "Necesarias",
+    "necessary_text": "Carrito, inicio de sesión, idioma y prevención de fraude en el pago (Stripe). No se pueden desactivar.",
+    "always_on": "Siempre activas",
+    "analytics_title": "Analítica",
+    "analytics_text": "Google Analytics: cuántas personas visitan la tienda y qué páginas ven.",
+    "marketing_title": "Marketing",
+    "marketing_text": "Píxeles de Meta (Facebook e Instagram) y TikTok: medir anuncios y mostrarte publicidad personalizada.",
+    "footer_link": "Preferencias de cookies"
   }
 }
