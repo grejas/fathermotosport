@@ -204,7 +204,7 @@
     "shipping_weight": "Peso del pedido: {weight} kg",
     "shipping_days": "Llega entre el {from} y el {to}",
     "shipping_days_unknown": "Plazo a confirmar por WhatsApp",
-    "shipping_from_china": "Enviado desde China · plazo estimado en días hábiles (lunes a viernes). La aduana de tu país puede sumar demoras.",
+    "shipping_from_china": "Plazo estimado en días hábiles (lunes a viernes). La aduana de tu país puede sumar demoras.",
     "shipping_unavailable": "Todavía no tenemos una tarifa de envío para {country}. Escribinos por WhatsApp y coordinamos el envío.",
     "shipping_to_coordinate": "A coordinar",
     "pay_with_paypal": "Pagar con PayPal",
