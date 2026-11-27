@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -13,11 +14,20 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Un primer intento (27-nov-2026) dejó la tabla creada sin la clave foránea (MySQL no
+        // revierte el CREATE). Si quedó vacía, se rehace.
+        if (Schema::hasTable('withdrawal_requests')) {
+            if (DB::table('withdrawal_requests')->exists()) {
+                throw new RuntimeException('withdrawal_requests ya tiene datos: revisar a mano antes de migrar.');
+            }
+            Schema::drop('withdrawal_requests');
+        }
+
         Schema::create('withdrawal_requests', function (Blueprint $table) {
             $table->id();
             $table->string('order_number', 40);
             // Pedido encontrado con ese número y ese email; null = no coincide (se revisa a mano).
-            $table->foreignId('order_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignUuid('order_id')->nullable()->constrained('orders')->nullOnDelete();
             $table->string('name', 150);
             $table->string('email', 190);
             $table->text('items')->nullable();
