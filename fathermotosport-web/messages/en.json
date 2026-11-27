@@ -551,21 +551,21 @@
   },
   "shipping_returns": {
     "free_shipping": "Free shipping",
-    "free_returns": "Returns within 14 days of delivery",
+    "free_returns": "Right of withdrawal under your country's law",
     "summary_shipping": "Free shipping across the Americas and Europe.",
-    "summary_damaged": "You have 14 days from receiving your order to return it without giving any reason. We refund everything you paid, including the original shipping.",
+    "summary_damaged": "You can withdraw from your purchase without giving a reason within the period set by the law of your country, counted from delivery (for example, 14 days in the European Union and the United Kingdom). We refund everything you paid, including the original shipping.",
     "summary_not_accepted": "If it arrives damaged or wrong, tell us within {hours} hours and we send the correct item at no cost or refund your money, your choice. Defects that appear later are covered by the legal guarantee.",
     "full_policy_link": "See full returns policy"
   },
   "returns_policy": {
     "title": "Shipping and Returns Policy",
-    "intro": "Free shipping across the Americas and Europe. You can return your purchase within 14 days of receiving it, even if nothing is wrong with it. If it arrives damaged or wrong, we replace it or refund you at no cost.",
-    "damaged_title": "Right of withdrawal: 14 days",
+    "intro": "Free shipping across the Americas and Europe. You can withdraw from your purchase without giving a reason within the period your country's law grants you. If it arrives damaged or wrong, we replace it or refund you at no cost.",
+    "damaged_title": "Right of withdrawal",
     "damaged_items": [
-      "You have 14 calendar days from receiving the order to cancel the purchase without giving any reason.",
+      "You can withdraw without giving a reason within your country's period, counted from delivery: 14 calendar days in the European Union, Norway and the United Kingdom; 10 in Argentina and Chile; 8 in Costa Rica and El Salvador; 7 in Brazil and Peru; 5 business days in Colombia, Mexico, Uruguay and Nicaragua; 3 in Ecuador. In other countries we honour the period set by your law.",
       "To use it, fill in the “Withdraw from a purchase” form in the footer or write to us with your order number. We confirm receipt by email.",
       "Send the product back within 14 days of telling us your decision, complete, with its accessories and tags.",
-      "We refund everything you paid, including the original shipping, within 14 days of receiving your withdrawal. Return shipping is yours, unless the law of your country places it on us (for example, Brazil and Argentina)."
+      "We refund everything you paid, including the original shipping, within 14 days of receiving your withdrawal. Return shipping is paid by the customer, unless the applicable law places it on the seller."
     ],
     "not_accepted_title": "Damaged, faulty or wrong products",
     "not_accepted_items": [
@@ -582,7 +582,7 @@
     "cancellations_title": "Cancellations",
     "cancellations_items": [
       "You can cancel the order before it is dispatched, with a full refund.",
-      "Once dispatched, you can still withdraw from the purchase within 14 days of receiving it."
+      "Once dispatched, you can still withdraw within your country's period, counted from when you receive it."
     ],
     "help": "To start a return or ask about your order, contact us through either of these channels:",
     "contact_whatsapp": "WhatsApp",
@@ -758,7 +758,7 @@
   },
   "withdrawal": {
     "title": "Withdraw from a purchase",
-    "intro": "You have 14 days from receiving your order to withdraw from the purchase without giving any reason. Fill in this form and we will email you a receipt with the date and time we received it.",
+    "intro": "You can withdraw from your purchase without giving a reason within the period your country's law grants you, counted from delivery (for example, 14 days in the European Union and the United Kingdom). Fill in this form and we will email you a receipt with the date and time we received it.",
     "start_text": "Want to return your purchase and get a refund? Start here.",
     "start_button": "Withdraw from contract",
     "order_number": "Order number",

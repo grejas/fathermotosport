@@ -38,7 +38,7 @@ const sections: LegalSection[] = [
   {
     heading: "Derecho de desistimiento",
     body: [
-      "Tienes 14 días naturales desde que recibes el pedido para desistir de la compra sin indicar el motivo. Te devolvemos todo lo pagado, incluido el envío original, dentro de los 14 días siguientes a recibir tu decisión.",
+      "Puedes desistir de la compra sin indicar el motivo dentro del plazo que te reconoce la ley de tu país, contado desde la entrega (por ejemplo, 14 días en la Unión Europea, 10 en Argentina y Chile y 7 en Brasil). Te devolvemos todo lo pagado, incluido el envío original, dentro de los 14 días siguientes a recibir tu decisión. El envío de vuelta corre por cuenta del cliente, salvo que la ley aplicable lo ponga a cargo del vendedor.",
       {
         text: "Puedes ejercerlo desde el formulario",
         href: "/withdrawal",

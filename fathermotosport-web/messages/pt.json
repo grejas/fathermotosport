@@ -551,21 +551,21 @@
   },
   "shipping_returns": {
     "free_shipping": "Frete grátis",
-    "free_returns": "Devolução até 14 dias após o recebimento",
+    "free_returns": "Arrependimento conforme a lei do seu país",
     "summary_shipping": "Frete grátis para toda a América e Europa.",
-    "summary_damaged": "Você tem 14 dias desde o recebimento do pedido para devolvê-lo sem precisar dar nenhum motivo. Devolvemos tudo o que foi pago, incluído o frete original.",
+    "summary_damaged": "Você pode desistir da compra sem dar motivo dentro do prazo fixado pela lei do seu país, contado a partir da entrega (por exemplo, 7 dias no Brasil, 10 na Argentina e no Chile e 14 na União Europeia). Devolvemos tudo o que foi pago, incluído o frete original.",
     "summary_not_accepted": "Se chegar danificado ou errado, avise-nos em até {hours} horas e enviamos o artigo correto sem custo ou devolvemos o seu dinheiro, você escolhe. Defeitos que aparecerem depois estão cobertos pela garantia legal.",
     "full_policy_link": "Ver política completa de devoluções"
   },
   "returns_policy": {
     "title": "Política de Frete e Devoluções",
-    "intro": "Frete grátis para toda a América e Europa. Você pode devolver a sua compra em até 14 dias após recebê-la, mesmo sem nenhum defeito. Se chegar danificada ou errada, substituímos ou devolvemos o dinheiro sem custo.",
-    "damaged_title": "Direito de arrependimento: 14 dias",
+    "intro": "Frete grátis para toda a América e Europa. Você pode desistir da compra sem dar motivo dentro do prazo que a lei do seu país lhe garante. Se chegar danificada ou errada, substituímos ou devolvemos o dinheiro sem custo.",
+    "damaged_title": "Direito de arrependimento",
     "damaged_items": [
-      "Você tem 14 dias corridos desde o recebimento do pedido para desistir da compra, sem precisar dar o motivo.",
+      "Você pode desistir sem dar o motivo dentro do prazo do seu país, contado a partir da entrega: 14 dias corridos na União Europeia, Noruega e Reino Unido; 10 na Argentina e no Chile; 8 na Costa Rica e em El Salvador; 7 no Brasil e no Peru; 5 dias úteis na Colômbia, México, Uruguai e Nicarágua; 3 no Equador. Nos demais países respeitamos o prazo fixado pela sua lei.",
       "Para exercê-lo, use o formulário «Desistir de uma compra» no rodapé ou escreva para nós com o número do pedido. Confirmamos o recebimento por e-mail.",
       "Devolva o produto em até 14 dias após nos comunicar a sua decisão, completo, com acessórios e etiquetas.",
-      "Devolvemos tudo o que foi pago, incluído o frete original, em até 14 dias após recebermos a sua decisão. O envio de volta é do cliente, salvo quando a lei do seu país o coloca a nosso cargo (por exemplo, no Brasil e na Argentina)."
+      "Devolvemos tudo o que foi pago, incluído o frete original, em até 14 dias após recebermos a sua decisão. O envio de volta é do cliente, salvo quando a lei aplicável o colocar a cargo do vendedor."
     ],
     "not_accepted_title": "Produtos danificados, com defeito ou errados",
     "not_accepted_items": [
@@ -582,7 +582,7 @@
     "cancellations_title": "Cancelamentos",
     "cancellations_items": [
       "Você pode cancelar o pedido antes do despacho, com reembolso total.",
-      "Depois de despachado, você ainda pode desistir da compra em até 14 dias após recebê-la."
+      "Depois de despachado, você ainda pode desistir dentro do prazo do seu país, contado a partir do recebimento."
     ],
     "help": "Para iniciar uma devolução ou consultar sobre o seu pedido, fale conosco por um destes canais:",
     "contact_whatsapp": "WhatsApp",
@@ -758,7 +758,7 @@
   },
   "withdrawal": {
     "title": "Desistir de uma compra",
-    "intro": "Você tem 14 dias desde o recebimento do pedido para desistir da compra sem precisar dar o motivo. Preencha este formulário e enviaremos o comprovante por e-mail com a data e a hora do recebimento.",
+    "intro": "Você pode desistir da compra sem dar o motivo dentro do prazo que a lei do seu país lhe garante, contado a partir da entrega (por exemplo, 7 dias no Brasil, 10 na Argentina e no Chile e 14 na União Europeia). Preencha este formulário e enviaremos o comprovante por e-mail com a data e a hora do recebimento.",
     "start_text": "Quer devolver sua compra e receber o reembolso? Comece aqui.",
     "start_button": "Desistir do contrato",
     "order_number": "Número do pedido",
