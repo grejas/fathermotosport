@@ -44,6 +44,7 @@
     <div class="footer">
       <div class="footer-text">
         {{ \App\Support\PieDeCorreo::TIENDA }}<br>
+        {{ \App\Support\PieDeCorreo::OPERADOR_POSTAL }}<br>
         {{ $motivoPie ?? __('marketing.footer_reason', [], $idiomaCorreo) }}
       </div>
       <div class="footer-links">

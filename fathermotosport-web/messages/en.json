@@ -224,7 +224,7 @@
     "paypal_order_reference": "Order: {id}",
     "paypal_see_orders": "See my orders",
     "pay_with": "Pay with",
-    "stripe_continue": "Continue to payment",
+    "stripe_continue": "Buy and pay",
     "stripe_title": "Pay by card",
     "stripe_save_card": "Stripe stores your card securely so you can add items to this order in one tap if you want. Nothing is ever charged without your confirmation.",
     "stripe_pay": "Pay now",

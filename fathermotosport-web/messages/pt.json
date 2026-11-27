@@ -224,7 +224,7 @@
     "paypal_order_reference": "Pedido: {id}",
     "paypal_see_orders": "Ver meus pedidos",
     "pay_with": "Pagar com",
-    "stripe_continue": "Continuar para o pagamento",
+    "stripe_continue": "Comprar e pagar",
     "stripe_title": "Pagar com cartão",
     "stripe_save_card": "A Stripe guarda seu cartão com segurança para que, se quiser, você adicione produtos a este pedido com um toque. Nada é cobrado sem a sua confirmação.",
     "stripe_pay": "Pagar agora",

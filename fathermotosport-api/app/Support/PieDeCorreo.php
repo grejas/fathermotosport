@@ -17,6 +17,12 @@ class PieDeCorreo
     /** Solo el nombre: el pie no lleva ciudad ni país. */
     public const TIENDA = 'FatherMotoSport';
 
+    /**
+     * Operador y dirección postal: solo en los correos promocionales, porque CAN-SPAM
+     * (EE.UU.) exige una dirección física en todo correo comercial. Los transaccionales no la llevan.
+     */
+    public const OPERADOR_POSTAL = 'FATHERSON IMP LLC · 30 N Gould St Ste R, Sheridan, WY 82801, USA';
+
     /** Respaldo si no se puede leer "Configuración de la tienda" (sin fila o sin base de datos). */
     public const EMAIL_RESPALDO = 'contacto@fathermotosport.com';
 

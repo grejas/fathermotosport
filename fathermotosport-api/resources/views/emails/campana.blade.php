@@ -104,6 +104,7 @@
         <tr>
           <td class="px" bgcolor="#050505" align="center" style="background:#050505; border-top:1px solid #1C1C1C; padding:22px 32px 26px 32px; font-size:13px; line-height:21px; color:#8F8F8F;">
             {{ \App\Support\PieDeCorreo::TIENDA }}<br>
+            {{ \App\Support\PieDeCorreo::OPERADOR_POSTAL }}<br>
             {{ __('marketing.footer_reason', [], $idiomaCorreo) }}<br>
             <a href="mailto:{{ $emailContacto }}" style="color:#C9C9C9; text-decoration:underline;">{{ $textoContacto }}</a>
             @if ($whatsapp)
