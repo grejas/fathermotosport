@@ -753,5 +753,23 @@
     "error_invalid": "Please check your email or WhatsApp.",
     "error_limited": "Too many attempts. Please try again later.",
     "error_network": "We couldn't save your request. Try again or message us on WhatsApp."
+  },
+  "cookies": {
+    "title": "We use cookies",
+    "text": "We use necessary cookies to run the store (cart, session, language and secure payment). With your permission we also use analytics cookies (Google Analytics) and marketing cookies (Meta and TikTok) to measure visits and show you relevant ads. You can change your choice anytime from the footer.",
+    "more": "Privacy policy",
+    "reject": "Reject",
+    "settings": "Settings",
+    "save": "Save selection",
+    "accept": "Accept all",
+    "close": "Close",
+    "necessary_title": "Necessary",
+    "necessary_text": "Cart, sign-in, language and payment fraud prevention (Stripe). Cannot be turned off.",
+    "always_on": "Always on",
+    "analytics_title": "Analytics",
+    "analytics_text": "Google Analytics: how many people visit the store and which pages they view.",
+    "marketing_title": "Marketing",
+    "marketing_text": "Meta (Facebook and Instagram) and TikTok pixels: measure ads and show you personalized advertising.",
+    "footer_link": "Cookie preferences"
   }
 }

@@ -753,5 +753,23 @@
     "error_invalid": "Revisa el email o el WhatsApp.",
     "error_limited": "Demasiados intentos. Prueba más tarde.",
     "error_network": "No pudimos guardar tu aviso. Inténtalo de nuevo o escríbenos por WhatsApp."
+  },
+  "cookies": {
+    "title": "Usamos cookies",
+    "text": "Usamos cookies necesarias para que la tienda funcione (carrito, sesión, idioma y pago seguro). Con tu permiso también usamos cookies de analítica (Google Analytics) y de marketing (Meta y TikTok) para medir visitas y mostrarte anuncios relevantes. Puedes cambiar tu elección cuando quieras desde el pie de página.",
+    "more": "Política de privacidad",
+    "reject": "Rechazar",
+    "settings": "Configurar",
+    "save": "Guardar selección",
+    "accept": "Aceptar todas",
+    "close": "Cerrar",
+    "necessary_title": "Necesarias",
+    "necessary_text": "Carrito, inicio de sesión, idioma y prevención de fraude en el pago (Stripe). No se pueden desactivar.",
+    "always_on": "Siempre activas",
+    "analytics_title": "Analítica",
+    "analytics_text": "Google Analytics: cuántas personas visitan la tienda y qué páginas ven.",
+    "marketing_title": "Marketing",
+    "marketing_text": "Píxeles de Meta (Facebook e Instagram) y TikTok: medir anuncios y mostrarte publicidad personalizada.",
+    "footer_link": "Preferencias de cookies"
   }
 }
