@@ -7,7 +7,6 @@ import {
   siMastercard,
   siMercadopago,
   siPaypal,
-  siSepa,
   siTether,
   siVisa,
 } from "simple-icons";
@@ -44,7 +43,6 @@ const RESTO: Marca[] = [
   { id: "mastercard", name: "Mastercard", si: siMastercard, label: "Mastercard" },
   { id: "amex", name: "American Express", si: siAmericanexpress, wide: true },
   { id: "mercadopago", name: "Mercado Pago", si: siMercadopago, label: "Mercado Pago" },
-  { id: "sepa", name: "IBAN · SEPA", si: siSepa, label: "IBAN" },
   { id: "usdt", name: "USDT (Tether)", si: siTether, label: "USDT" },
   { id: "bitcoin", name: "Bitcoin", si: siBitcoin, label: "Bitcoin" },
   { id: "binance_pay", name: "Binance Pay", si: siBinance, label: "Binance Pay" },
