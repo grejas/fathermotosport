@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { isGatewayAdvertised } from "@/lib/data/paymentMethods";
+import { useStoreSettings } from "@/components/layout/StoreSettingsProvider";
 
 interface MarqueeItem {
   label: string;
@@ -14,6 +15,7 @@ interface MarqueeItem {
 
 export function MarqueeBar() {
   const t = useTranslations("benefits");
+  const { mercadopago } = useStoreSettings();
 
   const items: MarqueeItem[] = [
     { label: t("free_shipping"), pill: true },
@@ -23,7 +25,7 @@ export function MarqueeBar() {
     { label: "Apple Pay", brand: true },
     { label: "Google Pay", brand: true },
     { label: "Visa · Mastercard", brand: true },
-    ...(isGatewayAdvertised("mercadopago") ? [{ label: "MercadoPago", brand: true }] : []),
+    ...(mercadopago ? [{ label: "Mercado Pago", brand: true }] : []),
     { label: "USDT", brand: true },
     { label: "Bitcoin", brand: true },
     { label: t("certified_helmets") },

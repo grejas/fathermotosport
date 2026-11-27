@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { CRYPTO_PAYMENT_METHODS, isManualPaymentMethod } from "@/lib/data/paymentMethods";
 import type { ManualPaymentMethod, PaymentMethod } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { CardLogos, WalletLogos } from "@/components/ui/WalletLogos";
+import { CardLogos, MercadoPagoLogo, WalletLogos } from "@/components/ui/WalletLogos";
 
 type Pasarela = "paypal" | "stripe_wallet" | "stripe" | "mercadopago";
 
@@ -73,9 +73,7 @@ export function PaymentMethods({ value, onChange, enabled, manual = [], comingSo
               ) : m.id === "stripe" ? (
                 <CardLogos className="mt-1.5" />
               ) : m.id === "mercadopago" ? (
-                <span className="mt-1.5 inline-block rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-brand-white">
-                  MXN
-                </span>
+                <MercadoPagoLogo className="mt-1.5" />
               ) : undefined
             }
             onClick={() => onChange(m.id)}
