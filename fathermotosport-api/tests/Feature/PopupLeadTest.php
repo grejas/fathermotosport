@@ -122,7 +122,7 @@ class PopupLeadTest extends TestCase
 
         // 20.000 sorteos: cada premio cae cerca de su probabilidad.
         $conteo = array_fill_keys([10, 15, 20, 25], 0);
-        $servicio = app(\App\Services\PopupLeadService::class);
+        $servicio = app(PopupLeadService::class);
         for ($i = 0; $i < 20000; $i++) {
             $conteo[$servicio->sortearPorcentaje()]++;
         }

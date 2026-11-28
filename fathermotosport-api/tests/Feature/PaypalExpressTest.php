@@ -214,7 +214,7 @@ class PaypalExpressTest extends TestCase
 
         // Solo los cobros que el cliente hace por fuera (transferencia y cripto) reciben
         // el correo de "recibimos tu pedido", con los datos para pagar.
-        $this->assertSame(['sepa', 'us_bank', 'usdt_trc20', 'usdt_bep20', 'btc', 'btc_bep20', 'binance_pay', 'mercadopago_mx'], Order::METODOS_CON_COORDINACION_MANUAL);
+        $this->assertSame(['sepa', 'us_bank', 'usdt_trc20', 'usdt_bep20', 'btc', 'btc_bep20', 'binance_pay', 'mercadopago_mx', 'paypal_manual'], Order::METODOS_CON_COORDINACION_MANUAL);
     }
 
     public function test_express_requires_a_valid_shipping_option(): void

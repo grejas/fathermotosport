@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\InventoryMovement;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Product;
@@ -11,6 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 /**
@@ -77,7 +79,7 @@ class StockAtPaymentTest extends TestCase
         ]);
     }
 
-    private function capturar(Order $order): \Illuminate\Testing\TestResponse
+    private function capturar(Order $order): TestResponse
     {
         return $this->postJson('/api/v1/payments/paypal/capture/PAYPAL-CAPTURE-1', [], [
             'X-Order-Token' => $order->access_token,
@@ -116,7 +118,7 @@ class StockAtPaymentTest extends TestCase
         $this->capturar($order)->assertOk();
 
         $this->assertSame(3, $variant->fresh()->stock, 'el webhook y el retorno del cliente pueden llegar los dos');
-        $this->assertSame(1, \App\Models\InventoryMovement::where('type', 'sale')->count());
+        $this->assertSame(1, InventoryMovement::where('type', 'sale')->count());
     }
 
     public function test_paying_without_enough_stock_is_flagged_instead_of_failing(): void

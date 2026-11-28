@@ -311,6 +311,36 @@ class ManualPaymentsTest extends TestCase
         Mail::assertSent(OrderReceivedMail::class);
     }
 
+    public function test_paypal_manual_charges_usd_plus_fee(): void
+    {
+        $this->getJson('/api/v1/store/settings')->assertJsonPath('data.payment_methods.paypal_manual', false);
+
+        StoreConfig::current()->update([
+            'pp_manual_email' => 'pagos@example.com',
+            'pp_manual_link' => 'https://paypal.me/fathermotosport',
+            'pp_manual_name' => 'FatherMotoSport',
+            'pp_manual_fee_percent' => 5,
+        ]);
+
+        // 430 USD + 5 % = 451,50 USD; el link de PayPal.me lleva el monto.
+        $this->pedir('paypal_manual')->assertCreated()
+            ->assertJsonPath('order.manual_payment.currency', 'USD')
+            ->assertJsonPath('order.manual_payment.amount', '451.50')
+            ->assertJsonPath('order.manual_payment.subtotal', '430.00')
+            ->assertJsonPath('order.manual_payment.fee_amount', '21.50')
+            ->assertJsonPath('order.manual_payment.email', 'pagos@example.com')
+            ->assertJsonPath('order.manual_payment.pay_url', 'https://paypal.me/fathermotosport/451.50USD')
+            ->assertJsonPath('payment.next_step', 'manual');
+
+        // Sin FEE: el total en USD tal cual y sin desglose.
+        StoreConfig::current()->update(['pp_manual_fee_percent' => 0, 'pp_manual_link' => null]);
+        $this->pedir('paypal_manual')->assertCreated()
+            ->assertJsonPath('order.manual_payment.amount', '430.00')
+            ->assertJsonPath('order.manual_payment.fee_amount', null)
+            ->assertJsonPath('order.manual_payment.pay_url', null);
+        Mail::assertSent(OrderReceivedMail::class);
+    }
+
     public function test_mercadopago_link_validation(): void
     {
         $this->assertTrue(ManualPaymentService::direccionValida('mercadopago_mx', 'https://link.mercadopago.com.mx/bolimex'));

@@ -39,7 +39,7 @@ class StoreOrderRequest extends FormRequest
 
             'shipping_option_id' => ['nullable', 'integer', 'exists:shipping_options,id'],
             'shipping_country_code' => ['required_with:shipping_option_id', 'nullable', 'string', 'size:2'],
-            'payment_method' => ['required', 'in:paypal,stripe,mercadopago,sepa,us_bank,usdt_trc20,usdt_bep20,btc,btc_bep20,binance_pay,mercadopago_mx'],
+            'payment_method' => ['required', 'in:paypal,stripe,mercadopago,sepa,us_bank,usdt_trc20,usdt_bep20,btc,btc_bep20,binance_pay,mercadopago_mx,paypal_manual'],
             'coupon_code' => ['nullable', 'string', 'max:50'],
             // Subtotal que vio el cliente (sin envío ni cupón). Si no coincide con el
             // recalculado, OrderService rechaza el pedido para que la web lo refresque.

@@ -298,7 +298,10 @@
     "reference_placeholder": "Ex.: casa branca de dois andares, em frente ao mercado",
     "pm_mercadopago_mx": "Mercado Pago",
     "pm_mercadopago_mx_desc": "Cartão, OXXO ou saldo Mercado Pago · pagamento em pesos mexicanos (MXN)",
-    "pm_mercadopago_mx_note": "Ao confirmar, você verá o valor exato em pesos mexicanos ao câmbio de hoje e o botão para pagar no Mercado Pago. Você tem 48 horas; preparamos seu pedido quando confirmarmos o pagamento."
+    "pm_mercadopago_mx_note": "Ao confirmar, você verá o valor exato em pesos mexicanos ao câmbio de hoje e o botão para pagar no Mercado Pago. Você tem 48 horas; preparamos seu pedido quando confirmarmos o pagamento.",
+    "pm_paypal_manual": "PayPal",
+    "pm_paypal_manual_desc": "Pague com seu saldo ou cartão no PayPal · em dólares (USD)",
+    "pm_paypal_manual_note": "Ao confirmar, você verá o valor exato em USD e a conta do PayPal para enviar o pagamento. Você tem 48 horas; preparamos seu pedido quando confirmarmos o pagamento."
   },
   "pay_pending": {
     "title": "Conclua o pagamento do seu pedido",
@@ -778,7 +781,17 @@
     "mp_how": "Toque no botão, digite o valor exato e pague com cartão, OXXO ou seu saldo do Mercado Pago. No computador, você também pode escanear o QR com o celular.",
     "mp_note": "A cobrança aparece em nome de {name}, que processa os pagamentos da FatherMotoSport no México. Digite o valor exato e guarde o comprovante.",
     "mp_step_1": "Abra o Mercado Pago pelo botão, digite {amount} e pague.",
-    "qr_mp": "Escaneie com a câmera do celular"
+    "qr_mp": "Escaneie com a câmera do celular",
+    "pp_title": "Pagamento com PayPal",
+    "pp_email": "Enviar para (PayPal)",
+    "pp_account": "Titular",
+    "pp_open": "Pagar com PayPal",
+    "pp_order": "Pedido",
+    "pp_fee": "FEE transação",
+    "pp_how": "Toque no botão ou envie o valor exato pelo PayPal para o e-mail acima. Escreva o número do pedido na nota do pagamento.",
+    "pp_note": "Envie exatamente o valor indicado e guarde o comprovante.",
+    "pp_step_1": "Envie {amount} pelo PayPal para a conta acima.",
+    "qr_pp": "Escaneie com a câmera do celular"
   },
   "stock_alert": {
     "title": "Avise-me quando estiver disponível",

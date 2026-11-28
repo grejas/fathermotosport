@@ -418,7 +418,7 @@ class UpsellMejorasTest extends TestCase
         // Sin save_card (la web vieja, que no avisa): no se guarda nada.
         $this->postJson('/api/v1/payments/stripe/intent', ['order_id' => $normal->id], $this->cabeceras($normal))->assertOk();
         $this->assertCount(0, Http::recorded(fn ($request) => str_contains($request->url(), '/v1/customers')));
-        \App\Models\Payment::where('order_id', $normal->id)->delete();
+        Payment::where('order_id', $normal->id)->delete();
 
         $this->postJson('/api/v1/payments/stripe/intent', ['order_id' => $normal->id, 'save_card' => true], $this->cabeceras($normal))->assertOk();
 

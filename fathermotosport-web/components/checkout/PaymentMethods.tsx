@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { CRYPTO_PAYMENT_METHODS, isManualPaymentMethod } from "@/lib/data/paymentMethods";
 import type { ManualPaymentMethod, PaymentMethod } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { CardLogos, MercadoPagoLogo, WalletLogos } from "@/components/ui/WalletLogos";
+import { CardLogos, MercadoPagoLogo, PaypalLogo, WalletLogos } from "@/components/ui/WalletLogos";
 
 type Pasarela = "paypal" | "stripe_wallet" | "stripe" | "mercadopago";
 
@@ -19,7 +19,7 @@ const PASARELAS: { id: Pasarela; icon: typeof Wallet }[] = [
 ];
 
 /** Etiqueta corta de cada red cripto, como la muestran los exchanges al retirar. */
-const REDES: Record<Exclude<ManualPaymentMethod, "sepa" | "us_bank" | "mercadopago_mx">, { moneda: string; red: string; monedas: string[] }> = {
+const REDES: Record<Exclude<ManualPaymentMethod, "sepa" | "us_bank" | "mercadopago_mx" | "paypal_manual">, { moneda: string; red: string; monedas: string[] }> = {
   binance_pay: { moneda: "Binance Pay", red: "USDT · USDC · BTC", monedas: ["USDT", "USDC", "BTC"] },
   usdt_trc20: { moneda: "USDT", red: "TRC20", monedas: ["USDT"] },
   usdt_bep20: { moneda: "USDT", red: "BEP20", monedas: ["USDT"] },
@@ -42,6 +42,7 @@ export function PaymentMethods({ value, onChange, enabled, manual = [], comingSo
   const conSepa = manual.includes("sepa");
   const conUsBank = manual.includes("us_bank");
   const conMpMx = manual.includes("mercadopago_mx");
+  const conPpManual = manual.includes("paypal_manual");
   const cripto = CRYPTO_PAYMENT_METHODS.filter((m) => manual.includes(m));
   const criptoActiva = cripto.includes(value as ManualPaymentMethod);
 
@@ -81,6 +82,20 @@ export function PaymentMethods({ value, onChange, enabled, manual = [], comingSo
           />
         );
       })}
+
+      {/* PayPal como pago manual: el cliente envía el total en USD y te manda el comprobante. */}
+      {conPpManual && (
+        <Opcion
+          icon={Wallet}
+          label={t("pm_paypal_manual")}
+          desc={t("pm_paypal_manual_desc")}
+          badge="USD"
+          active={value === "paypal_manual"}
+          iconClass="bg-[#FFC439] text-[#003087]"
+          extra={<PaypalLogo className="mt-1.5" />}
+          onClick={() => onChange("paypal_manual")}
+        />
+      )}
 
       {/* Mercado Pago México por link: cobro en MXN al tipo de cambio del día. Para todos. */}
       {conMpMx && (
@@ -186,7 +201,9 @@ export function PaymentMethods({ value, onChange, enabled, manual = [], comingSo
 
       {isManualPaymentMethod(value) && (
         <p className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-xs leading-relaxed text-brand-muted">
-          {value === "mercadopago_mx"
+          {value === "paypal_manual"
+            ? t("pm_paypal_manual_note")
+            : value === "mercadopago_mx"
             ? t("pm_mercadopago_mx_note")
             : value === "sepa"
             ? t("pm_sepa_note")

@@ -50,6 +50,9 @@ class ManualPaymentService
         // Mercado Pago México con el link de cobro de un intermediario (monto abierto): el
         // total se cotiza en MXN al tipo de cambio del día y el cliente escribe ese monto.
         'mercadopago_mx' => ['moneda' => 'MXN', 'horas' => 48, 'campos' => ['mp_link_url']],
+        // PayPal manual: el cliente envía el total en USD (más el FEE, si hay) a la cuenta
+        // del panel y el equipo confirma. Convive con la pasarela "paypal" (API) apagada.
+        'paypal_manual' => ['moneda' => 'USD', 'horas' => 48, 'campos' => ['pp_manual_email']],
     ];
 
     /** Nombre de cada red tal como lo muestran los exchanges al retirar. */
@@ -106,6 +109,11 @@ class ManualPaymentService
         // MXN. Se aplica a la tasa (menos USD por peso = más pesos por el mismo total).
         if ($metodo === 'mercadopago_mx' && $tasa !== null) {
             $tasa = round($tasa / (1 + self::comisionMp() / 100), 10);
+        }
+
+        // PayPal manual: mismo mecanismo para su FEE (0 % por defecto).
+        if ($metodo === 'paypal_manual' && $tasa !== null) {
+            $tasa = round($tasa / (1 + self::comisionPaypal() / 100), 10);
         }
 
         if ($tasa === null) {
@@ -207,6 +215,21 @@ class ManualPaymentService
             ];
         }
 
+        if ($metodo === 'paypal_manual') {
+            $comision = self::comisionPaypal($config);
+            $subtotal = round((float) $order->payment_amount / (1 + $comision / 100), 2);
+            $link = $config?->pp_manual_link ? rtrim($config->pp_manual_link, '/') : null;
+
+            return $base + [
+                'email' => $config?->pp_manual_email,
+                // PayPal.me acepta el monto en la URL: el cliente llega con el total cargado.
+                'pay_url' => $link ? $link.'/'.self::formatoMonto($order->payment_amount, 'USD').'USD' : null,
+                'merchant_name' => $config?->pp_manual_name,
+                'subtotal' => $comision > 0 ? self::formatoMonto($subtotal, 'USD') : null,
+                'fee_amount' => $comision > 0 ? self::formatoMonto((float) $order->payment_amount - $subtotal, 'USD') : null,
+            ];
+        }
+
         $campo = self::METODOS[$metodo]['campos'][0];
 
         return $base + [
@@ -222,6 +245,14 @@ class ManualPaymentService
         $valor = $config?->mp_link_fee_percent;
 
         return $valor === null ? 7.0 : max(0.0, min(30.0, (float) $valor));
+    }
+
+    /** % de FEE del pago manual por PayPal (panel; 0 si no está cargado). */
+    public static function comisionPaypal(?StoreConfig $config = null): float
+    {
+        $config ??= StoreConfig::current();
+
+        return max(0.0, min(30.0, (float) ($config?->pp_manual_fee_percent ?? 0)));
     }
 
     public static function formatoMonto(mixed $monto, ?string $moneda): string
@@ -378,6 +409,8 @@ class ManualPaymentService
             // Enlace de cobro de Binance Pay (el contenido del QR). Solo dominios de Binance.
             'binance_pay' => (bool) preg_match('#^https://(app|s|www)\.binance\.com/[A-Za-z0-9/_\-]+$#', $direccion),
             // Link de cobro de Mercado Pago México (link.mercadopago.com.mx/… o mpago.la/…).
+            'paypal_manual' => filter_var($direccion, FILTER_VALIDATE_EMAIL) !== false,
+            'paypal_me' => (bool) preg_match('#^https://(www\.)?paypal\.me/[A-Za-z0-9_\-]+/?$#i', $direccion),
             'mercadopago_mx' => (bool) preg_match('#^https://(link\.mercadopago\.com\.mx|mpago\.la|mpago\.li)/[A-Za-z0-9_\-]+/?$#', $direccion),
             // Legacy (1…), P2SH (3…) o bech32 / taproot (bc1…).
             'btc' => (bool) preg_match('/^(bc1[ac-hj-np-z02-9]{11,71}|[13][1-9A-HJ-NP-Za-km-z]{25,34})$/', $direccion),
