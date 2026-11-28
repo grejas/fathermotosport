@@ -3,10 +3,10 @@ import { getShippingReturnsContent } from "@/lib/shippingReturns";
 import { ProductClient } from "./ProductClient";
 import { formatPrice, finalPrice } from "@/lib/utils";
 import {
-  absoluteImage,
   alternatesFor,
   getProductServidor,
   jsonLdHtml,
+  ogImage,
   ogLocale,
   plainText,
   productJsonLd,
@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const descripcion =
     plainText(product.short_description || product.description, 150) ||
     `${product.name}${product.brand?.name ? ` · ${product.brand.name}` : ""} · ${precio}`;
-  const imagen = absoluteImage(product.primary_image);
+  const imagen = await ogImage(product.primary_image);
   const path = `/product/${product.slug}`;
 
   return {
