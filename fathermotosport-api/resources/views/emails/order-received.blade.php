@@ -47,6 +47,16 @@
           <div class="row"><span class="row-k">Cuenta</span><span class="row-v">{{ $pago['merchant_name'] }}</span></div>
         @endif
         <div class="row"><span class="row-k">Enlace de pago</span><span class="row-v" style="word-break:break-all"><a href="{{ $pago['pay_url'] }}">{{ $pago['pay_url'] }}</a></span></div>
+      @elseif($pago['method'] === 'mercadopago_mx')
+        <div class="row"><span class="row-k">Pagar con</span><span class="row-v"><strong>Mercado Pago</strong> (tarjeta, OXXO o saldo)</span></div>
+        @if(!empty($pago['subtotal']))
+          <div class="row"><span class="row-k">Pedido en MXN</span><span class="row-v">{{ $pago['subtotal'] }} MXN</span></div>
+          <div class="row"><span class="row-k">FEE transacción</span><span class="row-v">{{ $pago['fee_amount'] }} MXN</span></div>
+        @endif
+        @if(!empty($pago['merchant_name']))
+          <div class="row"><span class="row-k">Cobra</span><span class="row-v">{{ $pago['merchant_name'] }}</span></div>
+        @endif
+        <div class="row"><span class="row-k">Enlace de pago</span><span class="row-v" style="word-break:break-all"><a href="{{ $pago['pay_url'] }}">{{ $pago['pay_url'] }}</a></span></div>
       @else
         <div class="row"><span class="row-k">Red</span><span class="row-v"><strong>{{ $pago['network'] }}</strong></span></div>
         <div class="row"><span class="row-k">Dirección</span><span class="row-v" style="font-family:monospace;word-break:break-all">{{ $pago['address'] }}</span></div>
@@ -67,6 +77,10 @@
       @elseif($pago['method'] === 'binance_pay')
         Abre el enlace o el código QR de la página de pago con la app de Binance y envía <strong>{{ $pago['amount'] }} USDT</strong>
         (o el equivalente en USDC o BTC) a <strong>{{ $pago['merchant_name'] ?: 'nuestra cuenta' }}</strong>. No necesitas elegir red.
+      @elseif($pago['method'] === 'mercadopago_mx')
+        Abre el enlace, escribe exactamente <strong>{{ $pago['amount'] }} MXN</strong> y paga con tarjeta, OXXO o tu saldo de Mercado Pago.
+        El cobro aparece a nombre de <strong>{{ $pago['merchant_name'] ?: 'nuestro procesador de pagos en México' }}</strong>, que procesa los pagos de FatherMotoSport en México.
+        Después envíanos el comprobante por WhatsApp con tu número de pedido <strong>{{ $pago['reference'] }}</strong>.
       @else
         Envía solo por la red <strong>{{ $pago['network'] }}</strong>: un envío por otra red se pierde y no se puede recuperar.
         @if($pago['method'] === 'btc_bep20')

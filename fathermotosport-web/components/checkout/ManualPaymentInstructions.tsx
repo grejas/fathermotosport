@@ -25,6 +25,7 @@ export function ManualPaymentInstructions({ order, pago }: { order: Order; pago:
   const esUsBank = pago.method === "us_bank";
   const esBanco = esSepa || esUsBank;
   const esBinance = pago.method === "binance_pay";
+  const esMp = pago.method === "mercadopago_mx";
   const restante = useTiempoRestante(pago.expires_at);
 
   const qr = useMemo(() => contenidoQr(pago), [pago]);
@@ -32,7 +33,15 @@ export function ManualPaymentInstructions({ order, pago }: { order: Order; pago:
   const mensaje = t("whatsapp_message", {
     number: order.order_number,
     amount: `${pago.amount} ${pago.currency}`,
-    method: esSepa ? t("sepa_title") : esUsBank ? t("us_bank_title") : esBinance ? "Binance Pay" : `${pago.currency} · ${pago.network}`,
+    method: esSepa
+      ? t("sepa_title")
+      : esUsBank
+        ? t("us_bank_title")
+        : esBinance
+          ? "Binance Pay"
+          : esMp
+            ? "Mercado Pago"
+            : `${pago.currency} · ${pago.network}`,
   });
   const whatsappHref = whatsappUrl(whatsappDigits, mensaje);
 
@@ -41,7 +50,15 @@ export function ManualPaymentInstructions({ order, pago }: { order: Order; pago:
       {/* Monto: lo primero que tiene que ver el cliente, y exacto. */}
       <div className="relative overflow-hidden rounded-2xl border border-brand-red/40 bg-gradient-to-br from-brand-red/15 via-brand-card to-brand-card p-5">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-muted">
-          {esSepa ? t("sepa_title") : esUsBank ? t("us_bank_title") : esBinance ? t("binance_title") : t("crypto_title", { currency: pago.currency })}
+          {esSepa
+            ? t("sepa_title")
+            : esUsBank
+              ? t("us_bank_title")
+              : esBinance
+                ? t("binance_title")
+                : esMp
+                  ? t("mp_title")
+                  : t("crypto_title", { currency: pago.currency })}
         </p>
         <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -57,12 +74,27 @@ export function ManualPaymentInstructions({ order, pago }: { order: Order; pago:
               <Copy size={14} className="text-brand-muted transition group-hover:text-brand-white" />
             </button>
             {esBinance && <p className="mt-1 text-xs text-brand-white/80">{t("binance_alt_currencies")}</p>}
-            <p className="mt-1 text-xs text-brand-muted">
-              {t("equivalent", { total: formatPrice(order.total) })}
-              {pago.currency !== "USDT" && pago.currency !== "USD" && pago.rate_usd && (
-                <> · {t("rate", { currency: pago.currency, rate: formatearTasa(pago.rate_usd) })}</>
-              )}
-            </p>
+            {esMp && pago.subtotal && pago.fee_amount ? (
+              // Desglose: el pedido en MXN al tipo de cambio del día + FEE transacción.
+              <dl className="mt-2 space-y-0.5 text-xs">
+                <div className="flex gap-2 text-brand-muted">
+                  <dt>{t("mp_order_mxn")}:</dt>
+                  <dd className="font-mono text-brand-white/85">{pago.subtotal} MXN</dd>
+                  <dd>({t("equivalent", { total: formatPrice(order.total) })})</dd>
+                </div>
+                <div className="flex gap-2 text-brand-muted">
+                  <dt>{t("mp_fee")}:</dt>
+                  <dd className="font-mono text-brand-white/85">{pago.fee_amount} MXN</dd>
+                </div>
+              </dl>
+            ) : (
+              <p className="mt-1 text-xs text-brand-muted">
+                {t("equivalent", { total: formatPrice(order.total) })}
+                {pago.currency !== "USDT" && pago.currency !== "USD" && pago.currency !== "MXN" && pago.rate_usd && (
+                  <> · {t("rate", { currency: pago.currency, rate: formatearTasa(pago.rate_usd) })}</>
+                )}
+              </p>
+            )}
           </div>
           {restante && (
             <div
@@ -125,6 +157,23 @@ export function ManualPaymentInstructions({ order, pago }: { order: Order; pago:
                 )}
                 <p className="text-xs leading-relaxed text-brand-muted">{t("binance_how")}</p>
               </>
+            ) : esMp ? (
+              <>
+                <Dato label={t("mp_account")} valor={pago.merchant_name} destacado />
+                {pago.pay_url && (
+                  <a
+                    href={pago.pay_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => copiar(pago.amount, t("copied"))}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#00B1EA] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-[#00B1EA]/20 transition hover:brightness-105"
+                  >
+                    {t("mp_open")}
+                    <ExternalLink size={15} />
+                  </a>
+                )}
+                <p className="text-xs leading-relaxed text-brand-muted">{t("mp_how")}</p>
+              </>
             ) : (
               <>
                 <div>
@@ -144,7 +193,7 @@ export function ManualPaymentInstructions({ order, pago }: { order: Order; pago:
                 <QRCodeSVG value={qr} size={152} level="M" marginSize={0} />
               </div>
               <p className="max-w-[180px] text-center text-[11px] leading-snug text-brand-muted">
-                {esSepa ? t("qr_sepa") : esBinance ? t("qr_binance") : t("qr_crypto")}
+                {esSepa ? t("qr_sepa") : esBinance ? t("qr_binance") : esMp ? t("qr_mp") : t("qr_crypto")}
               </p>
             </div>
           )}
@@ -156,6 +205,11 @@ export function ManualPaymentInstructions({ order, pago }: { order: Order; pago:
           <div className="mt-5 flex gap-3 rounded-xl border border-[#F0B90B]/30 bg-[#F0B90B]/[0.07] p-3 text-xs leading-relaxed text-brand-white/85">
             <Info size={16} className="mt-0.5 shrink-0 text-[#F0B90B]" />
             <p>{t("binance_note", { name: pago.merchant_name ?? "FatherMotoSport" })}</p>
+          </div>
+        ) : esMp ? (
+          <div className="mt-5 flex gap-3 rounded-xl border border-[#00B1EA]/30 bg-[#00B1EA]/[0.07] p-3 text-xs leading-relaxed text-brand-white/85">
+            <Info size={16} className="mt-0.5 shrink-0 text-[#00B1EA]" />
+            <p>{t("mp_note", { name: pago.merchant_name ?? "Mercado Pago" })}</p>
           </div>
         ) : (
           <div className="mt-5 flex gap-3 rounded-xl border border-amber-400/30 bg-amber-400/[0.07] p-3 text-xs leading-relaxed text-amber-100/90">
@@ -175,7 +229,7 @@ export function ManualPaymentInstructions({ order, pago }: { order: Order; pago:
       {/* Qué pasa después */}
       <ol className="space-y-3 rounded-2xl border border-white/10 bg-brand-card p-5">
         {[
-          t(esBinance ? "binance_step_1" : "step_1", { amount: `${pago.amount} ${pago.currency}` }),
+          t(esBinance ? "binance_step_1" : esMp ? "mp_step_1" : "step_1", { amount: `${pago.amount} ${pago.currency}` }),
           t("step_2"),
           t("step_3"),
         ].map((paso, i) => (
@@ -303,7 +357,7 @@ function contenidoQr(pago: Instrucciones): string | null {
   }
 
   // Binance Pay: el mismo enlace de cobro que muestra la app; al escanearlo se abre Binance.
-  if (pago.method === "binance_pay") return pago.pay_url ?? null;
+  if (pago.method === "binance_pay" || pago.method === "mercadopago_mx") return pago.pay_url ?? null;
 
   if (!pago.address) return null;
   return pago.method === "btc" ? `bitcoin:${pago.address}?amount=${pago.amount}` : pago.address;

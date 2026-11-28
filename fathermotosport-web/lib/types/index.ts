@@ -240,12 +240,12 @@ export type ShippingStatus = "pending" | "preparing" | "in_transit" | "delivered
 export type PaymentMethod = "paypal" | "stripe" | "stripe_wallet" | "mercadopago" | ManualPaymentMethod;
 
 /** Cobros que el cliente hace por fuera (banco o billetera) y el equipo confirma a mano. */
-export type ManualPaymentMethod = "sepa" | "us_bank" | "usdt_trc20" | "usdt_bep20" | "btc" | "btc_bep20" | "binance_pay";
+export type ManualPaymentMethod = "sepa" | "us_bank" | "usdt_trc20" | "usdt_bep20" | "btc" | "btc_bep20" | "binance_pay" | "mercadopago_mx";
 
 /** Datos para pagar un pedido por transferencia o cripto, con el monto ya cotizado. */
 export interface ManualPaymentInstructions {
   method: ManualPaymentMethod;
-  currency: "EUR" | "USD" | "USDT" | "BTC";
+  currency: "EUR" | "USD" | "USDT" | "BTC" | "MXN";
   /** Monto exacto en la moneda del método (texto, para no perder decimales). */
   amount: string;
   /** USD por 1 unidad de la moneda del método, usado al crear el pedido. */
@@ -272,6 +272,11 @@ export interface ManualPaymentInstructions {
   pay_url?: string | null;
   merchant_name?: string | null;
   accepted_currencies?: string[];
+  // Mercado Pago México por link (pay_url / merchant_name de arriba): desglose en MXN.
+  /** Pedido en MXN al tipo de cambio del día, sin el FEE. */
+  subtotal?: string;
+  /** "FEE transacción" en MXN. */
+  fee_amount?: string;
 }
 
 export interface Order {

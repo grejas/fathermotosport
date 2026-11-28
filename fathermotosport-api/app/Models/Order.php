@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasUuid;
+use App\Services\MetaConversions;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -35,7 +36,7 @@ class Order extends Model
      * de agregarla acá. Antes la condición era `payment_method !== 'paypal'` y por eso
      * Stripe avisaba "recibimos tu pedido" incluso con la tarjeta rechazada.
      */
-    public const METODOS_CON_COORDINACION_MANUAL = ['sepa', 'us_bank', 'usdt_trc20', 'usdt_bep20', 'btc', 'btc_bep20', 'binance_pay'];
+    public const METODOS_CON_COORDINACION_MANUAL = ['sepa', 'us_bank', 'usdt_trc20', 'usdt_bep20', 'btc', 'btc_bep20', 'binance_pay', 'mercadopago_mx'];
 
     /** Nombre de cada método para el panel y los correos. */
     public const METODOS_DE_PAGO = [
@@ -49,6 +50,7 @@ class Order extends Model
         'btc' => 'Bitcoin (BTC)',
         'btc_bep20' => 'Bitcoin · BEP20 (BSC)',
         'binance_pay' => 'Binance Pay',
+        'mercadopago_mx' => 'Mercado Pago México (link · MXN)',
     ];
 
     /** Idiomas de la tienda. El primero es el de respaldo: el de los pedidos sin idioma. */
@@ -125,12 +127,12 @@ class Order extends Model
         // confirman a mano en el panel). Después de responder, para no demorar a nadie.
         static::updated(function (Order $order) {
             if ($order->wasChanged('payment_status') && $order->payment_status === 'paid'
-                && \App\Services\MetaConversions::enabled()) {
+                && MetaConversions::enabled()) {
                 $id = $order->id;
                 dispatch(function () use ($id) {
                     $pedido = Order::find($id);
                     if ($pedido) {
-                        app(\App\Services\MetaConversions::class)->sendPurchase($pedido);
+                        app(MetaConversions::class)->sendPurchase($pedido);
                     }
                 })->afterResponse();
             }

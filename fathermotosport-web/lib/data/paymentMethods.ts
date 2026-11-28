@@ -21,7 +21,7 @@ export const ENABLED_PAYMENT_METHODS: readonly PaymentMethod[] = ["stripe_wallet
  */
 // SEPA retirado del checkout (26-nov-2026, pedido de Gerson). El tipo "sepa" se mantiene para
 // que los pedidos antiguos sigan mostrando sus instrucciones.
-export const MANUAL_PAYMENT_METHODS: readonly ManualPaymentMethod[] = ["us_bank", "binance_pay", "usdt_trc20", "usdt_bep20", "btc", "btc_bep20"];
+export const MANUAL_PAYMENT_METHODS: readonly ManualPaymentMethod[] = ["mercadopago_mx", "us_bank", "binance_pay", "usdt_trc20", "usdt_bep20", "btc", "btc_bep20"];
 
 export const CRYPTO_PAYMENT_METHODS: readonly ManualPaymentMethod[] = ["binance_pay", "usdt_trc20", "usdt_bep20", "btc", "btc_bep20"];
 

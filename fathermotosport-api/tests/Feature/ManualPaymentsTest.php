@@ -281,6 +281,44 @@ class ManualPaymentsTest extends TestCase
         $this->assertFalse(ManualPaymentService::direccionValida('binance_pay', 'javascript:alert(1)'));
     }
 
+    public function test_mercadopago_link_charges_mxn_at_todays_rate(): void
+    {
+        $this->getJson('/api/v1/store/settings')->assertJsonPath('data.payment_methods.mercadopago_mx', false);
+        $this->pedir('mercadopago_mx')->assertStatus(422)->assertJsonValidationErrors('payment_method');
+
+        StoreConfig::current()->update([
+            'mp_link_url' => 'https://link.mercadopago.com.mx/bolimex',
+            'mp_link_name' => 'Bolimex Group',
+        ]);
+        Http::fake(['api.frankfurter.app/*' => Http::response(['rates' => ['MXN' => 19.5]])]);
+
+        $this->getJson('/api/v1/store/settings')->assertJsonPath('data.payment_methods.mercadopago_mx', true);
+
+        // 430 USD × 19,5 MXN/USD = 8.385,00 MXN + 7 % del cambista = 8.971,95 MXN.
+        $res = $this->pedir('mercadopago_mx')->assertCreated()
+            ->assertJsonPath('order.manual_payment.method', 'mercadopago_mx')
+            ->assertJsonPath('order.manual_payment.currency', 'MXN')
+            ->assertJsonPath('order.manual_payment.amount', '8971.95')
+            ->assertJsonPath('order.manual_payment.subtotal', '8385.00')
+            ->assertJsonPath('order.manual_payment.fee_amount', '586.95')
+            ->assertJsonPath('order.manual_payment.pay_url', 'https://link.mercadopago.com.mx/bolimex')
+            ->assertJsonPath('order.manual_payment.merchant_name', 'Bolimex Group')
+            ->assertJsonPath('payment.next_step', 'manual');
+
+        $order = Order::findOrFail($res->json('order.id'));
+        $this->assertSame('MXN', $order->payment_currency);
+        $this->assertEqualsWithDelta(48, now()->diffInHours($order->payment_expires_at), 1);
+        Mail::assertSent(OrderReceivedMail::class);
+    }
+
+    public function test_mercadopago_link_validation(): void
+    {
+        $this->assertTrue(ManualPaymentService::direccionValida('mercadopago_mx', 'https://link.mercadopago.com.mx/bolimex'));
+        $this->assertTrue(ManualPaymentService::direccionValida('mercadopago_mx', 'https://mpago.la/2AbCdE'));
+        $this->assertFalse(ManualPaymentService::direccionValida('mercadopago_mx', 'https://link.mercadopago.com.mx.evil.io/x'));
+        $this->assertFalse(ManualPaymentService::direccionValida('mercadopago_mx', 'http://link.mercadopago.com.mx/bolimex'));
+    }
+
     public function test_lists_stay_in_sync(): void
     {
         $this->assertEqualsCanonicalizing(

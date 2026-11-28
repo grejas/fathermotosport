@@ -15,7 +15,8 @@ interface MarqueeItem {
 
 export function MarqueeBar() {
   const t = useTranslations("benefits");
-  const { mercadopago } = useStoreSettings();
+  const ajustes = useStoreSettings();
+  const mercadopago = ajustes.mercadopago || ajustes.manualPaymentMethods.includes("mercadopago_mx");
 
   const items: MarqueeItem[] = [
     { label: t("free_shipping"), pill: true },

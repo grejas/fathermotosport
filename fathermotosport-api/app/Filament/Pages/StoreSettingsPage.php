@@ -62,6 +62,9 @@ class StoreSettingsPage extends Page implements HasForms
             'btc_bep20_address' => $config->btc_bep20_address,
             'binance_pay_url' => $config->binance_pay_url,
             'binance_pay_name' => $config->binance_pay_name,
+            'mp_link_url' => $config->mp_link_url,
+            'mp_link_name' => $config->mp_link_name,
+            'mp_link_fee_percent' => $config->mp_link_fee_percent ?? 7,
             'usbank_beneficiary' => $config->usbank_beneficiary,
             'usbank_beneficiary_address' => $config->usbank_beneficiary_address,
             'usbank_bank_name' => $config->usbank_bank_name,
@@ -218,6 +221,27 @@ class StoreSettingsPage extends Page implements HasForms
                             ->maxLength(100)
                             ->helperText('El mismo nombre que muestra Binance al escanear, para que el cliente confirme que paga a la cuenta correcta.'),
                     ]),
+
+                Forms\Components\Section::make('Mercado Pago México (link de cobro)')
+                    ->description('El total se cotiza en pesos mexicanos al tipo de cambio del día. El cliente abre el link, escribe ese monto y paga con tarjeta, OXXO o saldo; confirmas el ingreso desde el pedido.')
+                    ->columns(1)
+                    ->schema([
+                        Forms\Components\TextInput::make('mp_link_url')
+                            ->label('Link de cobro (monto abierto)')
+                            ->placeholder('https://link.mercadopago.com.mx/…')
+                            ->maxLength(255)
+                            ->rules([self::regla(fn ($v) => ManualPaymentService::direccionValida('mercadopago_mx', $v), 'Pega un link de Mercado Pago México (https://link.mercadopago.com.mx/…).')])
+                            ->helperText('Tiene que ser un link donde el cliente escribe el monto. Vacío: Mercado Pago México no se ofrece.'),
+                        Forms\Components\TextInput::make('mp_link_name')
+                            ->label('Nombre del titular que ve el cliente')
+                            ->placeholder('Bolimex Group')
+                            ->maxLength(100)
+                            ->helperText('El nombre que muestra Mercado Pago al abrir el link y en el comprobante, para que el cliente no desconfíe.'),
+                        Forms\Components\TextInput::make('mp_link_fee_percent')
+                            ->label('Comisión del cambista (%)')
+                            ->numeric()->minValue(0)->maxValue(30)->step(0.01)->default(7)->suffix('%')
+                            ->helperText('Se suma al monto en pesos y el cliente la ve desglosada antes de pagar.'),
+                    ]),
             ])
             ->statePath('data');
     }
@@ -260,6 +284,9 @@ class StoreSettingsPage extends Page implements HasForms
             'btc_bep20_address' => $texto('btc_bep20_address'),
             'binance_pay_url' => $texto('binance_pay_url'),
             'binance_pay_name' => $texto('binance_pay_name'),
+            'mp_link_url' => $texto('mp_link_url'),
+            'mp_link_name' => $texto('mp_link_name'),
+            'mp_link_fee_percent' => is_numeric($data['mp_link_fee_percent'] ?? null) ? (float) $data['mp_link_fee_percent'] : 7,
             'usbank_beneficiary' => $texto('usbank_beneficiary'),
             'usbank_beneficiary_address' => $texto('usbank_beneficiary_address'),
             'usbank_bank_name' => $texto('usbank_bank_name'),
