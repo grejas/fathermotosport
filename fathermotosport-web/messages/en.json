@@ -298,7 +298,10 @@
     "reference_placeholder": "E.g. white two-story house, across from the market",
     "pm_mercadopago_mx": "Mercado Pago",
     "pm_mercadopago_mx_desc": "Card, OXXO or Mercado Pago balance · paid in Mexican pesos (MXN)",
-    "pm_mercadopago_mx_note": "After confirming you'll see the exact amount in Mexican pesos at today's exchange rate and a button to pay on Mercado Pago. You have 48 hours; we prepare your order once the payment is confirmed."
+    "pm_mercadopago_mx_note": "After confirming you'll see the exact amount in Mexican pesos at today's exchange rate and a button to pay on Mercado Pago. You have 48 hours; we prepare your order once the payment is confirmed.",
+    "pm_paypal_manual": "PayPal",
+    "pm_paypal_manual_desc": "Pay with your PayPal balance or card · in US dollars (USD)",
+    "pm_paypal_manual_note": "After confirming you'll see the exact amount in USD and the PayPal account to send it to. You have 48 hours; we prepare your order once the payment is confirmed."
   },
   "pay_pending": {
     "title": "Complete your order payment",
@@ -778,7 +781,17 @@
     "mp_how": "Tap the button, enter the exact amount and pay with card, OXXO or your Mercado Pago balance. On a computer you can also scan the QR code with your phone.",
     "mp_note": "The charge appears under {name}, which processes FatherMotoSport payments in Mexico. Enter the exact amount and keep a screenshot of the payment.",
     "mp_step_1": "Open Mercado Pago with the button, enter {amount} and pay.",
-    "qr_mp": "Scan with your phone's camera"
+    "qr_mp": "Scan with your phone's camera",
+    "pp_title": "Pay with PayPal",
+    "pp_email": "Send to (PayPal)",
+    "pp_account": "Account holder",
+    "pp_open": "Pay with PayPal",
+    "pp_order": "Order",
+    "pp_fee": "Transaction FEE",
+    "pp_how": "Tap the button or send the exact amount from PayPal to the email above. Write your order number in the payment note.",
+    "pp_note": "Send exactly the amount shown and keep a screenshot of the payment.",
+    "pp_step_1": "Send {amount} via PayPal to the account above.",
+    "qr_pp": "Scan with your phone's camera"
   },
   "stock_alert": {
     "title": "Notify me when available",

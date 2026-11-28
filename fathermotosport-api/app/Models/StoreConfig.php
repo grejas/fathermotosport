@@ -58,6 +58,10 @@ class StoreConfig extends Model
         'mp_link_url',
         'mp_link_name',
         'mp_link_fee_percent',
+        'pp_manual_email',
+        'pp_manual_link',
+        'pp_manual_name',
+        'pp_manual_fee_percent',
         'usbank_beneficiary',
         'usbank_beneficiary_address',
         'usbank_bank_name',
@@ -71,6 +75,7 @@ class StoreConfig extends Model
     protected $casts = [
         'maintenance_mode' => 'boolean',
         'mp_link_fee_percent' => 'float',
+        'pp_manual_fee_percent' => 'float',
     ];
 
     /** Si la web confirmó la revalidación del último guardado (null: todavía no se guardó). */

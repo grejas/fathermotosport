@@ -65,6 +65,10 @@ class StoreSettingsPage extends Page implements HasForms
             'mp_link_url' => $config->mp_link_url,
             'mp_link_name' => $config->mp_link_name,
             'mp_link_fee_percent' => $config->mp_link_fee_percent ?? 7,
+            'pp_manual_email' => $config->pp_manual_email,
+            'pp_manual_link' => $config->pp_manual_link,
+            'pp_manual_name' => $config->pp_manual_name,
+            'pp_manual_fee_percent' => $config->pp_manual_fee_percent ?? 0,
             'usbank_beneficiary' => $config->usbank_beneficiary,
             'usbank_beneficiary_address' => $config->usbank_beneficiary_address,
             'usbank_bank_name' => $config->usbank_bank_name,
@@ -242,6 +246,29 @@ class StoreSettingsPage extends Page implements HasForms
                             ->numeric()->minValue(0)->maxValue(30)->step(0.01)->default(7)->suffix('%')
                             ->helperText('Se suma al monto en pesos y el cliente la ve desglosada antes de pagar.'),
                     ]),
+
+                Forms\Components\Section::make('PayPal (pago manual)')
+                    ->description('El cliente envía el total en USD a esta cuenta de PayPal y te manda el comprobante; confirmas el ingreso desde el pedido. Vacío: PayPal manual no se ofrece.')
+                    ->columns(1)
+                    ->schema([
+                        Forms\Components\TextInput::make('pp_manual_email')
+                            ->label('Correo de PayPal que recibe')
+                            ->email()
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('pp_manual_link')
+                            ->label('Link PayPal.me (opcional)')
+                            ->placeholder('https://paypal.me/…')
+                            ->maxLength(255)
+                            ->rules([self::regla(fn ($v) => ManualPaymentService::direccionValida('paypal_me', $v), 'Pega un link de PayPal.me (https://paypal.me/usuario).')])
+                            ->helperText('Si lo cargas, el botón abre PayPal con el monto exacto ya puesto.'),
+                        Forms\Components\TextInput::make('pp_manual_name')
+                            ->label('Nombre que ve el cliente al pagar')
+                            ->maxLength(100),
+                        Forms\Components\TextInput::make('pp_manual_fee_percent')
+                            ->label('FEE transacción (%)')
+                            ->numeric()->minValue(0)->maxValue(30)->step(0.01)->default(0)->suffix('%')
+                            ->helperText('Se suma al total en USD y el cliente lo ve como "FEE transacción". 0 = sin recargo.'),
+                    ]),
             ])
             ->statePath('data');
     }
@@ -287,6 +314,10 @@ class StoreSettingsPage extends Page implements HasForms
             'mp_link_url' => $texto('mp_link_url'),
             'mp_link_name' => $texto('mp_link_name'),
             'mp_link_fee_percent' => is_numeric($data['mp_link_fee_percent'] ?? null) ? (float) $data['mp_link_fee_percent'] : 7,
+            'pp_manual_email' => $texto('pp_manual_email'),
+            'pp_manual_link' => $texto('pp_manual_link'),
+            'pp_manual_name' => $texto('pp_manual_name'),
+            'pp_manual_fee_percent' => is_numeric($data['pp_manual_fee_percent'] ?? null) ? (float) $data['pp_manual_fee_percent'] : 0,
             'usbank_beneficiary' => $texto('usbank_beneficiary'),
             'usbank_beneficiary_address' => $texto('usbank_beneficiary_address'),
             'usbank_bank_name' => $texto('usbank_bank_name'),

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\ShippingOption;
+use App\Support\ShippingCountries;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -52,7 +53,7 @@ class FreeShippingMigrationTest extends TestCase
         $migracion->up();
         $migracion->up();
 
-        foreach (array_keys(\App\Support\ShippingCountries::AMERICAS) as $pais) {
+        foreach (array_keys(ShippingCountries::AMERICAS) as $pais) {
             foreach ([0.3, 3.2, 12] as $peso) {
                 $opciones = ShippingOption::availableFor($pais, $peso);
                 $this->assertCount(1, $opciones, "{$pais} {$peso} kg");

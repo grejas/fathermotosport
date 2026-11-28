@@ -90,16 +90,25 @@ function Chip({ marca }: { marca: Marca }) {
  * no existe (publicidad engañosa). PayPal vuelve solo cuando esté en ENABLED_PAYMENT_METHODS;
  * Mercado Pago aparece en cuanto la API tiene sus credenciales (settings.mercadopago).
  */
-function sinActivar(mercadopago: boolean): string[] {
+function sinActivar(mercadopago: boolean, paypal: boolean): string[] {
   return [
-    ...((ENABLED_PAYMENT_METHODS as readonly string[]).includes("paypal") ? [] : ["paypal"]),
+    ...((ENABLED_PAYMENT_METHODS as readonly string[]).includes("paypal") || paypal ? [] : ["paypal"]),
     ...(mercadopago ? [] : ["mercadopago"]),
   ];
 }
 
 /** Todos los medios de pago (footer). */
-export function PaymentLogos({ className, mercadopago = false }: { className?: string; mercadopago?: boolean }) {
-  const ocultos = sinActivar(mercadopago);
+export function PaymentLogos({
+  className,
+  mercadopago = false,
+  paypal = false,
+}: {
+  className?: string;
+  mercadopago?: boolean;
+  /** PayPal activo como pago manual (panel). */
+  paypal?: boolean;
+}) {
+  const ocultos = sinActivar(mercadopago, paypal);
   return (
     <ul className={cn("flex flex-wrap gap-2", className)} translate="no" aria-label="Medios de pago">
       {[...BILLETERAS, ...RESTO].filter((m) => !ocultos.includes(m.id)).map((m) => (
@@ -113,6 +122,17 @@ interface Props {
   /** "chip": tarjetitas blancas. "inline": solo los logos, para dentro de una opción. */
   variant?: "chip" | "inline";
   className?: string;
+}
+
+/** Logo de PayPal, para su opción manual del checkout. */
+export function PaypalLogo({ className }: { className?: string }) {
+  return (
+    <ul className={cn("flex flex-wrap gap-1.5", className)} translate="no" aria-label="PayPal">
+      {[...BILLETERAS, ...RESTO].filter((m) => m.id === "paypal").map((m) => (
+        <Chip key={m.id} marca={m} />
+      ))}
+    </ul>
+  );
 }
 
 /** Logo de Mercado Pago, para su opción del checkout. */

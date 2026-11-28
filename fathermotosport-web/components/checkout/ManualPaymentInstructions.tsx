@@ -26,6 +26,7 @@ export function ManualPaymentInstructions({ order, pago }: { order: Order; pago:
   const esBanco = esSepa || esUsBank;
   const esBinance = pago.method === "binance_pay";
   const esMp = pago.method === "mercadopago_mx";
+  const esPp = pago.method === "paypal_manual";
   const restante = useTiempoRestante(pago.expires_at);
 
   const qr = useMemo(() => contenidoQr(pago), [pago]);
@@ -41,7 +42,9 @@ export function ManualPaymentInstructions({ order, pago }: { order: Order; pago:
           ? "Binance Pay"
           : esMp
             ? "Mercado Pago"
-            : `${pago.currency} · ${pago.network}`,
+            : esPp
+              ? "PayPal"
+              : `${pago.currency} · ${pago.network}`,
   });
   const whatsappHref = whatsappUrl(whatsappDigits, mensaje);
 
@@ -58,7 +61,9 @@ export function ManualPaymentInstructions({ order, pago }: { order: Order; pago:
                 ? t("binance_title")
                 : esMp
                   ? t("mp_title")
-                  : t("crypto_title", { currency: pago.currency })}
+                  : esPp
+                    ? t("pp_title")
+                    : t("crypto_title", { currency: pago.currency })}
         </p>
         <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -87,7 +92,19 @@ export function ManualPaymentInstructions({ order, pago }: { order: Order; pago:
                   <dd className="font-mono text-brand-white/85">{pago.fee_amount} MXN</dd>
                 </div>
               </dl>
-            ) : (
+            ) : esPp && pago.subtotal && pago.fee_amount ? (
+              // PayPal manual con FEE: pedido en USD + FEE transacción.
+              <dl className="mt-2 space-y-0.5 text-xs">
+                <div className="flex gap-2 text-brand-muted">
+                  <dt>{t("pp_order")}:</dt>
+                  <dd className="font-mono text-brand-white/85">{pago.subtotal} USD</dd>
+                </div>
+                <div className="flex gap-2 text-brand-muted">
+                  <dt>{t("pp_fee")}:</dt>
+                  <dd className="font-mono text-brand-white/85">{pago.fee_amount} USD</dd>
+                </div>
+              </dl>
+            ) : esPp ? null : (
               <p className="mt-1 text-xs text-brand-muted">
                 {t("equivalent", { total: formatPrice(order.total) })}
                 {pago.currency !== "USDT" && pago.currency !== "USD" && pago.currency !== "MXN" && pago.rate_usd && (
@@ -174,6 +191,23 @@ export function ManualPaymentInstructions({ order, pago }: { order: Order; pago:
                 )}
                 <p className="text-xs leading-relaxed text-brand-muted">{t("mp_how")}</p>
               </>
+            ) : esPp ? (
+              <>
+                <Dato label={t("pp_email")} valor={pago.email} mono partir destacado />
+                {pago.merchant_name && <Dato label={t("pp_account")} valor={pago.merchant_name} />}
+                {pago.pay_url && (
+                  <a
+                    href={pago.pay_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#FFC439] px-4 py-3 text-sm font-bold text-[#003087] shadow-lg shadow-[#FFC439]/20 transition hover:brightness-105"
+                  >
+                    {t("pp_open")}
+                    <ExternalLink size={15} />
+                  </a>
+                )}
+                <p className="text-xs leading-relaxed text-brand-muted">{t("pp_how")}</p>
+              </>
             ) : (
               <>
                 <div>
@@ -193,7 +227,7 @@ export function ManualPaymentInstructions({ order, pago }: { order: Order; pago:
                 <QRCodeSVG value={qr} size={152} level="M" marginSize={0} />
               </div>
               <p className="max-w-[180px] text-center text-[11px] leading-snug text-brand-muted">
-                {esSepa ? t("qr_sepa") : esBinance ? t("qr_binance") : esMp ? t("qr_mp") : t("qr_crypto")}
+                {esSepa ? t("qr_sepa") : esBinance ? t("qr_binance") : esMp ? t("qr_mp") : esPp ? t("qr_pp") : t("qr_crypto")}
               </p>
             </div>
           )}
@@ -205,6 +239,11 @@ export function ManualPaymentInstructions({ order, pago }: { order: Order; pago:
           <div className="mt-5 flex gap-3 rounded-xl border border-[#F0B90B]/30 bg-[#F0B90B]/[0.07] p-3 text-xs leading-relaxed text-brand-white/85">
             <Info size={16} className="mt-0.5 shrink-0 text-[#F0B90B]" />
             <p>{t("binance_note", { name: pago.merchant_name ?? "FatherMotoSport" })}</p>
+          </div>
+        ) : esPp ? (
+          <div className="mt-5 flex gap-3 rounded-xl border border-[#FFC439]/30 bg-[#FFC439]/[0.07] p-3 text-xs leading-relaxed text-brand-white/85">
+            <Info size={16} className="mt-0.5 shrink-0 text-[#FFC439]" />
+            <p>{t("pp_note")}</p>
           </div>
         ) : esMp ? (
           <div className="mt-5 flex gap-3 rounded-xl border border-[#00B1EA]/30 bg-[#00B1EA]/[0.07] p-3 text-xs leading-relaxed text-brand-white/85">
@@ -229,7 +268,7 @@ export function ManualPaymentInstructions({ order, pago }: { order: Order; pago:
       {/* Qué pasa después */}
       <ol className="space-y-3 rounded-2xl border border-white/10 bg-brand-card p-5">
         {[
-          t(esBinance ? "binance_step_1" : esMp ? "mp_step_1" : "step_1", { amount: `${pago.amount} ${pago.currency}` }),
+          t(esBinance ? "binance_step_1" : esMp ? "mp_step_1" : esPp ? "pp_step_1" : "step_1", { amount: `${pago.amount} ${pago.currency}` }),
           t("step_2"),
           t("step_3"),
         ].map((paso, i) => (
@@ -357,7 +396,8 @@ function contenidoQr(pago: Instrucciones): string | null {
   }
 
   // Binance Pay: el mismo enlace de cobro que muestra la app; al escanearlo se abre Binance.
-  if (pago.method === "binance_pay" || pago.method === "mercadopago_mx") return pago.pay_url ?? null;
+  if (pago.method === "binance_pay" || pago.method === "mercadopago_mx" || pago.method === "paypal_manual")
+    return pago.pay_url ?? null;
 
   if (!pago.address) return null;
   return pago.method === "btc" ? `bitcoin:${pago.address}?amount=${pago.amount}` : pago.address;

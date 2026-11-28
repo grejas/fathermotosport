@@ -12,6 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Testing\TestResponse;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -307,7 +308,7 @@ class StripePaymentTest extends TestCase
     // ───────── Webhook ─────────
 
     /** Firma el payload como lo hace Stripe: HMAC-SHA256 de "timestamp.cuerpo". */
-    private function enviarWebhook(array $evento, string $secreto = 'whsec_test'): \Illuminate\Testing\TestResponse
+    private function enviarWebhook(array $evento, string $secreto = 'whsec_test'): TestResponse
     {
         config(['services.stripe.webhook_secret' => 'whsec_test']);
 

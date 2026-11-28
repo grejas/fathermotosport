@@ -240,7 +240,7 @@ export type ShippingStatus = "pending" | "preparing" | "in_transit" | "delivered
 export type PaymentMethod = "paypal" | "stripe" | "stripe_wallet" | "mercadopago" | ManualPaymentMethod;
 
 /** Cobros que el cliente hace por fuera (banco o billetera) y el equipo confirma a mano. */
-export type ManualPaymentMethod = "sepa" | "us_bank" | "usdt_trc20" | "usdt_bep20" | "btc" | "btc_bep20" | "binance_pay" | "mercadopago_mx";
+export type ManualPaymentMethod = "sepa" | "us_bank" | "usdt_trc20" | "usdt_bep20" | "btc" | "btc_bep20" | "binance_pay" | "mercadopago_mx" | "paypal_manual";
 
 /** Datos para pagar un pedido por transferencia o cripto, con el monto ya cotizado. */
 export interface ManualPaymentInstructions {
@@ -277,6 +277,8 @@ export interface ManualPaymentInstructions {
   subtotal?: string;
   /** "FEE transacción" en MXN. */
   fee_amount?: string;
+  /** PayPal manual: correo de la cuenta que recibe. */
+  email?: string | null;
 }
 
 export interface Order {

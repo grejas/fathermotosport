@@ -9,7 +9,8 @@ export function PaymentBanner() {
   const t = useTranslations("home");
   const ajustes = useStoreSettings();
   const mercadopago = ajustes.mercadopago || ajustes.manualPaymentMethods.includes("mercadopago_mx");
-  const medios = ["Visa", "Mastercard", "Apple Pay", "Google Pay", ...(mercadopago ? ["Mercado Pago"] : []), "USDT", "Bitcoin"];
+  const paypal = ajustes.manualPaymentMethods.includes("paypal_manual");
+  const medios = ["Visa", "Mastercard", "Apple Pay", "Google Pay", ...(paypal ? ["PayPal"] : []), ...(mercadopago ? ["Mercado Pago"] : []), "USDT", "Bitcoin"];
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">

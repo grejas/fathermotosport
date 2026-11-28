@@ -17,12 +17,13 @@ export function MarqueeBar() {
   const t = useTranslations("benefits");
   const ajustes = useStoreSettings();
   const mercadopago = ajustes.mercadopago || ajustes.manualPaymentMethods.includes("mercadopago_mx");
+  const paypal = isGatewayAdvertised("paypal") || ajustes.manualPaymentMethods.includes("paypal_manual");
 
   const items: MarqueeItem[] = [
     { label: t("free_shipping"), pill: true },
     { label: t("international_shipping"), pill: true},
     // Solo lo que el checkout cobra hoy (PayPal y MercadoPago vuelven solos al reactivarse).
-    ...(isGatewayAdvertised("paypal") ? [{ label: "PayPal", brand: true }] : []),
+    ...(paypal ? [{ label: "PayPal", brand: true }] : []),
     { label: "Apple Pay", brand: true },
     { label: "Google Pay", brand: true },
     { label: "Visa · Mastercard", brand: true },

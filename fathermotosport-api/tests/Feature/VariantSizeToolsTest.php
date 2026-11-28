@@ -257,4 +257,3 @@ class VariantSizeToolsTest extends TestCase
         $this->assertSame($botas, SizeCatalog::forCategoryId($sub->id));
     }
 }
-
