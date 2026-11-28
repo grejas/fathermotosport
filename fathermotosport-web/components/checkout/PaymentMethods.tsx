@@ -19,7 +19,7 @@ const PASARELAS: { id: Pasarela; icon: typeof Wallet }[] = [
 ];
 
 /** Etiqueta corta de cada red cripto, como la muestran los exchanges al retirar. */
-const REDES: Record<Exclude<ManualPaymentMethod, "sepa" | "us_bank">, { moneda: string; red: string; monedas: string[] }> = {
+const REDES: Record<Exclude<ManualPaymentMethod, "sepa" | "us_bank" | "mercadopago_mx">, { moneda: string; red: string; monedas: string[] }> = {
   binance_pay: { moneda: "Binance Pay", red: "USDT · USDC · BTC", monedas: ["USDT", "USDC", "BTC"] },
   usdt_trc20: { moneda: "USDT", red: "TRC20", monedas: ["USDT"] },
   usdt_bep20: { moneda: "USDT", red: "BEP20", monedas: ["USDT"] },
@@ -41,6 +41,7 @@ export function PaymentMethods({ value, onChange, enabled, manual = [], comingSo
   const t = useTranslations("checkout");
   const conSepa = manual.includes("sepa");
   const conUsBank = manual.includes("us_bank");
+  const conMpMx = manual.includes("mercadopago_mx");
   const cripto = CRYPTO_PAYMENT_METHODS.filter((m) => manual.includes(m));
   const criptoActiva = cripto.includes(value as ManualPaymentMethod);
 
@@ -80,6 +81,20 @@ export function PaymentMethods({ value, onChange, enabled, manual = [], comingSo
           />
         );
       })}
+
+      {/* Mercado Pago México por link: cobro en MXN al tipo de cambio del día. Para todos. */}
+      {conMpMx && (
+        <Opcion
+          icon={Wallet}
+          label={t("pm_mercadopago_mx")}
+          desc={t("pm_mercadopago_mx_desc")}
+          badge="MXN"
+          active={value === "mercadopago_mx"}
+          iconClass="bg-[#00B1EA] text-white"
+          extra={<MercadoPagoLogo className="mt-1.5" />}
+          onClick={() => onChange("mercadopago_mx")}
+        />
+      )}
 
       {conSepa && (
         <Opcion
@@ -171,7 +186,9 @@ export function PaymentMethods({ value, onChange, enabled, manual = [], comingSo
 
       {isManualPaymentMethod(value) && (
         <p className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-xs leading-relaxed text-brand-muted">
-          {value === "sepa"
+          {value === "mercadopago_mx"
+            ? t("pm_mercadopago_mx_note")
+            : value === "sepa"
             ? t("pm_sepa_note")
             : value === "us_bank"
               ? t("pm_us_bank_note")

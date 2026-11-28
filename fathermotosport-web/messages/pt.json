@@ -295,7 +295,10 @@
     "brazil_ml_title": "Compra a partir do Brasil?",
     "brazil_ml_text": "As vendas para o Brasil são feitas pelo Mercado Livre. Fale com a gente no WhatsApp e enviamos o link do produto.",
     "recipient_name": "Nome do destinatário",
-    "reference_placeholder": "Ex.: casa branca de dois andares, em frente ao mercado"
+    "reference_placeholder": "Ex.: casa branca de dois andares, em frente ao mercado",
+    "pm_mercadopago_mx": "Mercado Pago",
+    "pm_mercadopago_mx_desc": "Cartão, OXXO ou saldo Mercado Pago · pagamento em pesos mexicanos (MXN)",
+    "pm_mercadopago_mx_note": "Ao confirmar, você verá o valor exato em pesos mexicanos ao câmbio de hoje e o botão para pagar no Mercado Pago. Você tem 48 horas; preparamos seu pedido quando confirmarmos o pagamento."
   },
   "pay_pending": {
     "title": "Conclua o pagamento do seu pedido",
@@ -766,7 +769,16 @@
     "bank_address": "Endereço do banco",
     "swift_intl": "SWIFT (wires internacionais)",
     "memo": "Referência / memo",
-    "warning_us_bank": "Use {reference} na referência ou memo: é assim que identificamos seu pagamento. ACH leva de 1 a 3 dias úteis; um wire chega no mesmo dia. Se seu banco cobrar tarifa, some-a para que chegue o valor completo."
+    "warning_us_bank": "Use {reference} na referência ou memo: é assim que identificamos seu pagamento. ACH leva de 1 a 3 dias úteis; um wire chega no mesmo dia. Se seu banco cobrar tarifa, some-a para que chegue o valor completo.",
+    "mp_title": "Pagamento com Mercado Pago (México)",
+    "mp_account": "Recebedor",
+    "mp_open": "Pagar com Mercado Pago",
+    "mp_order_mxn": "Pedido em MXN",
+    "mp_fee": "FEE transação",
+    "mp_how": "Toque no botão, digite o valor exato e pague com cartão, OXXO ou seu saldo do Mercado Pago. No computador, você também pode escanear o QR com o celular.",
+    "mp_note": "A cobrança aparece em nome de {name}, que processa os pagamentos da FatherMotoSport no México. Digite o valor exato e guarde o comprovante.",
+    "mp_step_1": "Abra o Mercado Pago pelo botão, digite {amount} e pague.",
+    "qr_mp": "Escaneie com a câmera do celular"
   },
   "stock_alert": {
     "title": "Avise-me quando estiver disponível",

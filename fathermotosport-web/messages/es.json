@@ -295,7 +295,10 @@
     "brazil_ml_title": "¿Compras desde Brasil?",
     "brazil_ml_text": "Los envíos a Brasil se venden por Mercado Livre. Escríbenos por WhatsApp y te pasamos el enlace del producto.",
     "recipient_name": "Nombre del destinatario",
-    "reference_placeholder": "Ej.: casa blanca de dos pisos, frente al mercado"
+    "reference_placeholder": "Ej.: casa blanca de dos pisos, frente al mercado",
+    "pm_mercadopago_mx": "Mercado Pago",
+    "pm_mercadopago_mx_desc": "Tarjeta, OXXO o saldo Mercado Pago · pago en pesos mexicanos (MXN)",
+    "pm_mercadopago_mx_note": "Al confirmar verás el monto exacto en pesos mexicanos al tipo de cambio de hoy y el botón para pagar en Mercado Pago. Tienes 48 horas; preparamos tu pedido cuando confirmamos el pago."
   },
   "pay_pending": {
     "title": "Completa el pago de tu pedido",
@@ -766,7 +769,16 @@
     "bank_address": "Dirección del banco",
     "swift_intl": "SWIFT (wires internacionales)",
     "memo": "Referencia / memo",
-    "warning_us_bank": "Escribe {reference} en la referencia o memo: es como identificamos tu pago. ACH tarda de 1 a 3 días hábiles; un wire llega el mismo día. Si tu banco cobra comisión, súmala para que llegue el monto completo."
+    "warning_us_bank": "Escribe {reference} en la referencia o memo: es como identificamos tu pago. ACH tarda de 1 a 3 días hábiles; un wire llega el mismo día. Si tu banco cobra comisión, súmala para que llegue el monto completo.",
+    "mp_title": "Pago con Mercado Pago (México)",
+    "mp_account": "Cobra",
+    "mp_open": "Pagar con Mercado Pago",
+    "mp_order_mxn": "Pedido en MXN",
+    "mp_fee": "FEE transacción",
+    "mp_how": "Toca el botón, escribe el monto exacto y paga con tarjeta, OXXO o tu saldo de Mercado Pago. Desde la computadora también puedes escanear el QR con tu celular.",
+    "mp_note": "El cobro aparece a nombre de {name}, que procesa los pagos de FatherMotoSport en México. Escribe el monto exacto y guarda la captura del pago.",
+    "mp_step_1": "Abre Mercado Pago con el botón, escribe {amount} y paga.",
+    "qr_mp": "Escanea con la cámara de tu celular"
   },
   "stock_alert": {
     "title": "Avísame cuando esté disponible",

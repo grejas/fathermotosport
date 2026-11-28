@@ -7,7 +7,8 @@ import { useStoreSettings } from "@/components/layout/StoreSettingsProvider";
 
 export function PaymentBanner() {
   const t = useTranslations("home");
-  const { mercadopago } = useStoreSettings();
+  const ajustes = useStoreSettings();
+  const mercadopago = ajustes.mercadopago || ajustes.manualPaymentMethods.includes("mercadopago_mx");
   const medios = ["Visa", "Mastercard", "Apple Pay", "Google Pay", ...(mercadopago ? ["Mercado Pago"] : []), "USDT", "Bitcoin"];
 
   return (

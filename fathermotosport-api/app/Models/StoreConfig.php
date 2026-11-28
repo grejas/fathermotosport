@@ -55,6 +55,9 @@ class StoreConfig extends Model
         'btc_bep20_address',
         'binance_pay_url',
         'binance_pay_name',
+        'mp_link_url',
+        'mp_link_name',
+        'mp_link_fee_percent',
         'usbank_beneficiary',
         'usbank_beneficiary_address',
         'usbank_bank_name',
@@ -67,6 +70,7 @@ class StoreConfig extends Model
 
     protected $casts = [
         'maintenance_mode' => 'boolean',
+        'mp_link_fee_percent' => 'float',
     ];
 
     /** Si la web confirmó la revalidación del último guardado (null: todavía no se guardó). */

@@ -47,6 +47,9 @@ class ManualPaymentService
         // elegir red. El monto se pide en USDT (1:1 con USD); puede pagar el equivalente
         // en USDC o BTC dentro de Binance y el equipo lo verifica al confirmar.
         'binance_pay' => ['moneda' => 'USDT', 'horas' => 24, 'campos' => ['binance_pay_url']],
+        // Mercado Pago México con el link de cobro de un intermediario (monto abierto): el
+        // total se cotiza en MXN al tipo de cambio del día y el cliente escribe ese monto.
+        'mercadopago_mx' => ['moneda' => 'MXN', 'horas' => 48, 'campos' => ['mp_link_url']],
     ];
 
     /** Nombre de cada red tal como lo muestran los exchanges al retirar. */
@@ -95,8 +98,15 @@ class ManualPaymentService
         $tasa = match ($moneda) {
             'USDT', 'USD' => 1.0,
             'EUR' => $this->usdPorEuro(),
+            'MXN' => $this->usdPorPesoMexicano(),
             'BTC' => $this->usdPorBitcoin(),
         };
+
+        // Mercado Pago por link: el intermediario cobra una comisión que se suma al monto en
+        // MXN. Se aplica a la tasa (menos USD por peso = más pesos por el mismo total).
+        if ($metodo === 'mercadopago_mx' && $tasa !== null) {
+            $tasa = round($tasa / (1 + self::comisionMp() / 100), 10);
+        }
 
         if ($tasa === null) {
             throw ValidationException::withMessages([
@@ -184,12 +194,34 @@ class ManualPaymentService
             ];
         }
 
+        if ($metodo === 'mercadopago_mx') {
+            $comision = self::comisionMp($config);
+            $subtotal = round((float) $order->payment_amount / (1 + $comision / 100), 2);
+
+            return $base + [
+                'pay_url' => $config?->mp_link_url,
+                'merchant_name' => $config?->mp_link_name,
+                // Desglose para el cliente: pedido en MXN al tipo de cambio + "FEE transacción".
+                'subtotal' => self::formatoMonto($subtotal, 'MXN'),
+                'fee_amount' => self::formatoMonto((float) $order->payment_amount - $subtotal, 'MXN'),
+            ];
+        }
+
         $campo = self::METODOS[$metodo]['campos'][0];
 
         return $base + [
             'network' => self::REDES[$metodo],
             'address' => $config?->getAttribute($campo),
         ];
+    }
+
+    /** % de comisión del intermediario de Mercado Pago (panel; 7 si no está cargado). */
+    public static function comisionMp(?StoreConfig $config = null): float
+    {
+        $config ??= StoreConfig::current();
+        $valor = $config?->mp_link_fee_percent;
+
+        return $valor === null ? 7.0 : max(0.0, min(30.0, (float) $valor));
     }
 
     public static function formatoMonto(mixed $monto, ?string $moneda): string
@@ -345,6 +377,8 @@ class ManualPaymentService
             'usdt_bep20', 'btc_bep20' => (bool) preg_match('/^0x[a-fA-F0-9]{40}$/', $direccion),
             // Enlace de cobro de Binance Pay (el contenido del QR). Solo dominios de Binance.
             'binance_pay' => (bool) preg_match('#^https://(app|s|www)\.binance\.com/[A-Za-z0-9/_\-]+$#', $direccion),
+            // Link de cobro de Mercado Pago México (link.mercadopago.com.mx/… o mpago.la/…).
+            'mercadopago_mx' => (bool) preg_match('#^https://(link\.mercadopago\.com\.mx|mpago\.la|mpago\.li)/[A-Za-z0-9_\-]+/?$#', $direccion),
             // Legacy (1…), P2SH (3…) o bech32 / taproot (bc1…).
             'btc' => (bool) preg_match('/^(bc1[ac-hj-np-z02-9]{11,71}|[13][1-9A-HJ-NP-Za-km-z]{25,34})$/', $direccion),
             default => false,

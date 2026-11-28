@@ -295,7 +295,10 @@
     "brazil_ml_title": "Buying from Brazil?",
     "brazil_ml_text": "Orders to Brazil are sold through Mercado Livre. Message us on WhatsApp and we'll send you the product link.",
     "recipient_name": "Recipient name",
-    "reference_placeholder": "E.g. white two-story house, across from the market"
+    "reference_placeholder": "E.g. white two-story house, across from the market",
+    "pm_mercadopago_mx": "Mercado Pago",
+    "pm_mercadopago_mx_desc": "Card, OXXO or Mercado Pago balance · paid in Mexican pesos (MXN)",
+    "pm_mercadopago_mx_note": "After confirming you'll see the exact amount in Mexican pesos at today's exchange rate and a button to pay on Mercado Pago. You have 48 hours; we prepare your order once the payment is confirmed."
   },
   "pay_pending": {
     "title": "Complete your order payment",
@@ -766,7 +769,16 @@
     "bank_address": "Bank address",
     "swift_intl": "SWIFT (international wires)",
     "memo": "Reference / memo",
-    "warning_us_bank": "Enter {reference} in the reference or memo field: that's how we identify your payment. ACH takes 1–3 business days; a wire arrives the same day. If your bank charges a fee, add it so the full amount arrives."
+    "warning_us_bank": "Enter {reference} in the reference or memo field: that's how we identify your payment. ACH takes 1–3 business days; a wire arrives the same day. If your bank charges a fee, add it so the full amount arrives.",
+    "mp_title": "Pay with Mercado Pago (Mexico)",
+    "mp_account": "Payee",
+    "mp_open": "Pay with Mercado Pago",
+    "mp_order_mxn": "Order in MXN",
+    "mp_fee": "Transaction FEE",
+    "mp_how": "Tap the button, enter the exact amount and pay with card, OXXO or your Mercado Pago balance. On a computer you can also scan the QR code with your phone.",
+    "mp_note": "The charge appears under {name}, which processes FatherMotoSport payments in Mexico. Enter the exact amount and keep a screenshot of the payment.",
+    "mp_step_1": "Open Mercado Pago with the button, enter {amount} and pay.",
+    "qr_mp": "Scan with your phone's camera"
   },
   "stock_alert": {
     "title": "Notify me when available",

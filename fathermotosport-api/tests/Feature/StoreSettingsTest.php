@@ -105,6 +105,7 @@ class StoreSettingsTest extends TestCase
                         'btc' => false,
                         'btc_bep20' => false,
                         'binance_pay' => false,
+                        'mercadopago_mx' => false,
                     ],
                     'gateways' => [
                         'mercadopago' => false,
